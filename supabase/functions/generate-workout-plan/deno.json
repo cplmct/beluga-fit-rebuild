@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "generate-workout-plan": {
+      "verify_jwt": false
+    }
+  }
+}
