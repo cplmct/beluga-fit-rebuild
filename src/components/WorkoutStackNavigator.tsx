@@ -6,7 +6,6 @@ import { BodyPartsScreen } from './BodyPartsScreen';
 import { ExercisesScreen } from './ExercisesScreen';
 import { WorkoutChecklistScreen } from './WorkoutChecklistScreen';
 import { RestTimerScreen } from './RestTimerScreen';
-import { AIWorkoutScreen } from './AIWorkoutScreen'; // ⭐ Add this
 
 const Stack = createNativeStackNavigator();
 
@@ -28,14 +27,6 @@ export function WorkoutStackNavigator() {
         component={StartWorkoutScreen}
         options={{ title: 'Workout' }}
       />
-
-      {/* ⭐ Add AI Workout here */}
-      <Stack.Screen
-        name="AIWorkout"
-        component={AIWorkoutScreen}
-        options={{ title: 'AI Workout' }}
-      />
-
       <Stack.Screen
         name="Templates"
         component={WorkoutTemplatesScreen}

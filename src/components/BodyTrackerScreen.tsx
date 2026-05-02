@@ -1,11 +1,9 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Dimensions, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { LineChart } from 'react-native-chart-kit';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { VoiceButton } from './VoiceButton';
-import { VoiceCommand } from '../utils/voiceCommandParser';
 
 interface BodyMeasurement {
   id: string;
@@ -26,7 +24,6 @@ interface BodyMeasurement {
 
 export function BodyTrackerScreen() {
   const { user } = useAuth();
-  const weightInputRef = useRef<TextInput>(null);
 
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
@@ -53,9 +50,12 @@ export function BodyTrackerScreen() {
 
   const fetchMeasurements = async () => {
     try {
+      if (!user) return;
+
       const { data, error } = await supabase
         .from('body_measurements')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -181,13 +181,6 @@ export function BodyTrackerScreen() {
     };
   };
 
-  const handleVoiceCommand = useCallback((command: VoiceCommand) => {
-    if (command.type === 'LOG_WEIGHT') {
-      weightInputRef.current?.focus();
-      Alert.alert('Voice Command', 'Ready to log weight');
-    }
-  }, []);
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -274,7 +267,6 @@ export function BodyTrackerScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Weight (lbs)</Text>
             <TextInput
-              ref={weightInputRef}
               style={styles.input}
               value={weight}
               onChangeText={setWeight}
@@ -486,12 +478,6 @@ export function BodyTrackerScreen() {
           ))
         )}
       </View>
-
-      <VoiceButton
-        onCommand={handleVoiceCommand}
-        position="floating"
-        size="large"
-      />
     </ScrollView>
   );
 }

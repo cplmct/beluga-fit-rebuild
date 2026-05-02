@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet, useColorScheme, TouchableOpacity, Linking } from 'react-native';
 
-export default function LegalScreen() {
+export function LegalScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
@@ -47,11 +47,6 @@ export default function LegalScreen() {
       color: isDark ? '#d1d5db' : '#4b5563',
       lineHeight: 24,
       marginBottom: 12,
-    },
-    arrow: {
-      fontSize: 16,
-      color: isDark ? '#9ca3af' : '#6b7280',
-      marginLeft: 4,
     },
     bulletList: {
       marginLeft: 8,
@@ -124,7 +119,6 @@ export default function LegalScreen() {
       <Text style={styles.bodyText}>
         To exercise any of these rights, contact us at:
       </Text>
-      <Text style={styles.bodyText}>[your email here]</Text>
 
       <Text style={styles.sectionTitle}>Data Security</Text>
       <Text style={styles.bodyText}>

@@ -1,6 +1,6 @@
 # Beluga Fit
 
-A React Native / Expo fitness tracker app with AI-powered coaching, voice commands, and detailed progress monitoring. Runs on web via Expo Web.
+A React Native / Expo fitness tracker app focused on structured pre-built workout plans, custom workouts, body measurements, and detailed progress monitoring. Runs on web via Expo Web.
 
 ## Architecture
 
@@ -14,7 +14,7 @@ A React Native / Expo fitness tracker app with AI-powered coaching, voice comman
 
 ```
 /
-├── App.tsx                  # Root entry point
+├── App.tsx                  # Root entry point (AuthProvider + NavigationContainer)
 ├── app.json                 # Expo static configuration
 ├── babel.config.js          # Babel with expo preset and react-native-dotenv
 ├── assets/                  # Icons, splash screens, favicon
@@ -22,12 +22,9 @@ A React Native / Expo fitness tracker app with AI-powered coaching, voice comman
 │   ├── components/          # All screen components and navigators
 │   ├── contexts/            # React context providers (AuthContext)
 │   ├── data/                # Static data (exercises, workout templates)
-│   ├── hooks/               # Custom hooks (useVoiceRecognition)
 │   ├── lib/                 # Library setup (supabase.ts, safeSupabase.ts)
-│   └── utils/               # Helper functions (voiceCommandParser)
 └── supabase/
-    ├── migrations/          # SQL schema migrations
-    └── functions/           # Supabase Edge Functions (Deno)
+    └── migrations/          # SQL schema migrations
 ```
 
 ## Environment Variables
@@ -50,13 +47,58 @@ Users can also scan the QR code shown in the terminal with Expo Go to preview on
 ## Key Features
 
 - Auth flow (login / register) via Supabase Auth
-- Home screen with workout dashboard
-- Workout tracking with exercise library
-- AI Coach screen with Supabase Edge Function integration
-- Voice command support
-- Calendar / history tracking
-- Body tracker and measurements
-- Settings with account management
+- Home screen dashboard (quick links to all core features)
+- Workout tracking: pre-built plans + custom workout builder
+- Exercise library (60+ exercises across 6 body parts)
+- Rest timer with presets
+- Calendar view of workout history
+- Workout history with detailed exercise breakdowns
+- Body tracker with measurement logging and trend charts
+- Settings with profile management and account deletion
+
+## Navigation Structure
+
+```
+BottomTabNavigator
+├── Home → HomeStackNavigator
+│   ├── HomeScreen (dashboard)
+│   └── BodyTrackerScreen
+├── Workout → WorkoutStackNavigator
+│   ├── StartWorkoutScreen (Use a Plan | Custom Workout)
+│   ├── WorkoutTemplatesScreen
+│   ├── BodyPartsScreen
+│   ├── ExercisesScreen
+│   ├── WorkoutChecklistScreen
+│   ├── WorkoutDetailsScreen
+│   └── RestTimerScreen
+├── Calendar → CalendarStackNavigator
+├── History → HistoryStackNavigator
+└── Settings → SettingsStackNavigator
+    ├── SettingsScreen
+    └── LegalScreen
+```
+
+## Database Tables (Supabase)
+
+- `workouts` — user workout sessions
+- `workout_exercises` — exercises within each session
+- `body_measurements` — weight, waist, chest, etc. (scoped by user_id)
+- `profiles` — user profile (name, age, gender, height, weight)
+- `ai_workout_plans` — orphaned after Phase 1 cleanup; table exists in DB but is no longer used
+
+## Phase History
+
+### Phase 1 (Complete) — AI/Voice Cleanup
+- Deleted: AICoachScreen, AIWorkoutScreen, VoiceButton, VoicePreviewScreen, useVoiceRecognition, voiceCommandParser, supabase/functions/generate-workout-plan
+- Removed AIWorkout route from WorkoutStackNavigator
+- Removed AICoach and VoicePreview routes from HomeStackNavigator
+- Removed AI Workout option from StartWorkoutScreen
+- Removed VoiceButton from WorkoutChecklistScreen and BodyTrackerScreen
+- Fixed BodyTrackerScreen: added `.eq('user_id', user.id)` to measurements query
+- Fixed App.tsx: removed duplicate Supabase client and debug console.logs
+- Fixed LegalScreen: changed from default export to named export
+- Removed RECORD_AUDIO and CAMERA permissions from AndroidManifest
+- Updated app.json description to remove AI/voice copy
 
 ## Deployment
 

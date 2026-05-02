@@ -1,136 +1,187 @@
-import React, { useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { VoiceButton } from './VoiceButton';
-import { VoiceCommand } from '../utils/voiceCommandParser';
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { useAuth } from '../contexts/AuthContext';
 
 export function HomeScreen({ navigation }: any) {
-  const handleVoiceCommand = useCallback((command: VoiceCommand) => {
-    switch (command.type) {
-      case 'START_WORKOUT':
-        navigation.navigate('Workout', { screen: 'BodyParts' });
-        Alert.alert('Voice Command', 'Starting workout');
-        break;
-      case 'LOG_WEIGHT':
-      case 'OPEN_BODY_TRACKER':
-        navigation.navigate('BodyTracker');
-        Alert.alert('Voice Command', 'Opening body tracker');
-        break;
-      case 'GENERATE_WORKOUT_PLAN':
-        navigation.navigate('AICoach');
-        Alert.alert('Voice Command', 'Opening AI Coach');
-        break;
-      case 'SHOW_TODAY_WORKOUT':
-        navigation.navigate('Calendar');
-        Alert.alert('Voice Command', 'Showing calendar');
-        break;
-      case 'START_REST_TIMER':
-        navigation.navigate('Workout', { screen: 'RestTimer' });
-        Alert.alert('Voice Command', 'Starting rest timer');
-        break;
-      default:
-        break;
-    }
-  }, [navigation]);
+  const { user } = useAuth();
+
+  const displayName = user?.email?.split('@')[0] || 'Athlete';
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Welcome to Your Fitness App</Text>
-      <Text style={styles.subtitle}>Track your workouts and progress</Text>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <View style={styles.header}>
+        <Text style={styles.greeting}>Welcome back,</Text>
+        <Text style={styles.name}>{displayName}</Text>
+      </View>
 
-      <View style={styles.buttonsContainer}>
-        <TouchableOpacity
-          style={[styles.button, styles.voicePreviewButton]}
-          onPress={() => navigation.navigate('VoicePreview')}
-        >
-          <Text style={styles.buttonIcon}>🎤</Text>
-          <Text style={styles.buttonText}>Voice Input Demo</Text>
-          <Text style={styles.buttonSubtext}>See all voice commands & features</Text>
-        </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.primaryCard}
+        onPress={() => navigation.navigate('Workout', { screen: 'StartWorkout' })}
+        activeOpacity={0.85}
+      >
+        <View>
+          <Text style={styles.primaryCardLabel}>Ready to train?</Text>
+          <Text style={styles.primaryCardTitle}>Start a Workout</Text>
+        </View>
+        <Text style={styles.primaryCardArrow}>→</Text>
+      </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.button, styles.aiCoachButton]}
-          onPress={() => navigation.navigate('AICoach')}
-        >
-          <Text style={styles.buttonIcon}>🤖</Text>
-          <Text style={styles.buttonText}>AI Workout Coach</Text>
-          <Text style={styles.buttonSubtext}>Get personalized training plans</Text>
-        </TouchableOpacity>
+      <Text style={styles.sectionLabel}>Track Your Progress</Text>
 
+      <View style={styles.secondaryGrid}>
         <TouchableOpacity
-          style={styles.button}
+          style={styles.secondaryCard}
           onPress={() => navigation.navigate('BodyTracker')}
+          activeOpacity={0.85}
         >
-          <Text style={styles.buttonText}>Body Tracker</Text>
+          <Text style={styles.secondaryCardTitle}>Body Tracker</Text>
+          <Text style={styles.secondaryCardDesc}>Log weight and measurements</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.secondaryCard}
+          onPress={() => navigation.navigate('History')}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.secondaryCardTitle}>History</Text>
+          <Text style={styles.secondaryCardDesc}>Review past workouts</Text>
         </TouchableOpacity>
       </View>
 
-      <VoiceButton
-        onCommand={handleVoiceCommand}
-        position="floating"
-        size="large"
-      />
-    </View>
+      <TouchableOpacity
+        style={styles.calendarCard}
+        onPress={() => navigation.navigate('Calendar')}
+        activeOpacity={0.85}
+      >
+        <View>
+          <Text style={styles.calendarCardTitle}>Calendar</Text>
+          <Text style={styles.calendarCardDesc}>View your training schedule</Text>
+        </View>
+        <Text style={styles.calendarCardArrow}>→</Text>
+      </TouchableOpacity>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: '#f5f5f5',
-    padding: 20,
   },
-  title: {
-    fontSize: 32,
+  content: {
+    padding: 20,
+    paddingBottom: 40,
+  },
+  header: {
+    marginBottom: 28,
+    marginTop: 8,
+  },
+  greeting: {
+    fontSize: 16,
+    color: '#6b7280',
+    fontWeight: '500',
+  },
+  name: {
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#1f2937',
-    marginBottom: 8,
-    textAlign: 'center',
+    marginTop: 2,
+    textTransform: 'capitalize',
   },
-  subtitle: {
-    fontSize: 18,
-    color: '#6b7280',
-    marginBottom: 40,
-    textAlign: 'center',
-  },
-  buttonsContainer: {
-    width: '100%',
-    maxWidth: 400,
-    gap: 16,
-  },
-  button: {
+  primaryCard: {
     backgroundColor: '#3b82f6',
-    borderRadius: 12,
-    padding: 20,
+    borderRadius: 16,
+    padding: 24,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    marginBottom: 28,
+    shadowColor: '#3b82f6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
-  voicePreviewButton: {
-    backgroundColor: '#10b981',
-  },
-  aiCoachButton: {
-    backgroundColor: '#8b5cf6',
-  },
-  buttonIcon: {
-    fontSize: 40,
-    marginBottom: 8,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  buttonSubtext: {
-    color: '#e9d5ff',
+  primaryCardLabel: {
     fontSize: 14,
-    marginTop: 4,
+    color: '#bfdbfe',
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  primaryCardTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  primaryCardArrow: {
+    fontSize: 28,
+    color: '#fff',
+    fontWeight: '300',
+  },
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#9ca3af',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginBottom: 12,
+  },
+  secondaryGrid: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 12,
+  },
+  secondaryCard: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  secondaryCardTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: 4,
+  },
+  secondaryCardDesc: {
+    fontSize: 12,
+    color: '#9ca3af',
+    lineHeight: 16,
+  },
+  calendarCard: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 18,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  calendarCardTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: 4,
+  },
+  calendarCardDesc: {
+    fontSize: 12,
+    color: '#9ca3af',
+  },
+  calendarCardArrow: {
+    fontSize: 20,
+    color: '#d1d5db',
   },
 });

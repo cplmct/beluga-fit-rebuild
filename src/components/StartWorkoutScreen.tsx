@@ -12,10 +12,12 @@ export function StartWorkoutScreen({ navigation }: any) {
           style={styles.optionCard}
           onPress={() => navigation.navigate('Templates')}
         >
-          <Text style={styles.optionIcon}>📋</Text>
-          <Text style={styles.optionTitle}>Use Template</Text>
+          <View style={styles.optionIconContainer}>
+            <Text style={styles.optionIconText}>📋</Text>
+          </View>
+          <Text style={styles.optionTitle}>Use a Plan</Text>
           <Text style={styles.optionDescription}>
-            Start with a pre-built workout plan
+            Start with a structured pre-built workout
           </Text>
         </TouchableOpacity>
 
@@ -23,24 +25,14 @@ export function StartWorkoutScreen({ navigation }: any) {
           style={styles.optionCard}
           onPress={() => navigation.navigate('BodyParts')}
         >
-          <Text style={styles.optionIcon}>💪</Text>
+          <View style={styles.optionIconContainer}>
+            <Text style={styles.optionIconText}>💪</Text>
+          </View>
           <Text style={styles.optionTitle}>Custom Workout</Text>
           <Text style={styles.optionDescription}>
-            Build your own workout from scratch
+            Build your own workout from the exercise library
           </Text>
         </TouchableOpacity>
-		
-		<TouchableOpacity
-		  style={styles.optionCard}
-		  onPress={() => navigation.navigate('AIWorkout')}
-		>
-		  <Text style={styles.optionIcon}>🤖</Text>
-		  <Text style={styles.optionTitle}>AI Workout</Text>
-		  <Text style={styles.optionDescription}>
-			Generate a personalized workout using Beluga Fit AI
-		  </Text>
-		</TouchableOpacity>
-
       </View>
     </View>
   );
@@ -53,46 +45,51 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#1f2937',
-    marginBottom: 12,
-    marginTop: 60,
+    marginBottom: 8,
+    marginTop: 40,
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: 16,
     color: '#6b7280',
     marginBottom: 40,
     textAlign: 'center',
   },
   optionsContainer: {
-    gap: 20,
+    gap: 16,
   },
   optionCard: {
     backgroundColor: '#fff',
     borderRadius: 16,
     padding: 24,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 3,
   },
-  optionIcon: {
-    fontSize: 48,
+  optionIconContainer: {
     marginBottom: 12,
   },
+  optionIconText: {
+    fontSize: 40,
+  },
   optionTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '700',
     color: '#1f2937',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   optionDescription: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#6b7280',
     textAlign: 'center',
+    lineHeight: 20,
   },
 });

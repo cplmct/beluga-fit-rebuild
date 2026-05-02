@@ -4,8 +4,6 @@ import { ExerciseSelection } from '../data/exercises';
 import { supabase } from '../lib/supabase';
 import { safeQuery } from '../lib/safeSupabase';
 import { useAuth } from '../contexts/AuthContext';
-import { VoiceButton } from './VoiceButton';
-import { VoiceCommand } from '../utils/voiceCommandParser';
 
 export function WorkoutChecklistScreen({ route, navigation }: any) {
   const { exercises, bodyParts } = route.params;
@@ -23,98 +21,75 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
     setCompletedExercises(newCompleted);
   };
 
- const handleFinishWorkout = async () => {
-  if (isSaving || !user) return;
+  const handleFinishWorkout = async () => {
+    if (isSaving || !user) return;
 
-  if (exercises.length === 0) {
-    Alert.alert(
-      'No exercises',
-      'Please select at least one exercise before finishing.'
-    );
-    return;
-  }
-
-  setIsSaving(true);
-
-  try {
-    const workout = await safeQuery<{ id: string }>(
-      supabase
-        .from('workouts')
-        .insert({
-          user_id: user.id,
-          body_parts: bodyParts,
-          date: new Date().toISOString(),
-        })
-        .select()
-        .maybeSingle()
-    );
-
-    if (!workout || !workout.id) {
-      throw new Error('Failed to create workout');
+    if (exercises.length === 0) {
+      Alert.alert(
+        'No exercises',
+        'Please select at least one exercise before finishing.'
+      );
+      return;
     }
 
-    const workoutExercises = exercises.map((exercise: ExerciseSelection, index: number) => ({
-      workout_id: workout.id,
-      exercise_name: exercise.name,
-      body_part: exercise.bodyPart,
-      sets: exercise.sets,
-      reps: exercise.reps,
-      weight:
-        exercise.weight !== null && exercise.weight !== ''
-          ? parseFloat(exercise.weight)
-          : null,
-      completed: completedExercises.has(index),
-    }));
+    setIsSaving(true);
 
-    await safeQuery(
-      supabase
-        .from('workout_exercises')
-        .insert(workoutExercises)
-    );
+    try {
+      const workout = await safeQuery<{ id: string }>(
+        supabase
+          .from('workouts')
+          .insert({
+            user_id: user.id,
+            body_parts: bodyParts,
+            date: new Date().toISOString(),
+          })
+          .select()
+          .maybeSingle()
+      );
 
-    Alert.alert(
-      'Workout Saved!',
-      'Great job! Your workout has been saved successfully.',
-      [
-        {
-          text: 'OK',
-          onPress: () =>
-            navigation.navigate('WorkoutDetails', { workoutId: workout.id }),
-        },
-      ]
-    );
-  } catch (error: any) {
-    Alert.alert('Error', error.message || 'Failed to save workout.');
-  } finally {
-    setIsSaving(false);
-  }
-};
+      if (!workout || !workout.id) {
+        throw new Error('Failed to create workout');
+      }
+
+      const workoutExercises = exercises.map((exercise: ExerciseSelection, index: number) => ({
+        workout_id: workout.id,
+        exercise_name: exercise.name,
+        body_part: exercise.bodyPart,
+        sets: exercise.sets,
+        reps: exercise.reps,
+        weight:
+          exercise.weight !== null && exercise.weight !== ''
+            ? parseFloat(exercise.weight)
+            : null,
+        completed: completedExercises.has(index),
+      }));
+
+      await safeQuery(
+        supabase
+          .from('workout_exercises')
+          .insert(workoutExercises)
+      );
+
+      Alert.alert(
+        'Workout Saved!',
+        'Great job! Your workout has been saved successfully.',
+        [
+          {
+            text: 'OK',
+            onPress: () =>
+              navigation.navigate('WorkoutDetails', { workoutId: workout.id }),
+          },
+        ]
+      );
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to save workout.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const completedCount = completedExercises.size;
   const totalCount = exercises.length;
-
-  const handleVoiceCommand = useCallback((command: VoiceCommand) => {
-    switch (command.type) {
-      case 'ADD_SET':
-        const nextIncompleteIndex = exercises.findIndex((_: any, idx: number) => !completedExercises.has(idx));
-        if (nextIncompleteIndex !== -1) {
-          toggleComplete(nextIncompleteIndex);
-          Alert.alert('Voice Command', `Marked "${exercises[nextIncompleteIndex].name}" as complete`);
-        } else {
-          Alert.alert('Voice Command', 'All exercises completed!');
-        }
-        break;
-      case 'FINISH_WORKOUT':
-        handleFinishWorkout();
-        break;
-      case 'START_REST_TIMER':
-        navigation.navigate('RestTimer');
-        Alert.alert('Voice Command', 'Starting rest timer');
-        break;
-      default:
-        break;
-    }
-  }, [exercises, completedExercises, navigation]);
 
   return (
     <View style={styles.container}>
@@ -128,7 +103,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
           <View
             style={[
               styles.progressFill,
-              { width: `${(completedCount / totalCount) * 100}%` },
+              { width: totalCount > 0 ? `${(completedCount / totalCount) * 100}%` : '0%' },
             ]}
           />
         </View>
@@ -172,7 +147,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
                   <Text style={styles.detailLabel}>Reps</Text>
                   <Text style={styles.detailValue}>{exercise.reps}</Text>
                 </View>
-                {exercise.weight != null && (
+                {exercise.weight != null && exercise.weight !== '' && (
                   <View style={styles.detailItem}>
                     <Text style={styles.detailLabel}>Weight</Text>
                     <Text style={styles.detailValue}>{exercise.weight} lbs</Text>
@@ -185,18 +160,12 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
       </ScrollView>
 
       <View style={styles.footer}>
-        <View style={styles.footerButtons}>
-          <TouchableOpacity
-            style={styles.timerButton}
-            onPress={() => navigation.navigate('RestTimer')}
-          >
-            <Text style={styles.timerButtonText}>⏱️ Rest Timer</Text>
-          </TouchableOpacity>
-          <VoiceButton
-            onCommand={handleVoiceCommand}
-            size="medium"
-          />
-        </View>
+        <TouchableOpacity
+          style={styles.timerButton}
+          onPress={() => navigation.navigate('RestTimer')}
+        >
+          <Text style={styles.timerButtonText}>Rest Timer</Text>
+        </TouchableOpacity>
         <TouchableOpacity
           style={[
             styles.finishButton,
@@ -329,14 +298,9 @@ const styles = StyleSheet.create({
     borderTopColor: '#e5e7eb',
     gap: 12,
   },
-  footerButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
   timerButton: {
-    flex: 1,
     backgroundColor: '#3b82f6',
-    padding: 16,
+    padding: 14,
     borderRadius: 12,
     alignItems: 'center',
   },

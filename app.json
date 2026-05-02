@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "description": "Track your fitness journey with Beluga Fit - a comprehensive workout tracker with AI-powered coaching, voice commands, and detailed progress monitoring.",
+    "description": "Track your fitness journey with Beluga Fit - a structured workout tracker with pre-built training plans, custom workouts, body measurements, and detailed progress monitoring.",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
