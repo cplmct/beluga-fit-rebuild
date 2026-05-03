@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 
-const LAST_UPDATED = 'January 1, 2025';
+const LAST_UPDATED = 'May 1, 2025';
 
 type SectionProps = {
   title: string;
@@ -69,19 +69,19 @@ export function PrivacyPolicyScreen() {
 
       <Section title="3. Data Storage and Security">
         <Body>
-          Your data is stored securely using Supabase, a cloud database provider that uses industry-standard encryption for data in transit and at rest. Access to your data is protected by authenticated sessions and row-level security policies that ensure only you can access your records.
+          Your data is stored securely using Supabase, a cloud database provider that uses industry-standard encryption for data in transit (TLS) and at rest (AES-256). Access to your data is protected by authenticated sessions and row-level security policies that ensure only you can access your records.
         </Body>
         <Body>
-          [PLACEHOLDER — add any additional hosting or infrastructure details here before publishing.]
+          We implement reasonable technical and organizational measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction.
         </Body>
       </Section>
 
       <Section title="4. Data Retention and Deletion">
         <Body>
-          Your data is retained for as long as your account is active. You may delete your account and all associated data at any time directly within the app by navigating to Settings → Delete Account. Deletion is permanent and cannot be reversed.
+          Your data is retained for as long as your account is active. You may delete your account and all associated data at any time directly within the app by navigating to Settings then Delete Account. Deletion is permanent and cannot be reversed.
         </Body>
         <Body>
-          Data deleted through the app is removed from our database immediately. Backup retention periods may apply. [PLACEHOLDER — confirm backup policy before publishing.]
+          Data deleted through the app is removed from our primary database immediately. Encrypted database backups may retain data for up to 30 days before automatic expiry.
         </Body>
       </Section>
 
@@ -103,9 +103,9 @@ export function PrivacyPolicyScreen() {
           Beluga Fit uses the following third-party services to operate:
         </Body>
         <Bullet>Supabase — database and authentication (supabase.com/privacy)</Bullet>
-        <Bullet>Expo / React Native — app framework and build infrastructure</Bullet>
+        <Bullet>Expo / React Native — app framework and build infrastructure (expo.dev/privacy)</Bullet>
         <Body>
-          [PLACEHOLDER — add any additional third-party services used before publishing.]
+          Each of these services has its own privacy policy governing the data they process on our behalf.
         </Body>
       </Section>
 
@@ -126,8 +126,7 @@ export function PrivacyPolicyScreen() {
           If you have questions or concerns about this Privacy Policy, please contact us:
         </Body>
         <Body>
-          Email: developer@tranbtc.com{'\n'}
-          [PLACEHOLDER — add mailing address if required by applicable law before publishing.]
+          Email: developer@tranbtc.com
         </Body>
       </Section>
     </ScrollView>

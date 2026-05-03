@@ -319,15 +319,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#f7f8fc',
   },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#64748b',
-  },
   scroll: {
     flex: 1,
   },

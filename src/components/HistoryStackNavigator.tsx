@@ -10,7 +10,7 @@ export function HistoryStackNavigator() {
     <Stack.Navigator
       screenOptions={{
         headerStyle: {
-          backgroundColor: '#3b82f6',
+          backgroundColor: '#2563eb',
         },
         headerTintColor: '#fff',
         headerTitleStyle: {

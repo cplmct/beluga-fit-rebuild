@@ -61,7 +61,9 @@ function WorkoutDetailsSkeleton() {
           </View>
         ))}
       </View>
-      <SkeletonBlock width={120} height={18} style={{ marginBottom: 16 }} />
+      <View style={{ marginBottom: 16 }}>
+        <SkeletonBlock width={120} height={18} />
+      </View>
       {[0, 1, 2].map((i) => (
         <View key={i} style={[styles.exerciseCard, { marginBottom: 12 }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 }}>

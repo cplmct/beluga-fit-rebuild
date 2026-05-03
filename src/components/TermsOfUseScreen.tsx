@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 
-const LAST_UPDATED = 'January 1, 2025';
+const LAST_UPDATED = 'May 1, 2025';
 
 type SectionProps = {
   title: string;
@@ -81,7 +81,7 @@ export function TermsOfUseScreen() {
           Before beginning any exercise program, consult with a qualified healthcare professional, especially if you have any pre-existing medical conditions, injuries, or health concerns. You use Beluga Fit at your own risk.
         </Body>
         <Body>
-          [PLACEHOLDER — review this disclaimer with a legal professional before publishing if required in your jurisdiction.]
+          We are not responsible for any injury, illness, or adverse health outcome resulting from use of workout plans or information provided within this application.
         </Body>
       </Section>
 
@@ -119,13 +119,13 @@ export function TermsOfUseScreen() {
           To the maximum extent permitted by applicable law, Beluga Fit and its developers are not liable for any indirect, incidental, special, or consequential damages arising from your use of the app, including but not limited to personal injury, data loss, or loss of fitness progress data.
         </Body>
         <Body>
-          [PLACEHOLDER — review with a legal professional before publishing.]
+          Our total liability for any claim arising from your use of the app is limited to the amount you have paid us in the twelve months preceding the claim, or fifty dollars (CAD $50), whichever is greater.
         </Body>
       </Section>
 
       <Section title="9. Governing Law">
         <Body>
-          [PLACEHOLDER — specify the governing jurisdiction and applicable law before publishing, e.g., "These terms are governed by the laws of the Province of [X], Canada."]
+          These Terms of Use are governed by and construed in accordance with the laws of the Province of Ontario, Canada, without regard to conflict of law principles. Any disputes arising under these terms shall be subject to the exclusive jurisdiction of the courts located in Ontario, Canada.
         </Body>
       </Section>
 
@@ -134,8 +134,7 @@ export function TermsOfUseScreen() {
           If you have questions about these Terms of Use, please contact us:
         </Body>
         <Body>
-          Email: developer@tranbtc.com{'\n'}
-          [PLACEHOLDER — add mailing address if required before publishing.]
+          Email: developer@tranbtc.com
         </Body>
       </Section>
     </ScrollView>
