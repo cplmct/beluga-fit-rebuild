@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -16,10 +16,9 @@ interface Profile {
 
 export function SettingsScreen() {
   const navigation = useNavigation();
-  const { user, signOut, deleteAccount } = useAuth();
+  const { user, signOut } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [profile, setProfile] = useState<Profile>({
@@ -89,7 +88,7 @@ export function SettingsScreen() {
 
       if (error) throw error;
 
-      setSuccess('Profile updated successfully!');
+      setSuccess('Profile updated successfully.');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
       setError(err.message);
@@ -102,32 +101,8 @@ export function SettingsScreen() {
     await signOut();
   };
 
-  const handleDeleteAccount = async () => {
-    Alert.alert(
-      'Delete Account',
-      'Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently deleted.',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            setDeleting(true);
-            setError('');
-
-            const { error } = await deleteAccount();
-
-            if (error) {
-              setError(error.message || 'Failed to delete account');
-              setDeleting(false);
-            }
-          },
-        },
-      ]
-    );
+  const handleDeleteAccount = () => {
+    navigation.navigate('DeleteAccount' as never);
   };
 
   const handleLegalInfo = () => {
@@ -137,7 +112,7 @@ export function SettingsScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3b82f6" />
+        <ActivityIndicator size="large" color="#2563eb" />
       </View>
     );
   }
@@ -166,6 +141,7 @@ export function SettingsScreen() {
           <TextInput
             style={styles.input}
             placeholder="Enter your name"
+            placeholderTextColor="#94a3b8"
             value={profile.name}
             onChangeText={(text) => setProfile({ ...profile, name: text })}
             editable={!saving}
@@ -177,6 +153,7 @@ export function SettingsScreen() {
           <TextInput
             style={styles.input}
             placeholder="your@email.com"
+            placeholderTextColor="#94a3b8"
             value={profile.email}
             onChangeText={(text) => setProfile({ ...profile, email: text })}
             autoCapitalize="none"
@@ -190,6 +167,7 @@ export function SettingsScreen() {
           <TextInput
             style={styles.input}
             placeholder="Enter your age"
+            placeholderTextColor="#94a3b8"
             value={profile.age}
             onChangeText={(text) => setProfile({ ...profile, age: text })}
             keyboardType="numeric"
@@ -202,6 +180,7 @@ export function SettingsScreen() {
           <TextInput
             style={styles.input}
             placeholder="Male, Female, Other"
+            placeholderTextColor="#94a3b8"
             value={profile.gender}
             onChangeText={(text) => setProfile({ ...profile, gender: text })}
             editable={!saving}
@@ -213,6 +192,7 @@ export function SettingsScreen() {
           <TextInput
             style={styles.input}
             placeholder="Enter your height"
+            placeholderTextColor="#94a3b8"
             value={profile.height}
             onChangeText={(text) => setProfile({ ...profile, height: text })}
             keyboardType="numeric"
@@ -225,6 +205,7 @@ export function SettingsScreen() {
           <TextInput
             style={styles.input}
             placeholder="Enter your weight"
+            placeholderTextColor="#94a3b8"
             value={profile.weight}
             onChangeText={(text) => setProfile({ ...profile, weight: text })}
             keyboardType="numeric"
@@ -236,6 +217,7 @@ export function SettingsScreen() {
           style={[styles.saveButton, saving && styles.saveButtonDisabled]}
           onPress={handleSave}
           disabled={saving}
+          activeOpacity={0.8}
         >
           {saving ? (
             <ActivityIndicator color="#fff" />
@@ -248,26 +230,21 @@ export function SettingsScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account & Privacy</Text>
 
-        <TouchableOpacity style={styles.linkButton} onPress={handleLegalInfo}>
-          <Text style={styles.linkButtonText}>Legal Information</Text>
-          <Text style={styles.linkArrow}>→</Text>
+        <TouchableOpacity style={styles.listRow} onPress={handleLegalInfo} activeOpacity={0.7}>
+          <Text style={styles.listRowText}>Legal Information</Text>
+          <Text style={styles.listRowArrow}>›</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.deleteButton, deleting && styles.deleteButtonDisabled]}
-          onPress={handleDeleteAccount}
-          disabled={deleting}
-        >
-          {deleting ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.deleteButtonText}>Delete Account</Text>
-          )}
+        <View style={styles.divider} />
+
+        <TouchableOpacity style={styles.listRow} onPress={handleDeleteAccount} activeOpacity={0.7}>
+          <Text style={styles.listRowDestructive}>Delete Account</Text>
+          <Text style={styles.listRowArrow}>›</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.section}>
-        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut} activeOpacity={0.8}>
           <Text style={styles.signOutButtonText}>Sign Out</Text>
         </TouchableOpacity>
       </View>
@@ -278,27 +255,28 @@ export function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f7f8fc',
   },
   contentContainer: {
     padding: 20,
+    paddingBottom: 40,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f7f8fc',
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1f2937',
+    fontSize: 26,
+    fontWeight: '700',
+    color: '#0f172a',
     marginBottom: 24,
   },
   errorContainer: {
     backgroundColor: '#fee2e2',
+    borderRadius: 10,
     padding: 12,
-    borderRadius: 8,
     marginBottom: 16,
   },
   errorText: {
@@ -307,8 +285,8 @@ const styles = StyleSheet.create({
   },
   successContainer: {
     backgroundColor: '#d1fae5',
+    borderRadius: 10,
     padding: 12,
-    borderRadius: 8,
     marginBottom: 16,
   },
   successText: {
@@ -316,37 +294,42 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   section: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
     padding: 20,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 13,
     fontWeight: '600',
-    color: '#1f2937',
+    color: '#94a3b8',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
     marginBottom: 16,
   },
   inputGroup: {
     marginBottom: 16,
   },
   label: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    color: '#374151',
-    marginBottom: 8,
+    color: '#0f172a',
+    marginBottom: 6,
   },
   input: {
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f8fafc',
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
-    fontSize: 16,
+    borderColor: '#e2e8f0',
+    fontSize: 15,
+    color: '#0f172a',
   },
   saveButton: {
-    backgroundColor: '#3b82f6',
-    padding: 16,
+    backgroundColor: '#2563eb',
+    padding: 15,
     borderRadius: 12,
     alignItems: 'center',
     marginTop: 8,
@@ -356,51 +339,45 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
   },
+  listRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 13,
+  },
+  listRowText: {
+    fontSize: 15,
+    color: '#0f172a',
+    fontWeight: '500',
+  },
+  listRowDestructive: {
+    fontSize: 15,
+    color: '#dc2626',
+    fontWeight: '500',
+  },
+  listRowArrow: {
+    fontSize: 20,
+    color: '#94a3b8',
+    lineHeight: 24,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#e2e8f0',
+  },
   signOutButton: {
-    backgroundColor: '#dc2626',
-    padding: 16,
+    backgroundColor: '#f1f5f9',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    padding: 15,
     borderRadius: 12,
     alignItems: 'center',
   },
   signOutButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  linkButton: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  linkButtonText: {
-    fontSize: 16,
-    color: '#3b82f6',
-    fontWeight: '500',
-  },
-  linkArrow: {
-    fontSize: 18,
-    color: '#9ca3af',
-  },
-  deleteButton: {
-    backgroundColor: '#991b1b',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  deleteButtonDisabled: {
-    backgroundColor: '#fca5a5',
-  },
-  deleteButtonText: {
-    color: '#fff',
-    fontSize: 16,
+    color: '#0f172a',
+    fontSize: 15,
     fontWeight: '600',
   },
 });

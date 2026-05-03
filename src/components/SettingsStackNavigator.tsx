@@ -2,6 +2,7 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SettingsScreen } from './SettingsScreen';
 import { LegalScreen } from './LegalScreen';
+import { DeleteAccountScreen } from './DeleteAccountScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -10,11 +11,11 @@ export function SettingsStackNavigator() {
     <Stack.Navigator
       screenOptions={{
         headerStyle: {
-          backgroundColor: '#3b82f6',
+          backgroundColor: '#2563eb',
         },
         headerTintColor: '#fff',
         headerTitleStyle: {
-          fontWeight: 'bold',
+          fontWeight: '600',
         },
       }}
     >
@@ -27,6 +28,16 @@ export function SettingsStackNavigator() {
         name="Legal"
         component={LegalScreen}
         options={{ title: 'Legal Information' }}
+      />
+      <Stack.Screen
+        name="DeleteAccount"
+        component={DeleteAccountScreen}
+        options={{
+          title: 'Delete Account',
+          headerStyle: { backgroundColor: '#ffffff' },
+          headerTintColor: '#0f172a',
+          headerTitleStyle: { fontWeight: '600', color: '#0f172a' },
+        }}
       />
     </Stack.Navigator>
   );
