@@ -32,6 +32,7 @@
       "permissions": ["INTERNET", "VIBRATE"]
     },
     "plugins": [
+      "expo-dev-client",
       [
         "expo-build-properties",
         {
