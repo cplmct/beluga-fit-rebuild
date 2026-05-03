@@ -6,6 +6,7 @@ import { PrivacyPolicyScreen } from './PrivacyPolicyScreen';
 import { TermsOfUseScreen } from './TermsOfUseScreen';
 import { SupportScreen } from './SupportScreen';
 import { NotificationSettingsScreen } from './NotificationSettingsScreen';
+import { OnboardingSettingsWrapper } from './OnboardingSettingsWrapper';
 
 const Stack = createNativeStackNavigator();
 
@@ -48,6 +49,11 @@ export function SettingsStackNavigator() {
         name="NotificationSettings"
         component={NotificationSettingsScreen}
         options={{ title: 'Daily Reminders', ...sharedHeaderOptions }}
+      />
+      <Stack.Screen
+        name="GettingStarted"
+        component={OnboardingSettingsWrapper}
+        options={{ title: 'Getting Started', headerShown: false }}
       />
       <Stack.Screen
         name="DeleteAccount"

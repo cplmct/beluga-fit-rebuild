@@ -300,6 +300,15 @@ export function SettingsScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* ── Help ── */}
+      <SectionLabel title="Help" />
+      <View style={styles.card}>
+        <NavRow
+          label="Getting Started"
+          onPress={() => navigation.navigate('GettingStarted' as never)}
+        />
+      </View>
+
       {/* ── Privacy & Legal ── */}
       <SectionLabel title="Privacy & Legal" />
       <View style={styles.card}>

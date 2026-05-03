@@ -1,13 +1,16 @@
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import React, { useRef } from 'react';
+import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { AuthStackNavigator } from './src/components/AuthStackNavigator';
 import { BottomTabNavigator } from './src/components/BottomTabNavigator';
+import { OnboardingScreen } from './src/components/OnboardingScreen';
 
 function AppContent() {
-  const { user, loading } = useAuth();
+  const { user, loading, needsOnboarding, completeOnboarding } = useAuth();
+  const navigationRef = useNavigationContainerRef();
+  const pendingTabRef = useRef<string | null>(null);
 
   if (loading) {
     return (
@@ -17,8 +20,29 @@ function AppContent() {
     );
   }
 
+  if (user && needsOnboarding) {
+    return (
+      <OnboardingScreen
+        onComplete={async (goToPlans) => {
+          if (goToPlans) {
+            pendingTabRef.current = 'Workout';
+          }
+          await completeOnboarding();
+        }}
+      />
+    );
+  }
+
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      ref={navigationRef}
+      onReady={() => {
+        if (pendingTabRef.current) {
+          navigationRef.navigate(pendingTabRef.current as never);
+          pendingTabRef.current = null;
+        }
+      }}
+    >
       <StatusBar style="auto" />
       {user ? <BottomTabNavigator /> : <AuthStackNavigator />}
     </NavigationContainer>

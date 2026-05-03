@@ -1,0 +1,64 @@
+Add a first-time onboarding experience for new Beluga Fit users.
+
+Requirements:
+
+1. When a user signs up or registers for the first time,
+   detect this via Supabase profile creation timestamp or a
+   new onboarding flag stored in Supabase profiles table.
+
+2. If first-time signup is detected, show an onboarding flow
+   AFTER registration completes and user is signed in.
+   Do NOT show onboarding on every app open — only once.
+
+3. The onboarding flow should be a simple 4-slide carousel
+   with the following slides:
+
+   Slide 1 — Welcome
+   - "Welcome to Beluga Fit"
+   - "Structured training plans designed to help you reach your goals"
+   - Calm, premium visual with Beluga Fit branding
+   - Continue button
+
+   Slide 2 — How it works
+   - "Choose a plan based on your goals"
+   - "Track your workouts and body progress"
+   - "Stay on track with daily reminders"
+   - Illustrations or icons for each point
+   - Continue button
+
+   Slide 3 — Start your journey
+   - "Pick your first training plan to get started"
+   - "Plans for weight loss, muscle gain, strength, and more"
+   - "All plans are structured and progress week by week"
+   - Continue button
+
+   Slide 4 — Ready
+   - "You're all set"
+   - "Let's find a plan that fits your goals"
+   - Button that says "Find a Plan" and navigates to
+     the Plan Library screen
+
+4. Store an onboarding_completed flag after the user finishes
+   the flow so it never shows again.
+   Store this in Supabase profiles table or locally.
+
+5. Add a "Skip" option on every slide for users who want
+   to go straight to the app.
+
+6. Design requirements:
+   - Consistent with Beluga Fit's existing design language
+   - Smooth transitions between slides
+   - Progress indicators showing slide position (1/4, 2/4, etc.)
+   - Clean typography and spacing
+   - No flashy animations or gimmicky transitions
+
+7. Do not show onboarding on re-entry for returning users.
+
+8. Add a way to view the onboarding again from Settings,
+   labeled "View Onboarding" or "Help — Getting Started"
+   for users who want to revisit it.
+
+9. After completing the implementation, summarize:
+   - Where the onboarding_completed flag is stored
+   - How the first-time user is detected
+   - Whether the onboarding can be re-triggered from Settings
