@@ -1,0 +1,68 @@
+The production APK still shows "Network request failed" on signup.
+The environment variables are not being embedded into the native Android build.
+
+EAS json env section is not reliably embedding process.env variables into production builds.
+We need to use app.config.js as a fallback.
+
+Step 1 — Create or update app.config.js
+Create app.config.js with this content:
+
+import { ExpoConfig } from '@expo/config'
+
+const config: ExpoConfig = {
+  expo: {
+    extra: {
+      supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL || '',
+      supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '',
+    },
+  },
+}
+
+export default config
+
+Step 2 — Update supabase.ts to read from Constants.expoConfig.extra as fallback
+Replace src/lib/supabase.ts with:
+
+import 'react-native-url-polyfill/auto'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { createClient } from '@supabase/supabase-js'
+import Constants from 'expo-constants'
+
+const envUrl = process.env.EXPO_PUBLIC_SUPABASE_URL
+const envKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
+const extraUrl = Constants.expoConfig?.extra?.supabaseUrl || ''
+const extraKey = Constants.expoConfig?.extra?.supabaseAnonKey || ''
+
+const url = (envUrl || extraUrl)?.trim()
+const key = (envKey || extraKey)?.trim()
+
+const hasValidUrl = url && url.startsWith('https://')
+const hasValidKey = key && key.length > 20
+
+if (__DEV__) {
+  console.log('[Supabase] env URL:', !!envUrl, 'extra URL:', !!extraUrl)
+  console.log('[Supabase] env Key:', !!envKey, 'extra Key:', !!extraKey)
+  console.log('[Supabase] final URL:', !!url, 'final Key:', !!key)
+}
+
+const safeUrl = hasValidUrl ? url : ''
+const safeKey = hasValidKey ? key : ''
+
+export const supabase = createClient(safeUrl, safeKey, {
+  auth: {
+    storage: AsyncStorage as any,
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false,
+  },
+})
+
+Step 3 — Restart Metro to verify
+Run npx expo start
+and confirm no configuration errors appear in console.
+
+Step 4 — Rebuild production APK
+Run npx eas-cli build --profile production --platform android
+
+Do not change any app features or screens.
+Only fix Supabase connectivity and rebuild.
