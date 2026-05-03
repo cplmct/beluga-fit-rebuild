@@ -1,0 +1,53 @@
+Add a complete account deletion flow to Beluga Fit.
+
+Requirements for the Delete Account flow:
+
+1. Navigate from Settings > Account > Delete Account to a deleted account confirmation screen
+
+2. The confirmation screen must show:
+   - Clear warning that deleting the account will permanently remove
+     profile, workout history, body measurements, and active plan data
+   - Statistic summary showing what will be deleted
+     (total workouts logged, days active, last body measurement date)
+     fetched from Supabase before deletion proceeds
+   - Email confirmation match display (e.g. "Deleting account for tranbtc@example.com")
+   - Two buttons: Cancel (safe) and Delete My Account (destructive style)
+
+3. If the user taps Delete My Account:
+   - Show a second confirmation requiring them to type their email address
+     to confirm intent
+   - Only enable the destructive button when the typed email matches
+   - Call supabase.auth.admin.deleteUser or supabase.auth.signOut + user deletion
+   - After successful deletion, sign the user out and navigate to Login screen
+   - If deletion fails, show a clear error message and stay on the confirmation screen
+
+4. Supabase implementation:
+   - Delete the user's auth.user entry if possible
+   - Alternatively, soft-delete by marking the profile as deleted
+     and removing all related data: profiles, workouts, body_measurements,
+     workout_exercises, and any other user-owned tables
+   - Make sure foreign key cascading is handled safely
+
+5. UX requirements:
+   - Cancel button always has a clear safe exit path
+   - Destructive button uses a distinctly different color
+   - Loading state shown during the deletion process
+   - Success confirmation shown after deletion completes
+   - Error state shown if deletion fails for any reason
+
+6. Security and safety:
+   - Never expose Supabase service keys in the client
+   - If server-side deletion is required, note that clearly
+     in a comment for future implementation
+   - Log the deletion attempt (without the email) to console in dev mode
+
+7. Do not change:
+   - The existing Sign Out flow
+   - The login screen
+   - The registration screen
+   - Any navigation outside of the Delete Account path
+
+8. After completing the implementation, summarize:
+   - Which Supabase tables are affected by the deletion
+   - Whether soft-delete or hard-delete was implemented
+   - What additional server-side setup might be needed for production
