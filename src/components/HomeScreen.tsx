@@ -23,6 +23,7 @@ interface DashboardData {
   todayWorkout: TodayWorkout | null;
   weeklyCount: number;
   streak: number;
+  last7Days: boolean[];
   latestWeight: { value: number; date: string } | null;
 }
 
@@ -60,6 +61,101 @@ function computeStreak(dates: string[]): number {
   return streak;
 }
 
+function computeLast7Days(workoutDates: string[]): boolean[] {
+  const dateSet = new Set(workoutDates.map(toLocalDateStr));
+  const today = new Date();
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() - (6 - i));
+    const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return dateSet.has(ds);
+  });
+}
+
+function getStreakMessage(streak: number): string {
+  if (streak === 0) return 'Log a workout to start your streak';
+  if (streak === 1) return 'Great start — keep it going';
+  if (streak < 5) return 'Building momentum';
+  if (streak < 7) return 'Almost a week strong';
+  if (streak < 14) return 'One week streak — stay consistent';
+  if (streak < 21) return 'Two weeks strong';
+  if (streak < 30) return 'Three weeks of consistency';
+  return 'Elite consistency — keep it up';
+}
+
+function getLast7DayLabels(): string[] {
+  const DAY = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+  const today = new Date();
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() - (6 - i));
+    return DAY[d.getDay()];
+  });
+}
+
+function StreakCard({
+  streak,
+  weeklyCount,
+  last7Days,
+}: {
+  streak: number;
+  weeklyCount: number;
+  last7Days: boolean[];
+}) {
+  const dayLabels = getLast7DayLabels();
+  const message = getStreakMessage(streak);
+  const hasStreak = streak > 0;
+
+  return (
+    <View style={streakStyles.card}>
+      <View style={streakStyles.topRow}>
+        <View style={streakStyles.streakBlock}>
+          <Text style={streakStyles.streakNumber}>{streak}</Text>
+          <View>
+            <Text style={streakStyles.streakUnit}>
+              {streak === 1 ? 'day' : 'days'}
+            </Text>
+            <Text style={streakStyles.streakUnitSub}>streak</Text>
+          </View>
+        </View>
+        <View style={streakStyles.weeklyBlock}>
+          <Text style={streakStyles.weeklyNumber}>{weeklyCount}</Text>
+          <Text style={streakStyles.weeklyLabel}>
+            {weeklyCount === 1 ? 'workout' : 'workouts'}{'\n'}this week
+          </Text>
+        </View>
+      </View>
+
+      <Text style={[streakStyles.message, !hasStreak && streakStyles.messageMuted]}>
+        {message}
+      </Text>
+
+      <View style={streakStyles.dotsRow}>
+        {last7Days.map((active, i) => (
+          <View key={i} style={streakStyles.dotCell}>
+            <View
+              style={[
+                streakStyles.dot,
+                active ? streakStyles.dotActive : streakStyles.dotInactive,
+                i === 6 && streakStyles.dotToday,
+              ]}
+            />
+            <Text
+              style={[
+                streakStyles.dotLabel,
+                active ? streakStyles.dotLabelActive : null,
+                i === 6 && streakStyles.dotLabelToday,
+              ]}
+            >
+              {dayLabels[i]}
+            </Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 export function HomeScreen({ navigation }: any) {
   const { user } = useAuth();
   const [data, setData] = useState<DashboardData>({
@@ -67,6 +163,7 @@ export function HomeScreen({ navigation }: any) {
     todayWorkout: null,
     weeklyCount: 0,
     streak: 0,
+    last7Days: Array(7).fill(false),
     latestWeight: null,
   });
   const [activePlan, setActivePlanState] = useState<ActivePlanState | null>(null);
@@ -127,11 +224,14 @@ export function HomeScreen({ navigation }: any) {
       monday.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1));
       monday.setHours(0, 0, 0, 0);
 
+      const workoutDates = workouts.map((w) => w.date);
+
       setData({
         profileName: profileRes.data?.name || '',
         todayWorkout,
         weeklyCount: workouts.filter((w) => new Date(w.date) >= monday).length,
-        streak: computeStreak(workouts.map((w) => w.date)),
+        streak: computeStreak(workoutDates),
+        last7Days: computeLast7Days(workoutDates),
         latestWeight: weightRes.data
           ? { value: weightRes.data.weight, date: weightRes.data.created_at }
           : null,
@@ -217,19 +317,14 @@ export function HomeScreen({ navigation }: any) {
         )}
       </View>
 
-      {/* ── Weekly Stats ── */}
-      <View style={styles.statsCard}>
-        <View style={styles.statBlock}>
-          <Text style={styles.statNumber}>{data.weeklyCount}</Text>
-          <Text style={styles.statLabel}>
-            {data.weeklyCount === 1 ? 'Workout' : 'Workouts'} this week
-          </Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statBlock}>
-          <Text style={styles.statNumber}>{data.streak}</Text>
-          <Text style={styles.statLabel}>Day streak</Text>
-        </View>
+      {/* ── Streak Card ── */}
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>STREAK</Text>
+        <StreakCard
+          streak={data.streak}
+          weeklyCount={data.weeklyCount}
+          last7Days={data.last7Days}
+        />
       </View>
 
       {/* ── Active Plan ── */}
@@ -283,7 +378,6 @@ export function HomeScreen({ navigation }: any) {
               </Text>
             </View>
 
-            {/* Progress bar */}
             <View style={styles.progressBarTrack}>
               <View
                 style={[
@@ -363,6 +457,112 @@ export function HomeScreen({ navigation }: any) {
     </ScrollView>
   );
 }
+
+const streakStyles = StyleSheet.create({
+  card: {
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    padding: 20,
+  },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    marginBottom: 14,
+  },
+  streakBlock: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 8,
+    flex: 1,
+  },
+  streakNumber: {
+    fontSize: 52,
+    fontWeight: '800',
+    color: '#0f172a',
+    letterSpacing: -2,
+    lineHeight: 56,
+  },
+  streakUnit: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0f172a',
+    lineHeight: 20,
+  },
+  streakUnitSub: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#94a3b8',
+    lineHeight: 18,
+  },
+  weeklyBlock: {
+    alignItems: 'flex-end',
+    paddingBottom: 4,
+  },
+  weeklyNumber: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#2563eb',
+    letterSpacing: -0.5,
+    lineHeight: 26,
+  },
+  weeklyLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#94a3b8',
+    textAlign: 'right',
+    lineHeight: 15,
+  },
+  message: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#2563eb',
+    marginBottom: 20,
+    letterSpacing: 0.1,
+  },
+  messageMuted: {
+    color: '#94a3b8',
+  },
+  dotsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  dotCell: {
+    alignItems: 'center',
+    gap: 6,
+    flex: 1,
+  },
+  dot: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+  },
+  dotActive: {
+    backgroundColor: '#2563eb',
+  },
+  dotInactive: {
+    backgroundColor: '#f1f5f9',
+    borderWidth: 1.5,
+    borderColor: '#e2e8f0',
+  },
+  dotToday: {
+    borderWidth: 2,
+    borderColor: '#2563eb',
+  },
+  dotLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#cbd5e1',
+    letterSpacing: 0.2,
+  },
+  dotLabelActive: {
+    color: '#2563eb',
+  },
+  dotLabelToday: {
+    color: '#2563eb',
+  },
+});
 
 const styles = StyleSheet.create({
   loader: {
@@ -455,26 +655,6 @@ const styles = StyleSheet.create({
   todayDoneSub: { fontSize: 13, color: '#64748b' },
   todayDoneLink: { paddingHorizontal: 18, paddingVertical: 18 },
   todayDoneLinkText: { fontSize: 13, fontWeight: '600', color: '#2563eb' },
-
-  // ── Stats ──
-  statsCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    flexDirection: 'row',
-    marginBottom: 24,
-  },
-  statBlock: { flex: 1, paddingVertical: 20, alignItems: 'center' },
-  statNumber: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#0f172a',
-    letterSpacing: -1,
-    marginBottom: 4,
-  },
-  statLabel: { fontSize: 12, color: '#94a3b8', fontWeight: '500', textAlign: 'center' },
-  statDivider: { width: 1, backgroundColor: '#e2e8f0', marginVertical: 16 },
 
   // ── Active plan ──
   activePlanCard: {
