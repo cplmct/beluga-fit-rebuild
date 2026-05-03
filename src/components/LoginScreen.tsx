@@ -14,6 +14,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 
 const PRIVACY_URL = 'https://belugafit.tranbtc.com/privacy';
+const TERMS_URL = 'https://belugafit.tranbtc.com/terms-of-service';
 
 export function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
@@ -148,11 +149,12 @@ export function LoginScreen({ navigation }: any) {
         <View style={styles.privacyBox}>
           <Text style={styles.privacyText}>
             Your data is used to save your fitness progress across devices. It is not sold.{' '}
-            <Text
-              style={styles.privacyLink}
-              onPress={() => Linking.openURL(PRIVACY_URL)}
-            >
+            <Text style={styles.privacyLink} onPress={() => Linking.openURL(PRIVACY_URL)}>
               Privacy Policy
+            </Text>
+            {'  ·  '}
+            <Text style={styles.privacyLink} onPress={() => Linking.openURL(TERMS_URL)}>
+              Terms of Service
             </Text>
           </Text>
         </View>
