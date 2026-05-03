@@ -21,6 +21,28 @@
       },
       "config": {
         "usesNonExemptEncryption": false
+      },
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+            "NSPrivacyAccessedAPITypeReasons": ["C617.1"]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryDiskSpace",
+            "NSPrivacyAccessedAPITypeReasons": ["85F4.1"]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategorySystemBootTime",
+            "NSPrivacyAccessedAPITypeReasons": ["35F9.1"]
+          }
+        ],
+        "NSPrivacyCollectedDataTypes": [],
+        "NSPrivacyTracking": false
       }
     },
     "android": {
@@ -29,7 +51,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.tranbtc.belugafitworkout",
-      "permissions": ["INTERNET", "VIBRATE", "RECEIVE_BOOT_COMPLETED", "SCHEDULE_EXACT_ALARM", "POST_NOTIFICATIONS"]
+      "permissions": ["INTERNET"]
     },
     "plugins": [
       "expo-dev-client",
@@ -39,7 +61,11 @@
           "android": {
             "compileSdkVersion": 35,
             "targetSdkVersion": 35,
+            "minSdkVersion": 24,
             "kotlinVersion": "2.1.0"
+          },
+          "ios": {
+            "deploymentTarget": "16.0"
           }
         }
       ],
@@ -62,9 +88,7 @@
     "extra": {
       "eas": {
         "projectId": "322e2792-29c9-4977-ad75-f5e21def0be4"
-      },
-      "supabaseUrl": "https://tlubxgafmtaczttavtjn.supabase.co",
-      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRsdWJ4Z2FmbXRhY3p0dGF2dGpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMjI0NjYsImV4cCI6MjA4Mzg5ODQ2Nn0.Jb1hSjqhQql3a_cyNr1MpVJ4Ka49ABkxM1hPYgnHOQg"
+      }
     }
   }
 }
