@@ -1,5 +1,15 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Dimensions, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  ActivityIndicator,
+  Dimensions,
+  Alert,
+} from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { LineChart } from 'react-native-chart-kit';
 import { supabase } from '../lib/supabase';
@@ -22,6 +32,28 @@ interface BodyMeasurement {
   created_at: string;
 }
 
+function SkeletonBlock({
+  width,
+  height = 14,
+  radius = 6,
+}: {
+  width: number | string;
+  height?: number;
+  radius?: number;
+}) {
+  return (
+    <View
+      style={{
+        width: width as any,
+        height,
+        borderRadius: radius,
+        backgroundColor: '#f1f5f9',
+        marginBottom: 4,
+      }}
+    />
+  );
+}
+
 export function BodyTrackerScreen() {
   const { user } = useAuth();
 
@@ -41,6 +73,8 @@ export function BodyTrackerScreen() {
   const [measurements, setMeasurements] = useState<BodyMeasurement[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const [saveError, setSaveError] = useState('');
 
   useFocusEffect(
     useCallback(() => {
@@ -50,6 +84,7 @@ export function BodyTrackerScreen() {
 
   const fetchMeasurements = async () => {
     try {
+      setLoadError('');
       if (!user) return;
 
       const { data, error } = await supabase
@@ -58,139 +93,102 @@ export function BodyTrackerScreen() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        throw new Error('Failed to fetch measurements');
-      }
-
+      if (error) throw error;
       setMeasurements(data || []);
-    } catch (error) {
-      if (__DEV__) {
-        console.error('Error fetching measurements:', error);
-      }
+    } catch (err: any) {
+      setLoadError("Couldn't load your measurements. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleSave = async () => {
-    if (!user) {
-      Alert.alert('Error', 'You must be logged in to save measurements');
+    if (!user) return;
+
+    const hasAny =
+      height || weight || chest || waist || hips || leftArm || rightArm ||
+      leftThigh || rightThigh || leftCalf || rightCalf || neck;
+
+    if (!hasAny) {
+      setSaveError('Enter at least one measurement before saving.');
       return;
     }
 
-    if (!height && !weight && !chest && !waist && !hips && !leftArm && !rightArm && !leftThigh && !rightThigh && !leftCalf && !rightCalf && !neck) {
-      Alert.alert('Error', 'Please enter at least one measurement');
-      return;
-    }
-
+    setSaveError('');
     setSaving(true);
 
     try {
-      const { error } = await supabase
-        .from('body_measurements')
-        .insert({
-          user_id: user.id,
-          height: height ? parseFloat(height) : null,
-          weight: weight ? parseFloat(weight) : null,
-          chest: chest ? parseFloat(chest) : null,
-          waist: waist ? parseFloat(waist) : null,
-          hips: hips ? parseFloat(hips) : null,
-          left_arm: leftArm ? parseFloat(leftArm) : null,
-          right_arm: rightArm ? parseFloat(rightArm) : null,
-          left_thigh: leftThigh ? parseFloat(leftThigh) : null,
-          right_thigh: rightThigh ? parseFloat(rightThigh) : null,
-          left_calf: leftCalf ? parseFloat(leftCalf) : null,
-          right_calf: rightCalf ? parseFloat(rightCalf) : null,
-          neck: neck ? parseFloat(neck) : null,
-        });
+      const { error } = await supabase.from('body_measurements').insert({
+        user_id: user.id,
+        height: height ? parseFloat(height) : null,
+        weight: weight ? parseFloat(weight) : null,
+        chest: chest ? parseFloat(chest) : null,
+        waist: waist ? parseFloat(waist) : null,
+        hips: hips ? parseFloat(hips) : null,
+        left_arm: leftArm ? parseFloat(leftArm) : null,
+        right_arm: rightArm ? parseFloat(rightArm) : null,
+        left_thigh: leftThigh ? parseFloat(leftThigh) : null,
+        right_thigh: rightThigh ? parseFloat(rightThigh) : null,
+        left_calf: leftCalf ? parseFloat(leftCalf) : null,
+        right_calf: rightCalf ? parseFloat(rightCalf) : null,
+        neck: neck ? parseFloat(neck) : null,
+      });
 
-      if (error) {
-        throw new Error('Failed to save measurements');
-      }
+      if (error) throw error;
 
-      setHeight('');
-      setWeight('');
-      setChest('');
-      setWaist('');
-      setHips('');
-      setLeftArm('');
-      setRightArm('');
-      setLeftThigh('');
-      setRightThigh('');
-      setLeftCalf('');
-      setRightCalf('');
-      setNeck('');
+      setHeight(''); setWeight(''); setChest(''); setWaist('');
+      setHips(''); setLeftArm(''); setRightArm(''); setLeftThigh('');
+      setRightThigh(''); setLeftCalf(''); setRightCalf(''); setNeck('');
 
+      Alert.alert('Saved', 'Your measurements have been recorded.');
       fetchMeasurements();
-    } catch (error) {
-      if (__DEV__) {
-        console.error('Error saving measurements:', error);
-      }
-      Alert.alert('Error', 'Failed to save measurements');
+    } catch (err: any) {
+      setSaveError("Couldn't save your measurements. Please try again.");
     } finally {
       setSaving(false);
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString('en-US', {
       weekday: 'short',
       year: 'numeric',
       month: 'short',
       day: 'numeric',
     });
-  };
 
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', {
+  const formatTime = (dateString: string) =>
+    new Date(dateString).toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
     });
-  };
 
   const prepareChartData = (field: 'weight' | 'waist') => {
-    const filtered = measurements
-      .filter((m) => m[field] !== null)
-      .reverse();
-
-    if (filtered.length === 0) {
-      return null;
-    }
+    const filtered = measurements.filter((m) => m[field] !== null).reverse();
+    if (filtered.length < 2) return null;
 
     const values = filtered.map((m) => m[field] as number);
     const labels = filtered.map((m) => {
-      const date = new Date(m.created_at);
-      return `${date.getMonth() + 1}/${date.getDate()}`;
+      const d = new Date(m.created_at);
+      return `${d.getMonth() + 1}/${d.getDate()}`;
     });
 
-    const maxDataPoints = 7;
-    const step = Math.max(1, Math.floor(labels.length / maxDataPoints));
-    const displayLabels = labels.filter((_, index) => index % step === 0);
+    const maxPoints = 7;
+    const step = Math.max(1, Math.floor(labels.length / maxPoints));
+    const displayLabels = labels.filter((_, i) => i % step === 0);
 
     return {
-      labels: displayLabels.length > 0 ? displayLabels : labels.slice(-maxDataPoints),
+      labels: displayLabels.length > 0 ? displayLabels : labels.slice(-maxPoints),
       datasets: [
         {
           data: values,
-          color: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`,
+          color: (opacity = 1) => `rgba(37, 99, 235, ${opacity})`,
           strokeWidth: 2,
         },
       ],
     };
   };
 
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3b82f6" />
-      </View>
-    );
-  }
-
-  const weightChartData = prepareChartData('weight');
-  const waistChartData = prepareChartData('waist');
   const screenWidth = Dimensions.get('window').width;
 
   const chartConfig = {
@@ -198,280 +196,203 @@ export function BodyTrackerScreen() {
     backgroundGradientFrom: '#ffffff',
     backgroundGradientTo: '#ffffff',
     decimalPlaces: 1,
-    color: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`,
-    labelColor: (opacity = 1) => `rgba(107, 114, 128, ${opacity})`,
-    style: {
-      borderRadius: 12,
-    },
-    propsForDots: {
-      r: '4',
-      strokeWidth: '2',
-      stroke: '#3b82f6',
-    },
+    color: (opacity = 1) => `rgba(37, 99, 235, ${opacity})`,
+    labelColor: (opacity = 1) => `rgba(100, 116, 139, ${opacity})`,
+    style: { borderRadius: 12 },
+    propsForDots: { r: '4', strokeWidth: '2', stroke: '#2563eb' },
   };
 
+  if (loading) {
+    return (
+      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+        <View style={styles.skeletonCard}>
+          <SkeletonBlock width={160} height={20} radius={8} />
+          <View style={{ height: 16 }} />
+          <SkeletonBlock width="100%" height={180} radius={10} />
+        </View>
+        <View style={styles.skeletonCard}>
+          <SkeletonBlock width={140} height={20} radius={8} />
+          <View style={{ height: 20 }} />
+          {[0, 1, 2].map((i) => (
+            <View key={i} style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
+              <SkeletonBlock width="48%" height={56} radius={10} />
+              <SkeletonBlock width="48%" height={56} radius={10} />
+            </View>
+          ))}
+          <SkeletonBlock width="100%" height={52} radius={10} />
+        </View>
+      </ScrollView>
+    );
+  }
+
+  const weightChartData = prepareChartData('weight');
+  const waistChartData = prepareChartData('waist');
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      keyboardShouldPersistTaps="handled"
+    >
+      {/* ── Load error ── */}
+      {loadError ? (
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorBannerText}>{loadError}</Text>
+          <TouchableOpacity onPress={() => { setLoading(true); fetchMeasurements(); }}>
+            <Text style={styles.errorBannerAction}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
+
+      {/* ── Charts ── */}
       {weightChartData && (
-        <View style={styles.chartSection}>
+        <View style={styles.chartCard}>
           <Text style={styles.chartTitle}>Weight Trend</Text>
           <LineChart
             data={weightChartData}
             width={screenWidth - 40}
-            height={220}
+            height={200}
             chartConfig={chartConfig}
             bezier
             style={styles.chart}
             withInnerLines={false}
-            withOuterLines={true}
-            withVerticalLabels={true}
-            withHorizontalLabels={true}
+            withOuterLines
+            withVerticalLabels
+            withHorizontalLabels
           />
         </View>
       )}
 
       {waistChartData && (
-        <View style={styles.chartSection}>
+        <View style={styles.chartCard}>
           <Text style={styles.chartTitle}>Waist Trend</Text>
           <LineChart
             data={waistChartData}
             width={screenWidth - 40}
-            height={220}
+            height={200}
             chartConfig={chartConfig}
             bezier
             style={styles.chart}
             withInnerLines={false}
-            withOuterLines={true}
-            withVerticalLabels={true}
-            withHorizontalLabels={true}
+            withOuterLines
+            withVerticalLabels
+            withHorizontalLabels
           />
         </View>
       )}
 
-      <View style={styles.formSection}>
+      {/* ── Form ── */}
+      <View style={styles.formCard}>
         <Text style={styles.sectionTitle}>New Measurement</Text>
 
-        <View style={styles.row}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Height (in)</Text>
-            <TextInput
-              style={styles.input}
-              value={height}
-              onChangeText={setHeight}
-              placeholder="0"
-              keyboardType="numeric"
-              placeholderTextColor="#9ca3af"
-            />
+        {saveError ? (
+          <View style={styles.saveBanner}>
+            <Text style={styles.saveBannerText}>{saveError}</Text>
           </View>
+        ) : null}
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Weight (lbs)</Text>
-            <TextInput
-              style={styles.input}
-              value={weight}
-              onChangeText={setWeight}
-              placeholder="0"
-              keyboardType="numeric"
-              placeholderTextColor="#9ca3af"
-            />
-          </View>
+        <View style={styles.row}>
+          <MeasurementField label="Height (in)" value={height} onChange={setHeight} />
+          <MeasurementField label="Weight (lbs)" value={weight} onChange={setWeight} />
+        </View>
+        <View style={styles.row}>
+          <MeasurementField label="Chest (in)" value={chest} onChange={setChest} />
+          <MeasurementField label="Waist (in)" value={waist} onChange={setWaist} />
+        </View>
+        <View style={styles.row}>
+          <MeasurementField label="Hips (in)" value={hips} onChange={setHips} />
+          <MeasurementField label="Neck (in)" value={neck} onChange={setNeck} />
         </View>
 
+        <Text style={styles.subLabel}>Arms</Text>
         <View style={styles.row}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Chest (in)</Text>
-            <TextInput
-              style={styles.input}
-              value={chest}
-              onChangeText={setChest}
-              placeholder="0"
-              keyboardType="numeric"
-              placeholderTextColor="#9ca3af"
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Waist (in)</Text>
-            <TextInput
-              style={styles.input}
-              value={waist}
-              onChangeText={setWaist}
-              placeholder="0"
-              keyboardType="numeric"
-              placeholderTextColor="#9ca3af"
-            />
-          </View>
+          <MeasurementField label="Left (in)" value={leftArm} onChange={setLeftArm} />
+          <MeasurementField label="Right (in)" value={rightArm} onChange={setRightArm} />
         </View>
 
+        <Text style={styles.subLabel}>Thighs</Text>
         <View style={styles.row}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Hips (in)</Text>
-            <TextInput
-              style={styles.input}
-              value={hips}
-              onChangeText={setHips}
-              placeholder="0"
-              keyboardType="numeric"
-              placeholderTextColor="#9ca3af"
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Neck (in)</Text>
-            <TextInput
-              style={styles.input}
-              value={neck}
-              onChangeText={setNeck}
-              placeholder="0"
-              keyboardType="numeric"
-              placeholderTextColor="#9ca3af"
-            />
-          </View>
+          <MeasurementField label="Left (in)" value={leftThigh} onChange={setLeftThigh} />
+          <MeasurementField label="Right (in)" value={rightThigh} onChange={setRightThigh} />
         </View>
 
-        <Text style={styles.subSectionTitle}>Arms</Text>
+        <Text style={styles.subLabel}>Calves</Text>
         <View style={styles.row}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Left (in)</Text>
-            <TextInput
-              style={styles.input}
-              value={leftArm}
-              onChangeText={setLeftArm}
-              placeholder="0"
-              keyboardType="numeric"
-              placeholderTextColor="#9ca3af"
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Right (in)</Text>
-            <TextInput
-              style={styles.input}
-              value={rightArm}
-              onChangeText={setRightArm}
-              placeholder="0"
-              keyboardType="numeric"
-              placeholderTextColor="#9ca3af"
-            />
-          </View>
-        </View>
-
-        <Text style={styles.subSectionTitle}>Thighs</Text>
-        <View style={styles.row}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Left (in)</Text>
-            <TextInput
-              style={styles.input}
-              value={leftThigh}
-              onChangeText={setLeftThigh}
-              placeholder="0"
-              keyboardType="numeric"
-              placeholderTextColor="#9ca3af"
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Right (in)</Text>
-            <TextInput
-              style={styles.input}
-              value={rightThigh}
-              onChangeText={setRightThigh}
-              placeholder="0"
-              keyboardType="numeric"
-              placeholderTextColor="#9ca3af"
-            />
-          </View>
-        </View>
-
-        <Text style={styles.subSectionTitle}>Calves</Text>
-        <View style={styles.row}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Left (in)</Text>
-            <TextInput
-              style={styles.input}
-              value={leftCalf}
-              onChangeText={setLeftCalf}
-              placeholder="0"
-              keyboardType="numeric"
-              placeholderTextColor="#9ca3af"
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Right (in)</Text>
-            <TextInput
-              style={styles.input}
-              value={rightCalf}
-              onChangeText={setRightCalf}
-              placeholder="0"
-              keyboardType="numeric"
-              placeholderTextColor="#9ca3af"
-            />
-          </View>
+          <MeasurementField label="Left (in)" value={leftCalf} onChange={setLeftCalf} />
+          <MeasurementField label="Right (in)" value={rightCalf} onChange={setRightCalf} />
         </View>
 
         <TouchableOpacity
           style={[styles.saveButton, saving && styles.saveButtonDisabled]}
           onPress={handleSave}
           disabled={saving}
+          activeOpacity={0.85}
         >
-          <Text style={styles.saveButtonText}>
-            {saving ? 'Saving...' : 'Save Measurements'}
-          </Text>
+          {saving ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text style={styles.saveButtonText}>Save Measurements</Text>
+          )}
         </TouchableOpacity>
       </View>
 
+      {/* ── History ── */}
       <View style={styles.historySection}>
         <Text style={styles.sectionTitle}>Measurement History</Text>
 
         {measurements.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No measurements recorded yet</Text>
+          <View style={styles.historyEmpty}>
+            <View style={styles.historyEmptyIconRing}>
+              <View style={styles.historyEmptyIconDot} />
+            </View>
+            <Text style={styles.historyEmptyTitle}>No measurements recorded yet</Text>
+            <Text style={styles.historyEmptySub}>
+              Use the form above to log your first measurement. Tracking over time helps you see real progress.
+            </Text>
           </View>
         ) : (
-          measurements.map((measurement) => (
-            <View key={measurement.id} style={styles.measurementCard}>
+          measurements.map((m) => (
+            <View key={m.id} style={styles.measurementCard}>
               <View style={styles.measurementHeader}>
-                <Text style={styles.measurementDate}>{formatDate(measurement.created_at)}</Text>
-                <Text style={styles.measurementTime}>{formatTime(measurement.created_at)}</Text>
+                <Text style={styles.measurementDate}>{formatDate(m.created_at)}</Text>
+                <Text style={styles.measurementTime}>{formatTime(m.created_at)}</Text>
               </View>
-
               <View style={styles.measurementGrid}>
-                {measurement.weight && (
-                  <View style={styles.measurementItem}>
-                    <Text style={styles.measurementLabel}>Weight</Text>
-                    <Text style={styles.measurementValue}>{measurement.weight} lbs</Text>
-                  </View>
+                {m.weight != null && (
+                  <MeasurementItem label="Weight" value={`${m.weight} lbs`} />
                 )}
-                {measurement.waist && (
-                  <View style={styles.measurementItem}>
-                    <Text style={styles.measurementLabel}>Waist</Text>
-                    <Text style={styles.measurementValue}>{measurement.waist} in</Text>
-                  </View>
+                {m.waist != null && (
+                  <MeasurementItem label="Waist" value={`${m.waist} in`} />
                 )}
-                {measurement.height && (
-                  <View style={styles.measurementItem}>
-                    <Text style={styles.measurementLabel}>Height</Text>
-                    <Text style={styles.measurementValue}>{measurement.height} in</Text>
-                  </View>
+                {m.height != null && (
+                  <MeasurementItem label="Height" value={`${m.height} in`} />
                 )}
-                {measurement.chest && (
-                  <View style={styles.measurementItem}>
-                    <Text style={styles.measurementLabel}>Chest</Text>
-                    <Text style={styles.measurementValue}>{measurement.chest} in</Text>
-                  </View>
+                {m.chest != null && (
+                  <MeasurementItem label="Chest" value={`${m.chest} in`} />
                 )}
-                {measurement.hips && (
-                  <View style={styles.measurementItem}>
-                    <Text style={styles.measurementLabel}>Hips</Text>
-                    <Text style={styles.measurementValue}>{measurement.hips} in</Text>
-                  </View>
+                {m.hips != null && (
+                  <MeasurementItem label="Hips" value={`${m.hips} in`} />
                 )}
-                {measurement.neck && (
-                  <View style={styles.measurementItem}>
-                    <Text style={styles.measurementLabel}>Neck</Text>
-                    <Text style={styles.measurementValue}>{measurement.neck} in</Text>
-                  </View>
+                {m.neck != null && (
+                  <MeasurementItem label="Neck" value={`${m.neck} in`} />
+                )}
+                {m.left_arm != null && (
+                  <MeasurementItem label="L. Arm" value={`${m.left_arm} in`} />
+                )}
+                {m.right_arm != null && (
+                  <MeasurementItem label="R. Arm" value={`${m.right_arm} in`} />
+                )}
+                {m.left_thigh != null && (
+                  <MeasurementItem label="L. Thigh" value={`${m.left_thigh} in`} />
+                )}
+                {m.right_thigh != null && (
+                  <MeasurementItem label="R. Thigh" value={`${m.right_thigh} in`} />
+                )}
+                {m.left_calf != null && (
+                  <MeasurementItem label="L. Calf" value={`${m.left_calf} in`} />
+                )}
+                {m.right_calf != null && (
+                  <MeasurementItem label="R. Calf" value={`${m.right_calf} in`} />
                 )}
               </View>
             </View>
@@ -482,149 +403,282 @@ export function BodyTrackerScreen() {
   );
 }
 
+function MeasurementField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <View style={styles.inputGroup}>
+      <Text style={styles.inputLabel}>{label}</Text>
+      <TextInput
+        style={[styles.input, focused && styles.inputFocused]}
+        value={value}
+        onChangeText={onChange}
+        placeholder="—"
+        keyboardType="numeric"
+        placeholderTextColor="#94a3b8"
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+      />
+    </View>
+  );
+}
+
+function MeasurementItem({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.measurementItem}>
+      <Text style={styles.measurementLabel}>{label}</Text>
+      <Text style={styles.measurementValue}>{value}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f7f8fc',
   },
   scrollContent: {
     padding: 20,
+    paddingBottom: 48,
   },
-  chartSection: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+
+  // ── Skeleton ──
+  skeletonCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
     padding: 20,
-    marginBottom: 24,
+    marginBottom: 20,
+  },
+
+  // ── Error banner ──
+  errorBanner: {
+    backgroundColor: '#fef2f2',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#fecaca',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  errorBannerText: {
+    fontSize: 13,
+    color: '#dc2626',
+    flex: 1,
+    lineHeight: 18,
+  },
+  errorBannerAction: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#dc2626',
+    marginLeft: 12,
+  },
+  saveBanner: {
+    backgroundColor: '#fef2f2',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#fecaca',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 16,
+  },
+  saveBannerText: {
+    fontSize: 13,
+    color: '#dc2626',
+    lineHeight: 18,
+  },
+
+  // ── Charts ──
+  chartCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    padding: 20,
+    marginBottom: 20,
   },
   chartTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '700',
-    color: '#1f2937',
+    color: '#0f172a',
+    letterSpacing: -0.2,
     marginBottom: 16,
   },
   chart: {
-    marginVertical: 8,
-    borderRadius: 12,
+    marginVertical: 4,
+    borderRadius: 10,
   },
-  formSection: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+
+  // ── Form ──
+  formCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
     padding: 20,
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#1f2937',
     marginBottom: 20,
   },
-  subSectionTitle: {
+  sectionTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#4b5563',
-    marginTop: 16,
+    fontWeight: '700',
+    color: '#0f172a',
+    letterSpacing: -0.2,
+    marginBottom: 16,
+  },
+  subLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#94a3b8',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginTop: 8,
     marginBottom: 12,
   },
   row: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   inputGroup: {
     flex: 1,
   },
-  label: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6b7280',
+  inputLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748b',
     marginBottom: 6,
   },
   input: {
-    backgroundColor: '#f9fafb',
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    color: '#1f2937',
+    backgroundColor: '#f8fafc',
+    borderWidth: 1.5,
+    borderColor: '#e2e8f0',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+    fontSize: 15,
+    color: '#0f172a',
+  },
+  inputFocused: {
+    borderColor: '#2563eb',
+    backgroundColor: '#ffffff',
   },
   saveButton: {
-    backgroundColor: '#3b82f6',
-    borderRadius: 8,
-    padding: 16,
+    backgroundColor: '#2563eb',
+    borderRadius: 12,
+    padding: 15,
     alignItems: 'center',
     marginTop: 8,
   },
   saveButtonDisabled: {
-    backgroundColor: '#9ca3af',
+    backgroundColor: '#93c5fd',
   },
   saveButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: -0.2,
   },
+
+  // ── History ──
   historySection: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
-  emptyState: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 40,
+  historyEmpty: {
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    padding: 32,
     alignItems: 'center',
   },
-  emptyText: {
-    fontSize: 16,
-    color: '#6b7280',
+  historyEmptyIconRing: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: '#e2e8f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  historyEmptyIconDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#cbd5e1',
+  },
+  historyEmptyTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#0f172a',
+    marginBottom: 6,
     textAlign: 'center',
   },
+  historyEmptySub: {
+    fontSize: 13,
+    color: '#94a3b8',
+    textAlign: 'center',
+    lineHeight: 19,
+  },
+
+  // ── Measurement cards ──
   measurementCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
     padding: 16,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
   },
   measurementHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
+    borderBottomColor: '#f1f5f9',
   },
   measurementDate: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
-    color: '#1f2937',
+    color: '#0f172a',
   },
   measurementTime: {
-    fontSize: 14,
-    color: '#6b7280',
+    fontSize: 13,
+    color: '#94a3b8',
+    fontWeight: '500',
   },
   measurementGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 16,
+    gap: 12,
   },
   measurementItem: {
     width: '30%',
   },
   measurementLabel: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginBottom: 4,
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#94a3b8',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    marginBottom: 3,
   },
   measurementValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0f172a',
   },
 });

@@ -156,6 +156,49 @@ function StreakCard({
   );
 }
 
+function SkeletonBlock({ width, height = 14, radius = 6 }: { width: number | string; height?: number; radius?: number }) {
+  return (
+    <View style={{ width: width as any, height, borderRadius: radius, backgroundColor: '#f1f5f9' }} />
+  );
+}
+
+function HomeSkeleton() {
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      {/* Header */}
+      <View style={[styles.header, { gap: 10 }]}>
+        <SkeletonBlock width={100} height={11} />
+        <SkeletonBlock width={80} height={14} />
+        <SkeletonBlock width={160} height={28} radius={8} />
+      </View>
+      {/* Today card */}
+      <View style={[styles.section]}>
+        <SkeletonBlock width={56} height={11} radius={4} />
+        <View style={{ height: 10 }} />
+        <SkeletonBlock width="100%" height={80} radius={14} />
+      </View>
+      {/* Streak card */}
+      <View style={styles.section}>
+        <SkeletonBlock width={56} height={11} radius={4} />
+        <View style={{ height: 10 }} />
+        <SkeletonBlock width="100%" height={120} radius={14} />
+      </View>
+      {/* Plan card */}
+      <View style={styles.section}>
+        <SkeletonBlock width={76} height={11} radius={4} />
+        <View style={{ height: 10 }} />
+        <SkeletonBlock width="100%" height={96} radius={14} />
+      </View>
+      {/* Body card */}
+      <View style={styles.section}>
+        <SkeletonBlock width={44} height={11} radius={4} />
+        <View style={{ height: 10 }} />
+        <SkeletonBlock width="100%" height={72} radius={14} />
+      </View>
+    </ScrollView>
+  );
+}
+
 export function HomeScreen({ navigation }: any) {
   const { user } = useAuth();
   const [data, setData] = useState<DashboardData>({
@@ -168,6 +211,7 @@ export function HomeScreen({ navigation }: any) {
   });
   const [activePlan, setActivePlanState] = useState<ActivePlanState | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useFocusEffect(
     useCallback(() => {
@@ -238,6 +282,7 @@ export function HomeScreen({ navigation }: any) {
       });
     } catch (err) {
       if (__DEV__) console.error('HomeScreen:', err);
+      setError("Couldn't load your dashboard. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -255,9 +300,28 @@ export function HomeScreen({ navigation }: any) {
   });
 
   if (loading) {
+    return <HomeSkeleton />;
+  }
+
+  if (error) {
     return (
-      <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#2563eb" />
+      <View style={[styles.container, { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 36 }]}>
+        <View style={{ width: 52, height: 52, borderRadius: 26, borderWidth: 2, borderColor: '#fecaca', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
+          <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#dc2626' }} />
+        </View>
+        <Text style={{ fontSize: 17, fontWeight: '700', color: '#0f172a', letterSpacing: -0.3, textAlign: 'center', marginBottom: 8 }}>
+          Couldn't load your dashboard
+        </Text>
+        <Text style={{ fontSize: 14, color: '#64748b', textAlign: 'center', lineHeight: 20, marginBottom: 28 }}>
+          {error}
+        </Text>
+        <TouchableOpacity
+          style={{ backgroundColor: '#f1f5f9', borderRadius: 12, paddingHorizontal: 28, paddingVertical: 14, borderWidth: 1, borderColor: '#e2e8f0' }}
+          onPress={() => { setError(''); loadDashboard(); }}
+          activeOpacity={0.85}
+        >
+          <Text style={{ color: '#0f172a', fontSize: 15, fontWeight: '600' }}>Try Again</Text>
+        </TouchableOpacity>
       </View>
     );
   }

@@ -144,15 +144,34 @@ export function PlanLibraryScreen({ navigation }: any) {
           {filtered.length} {filtered.length === 1 ? 'plan' : 'plans'}
         </Text>
 
-        {filtered.map((plan) => (
-          <PlanCard
-            key={plan.id}
-            plan={plan}
-            onPress={() =>
-              navigation.navigate('PlanDetail', { planId: plan.id })
-            }
-          />
-        ))}
+        {filtered.length === 0 ? (
+          <View style={styles.emptyWrap}>
+            <View style={styles.emptyIconRing}>
+              <View style={styles.emptyIconDot} />
+            </View>
+            <Text style={styles.emptyTitle}>No plans in this category</Text>
+            <Text style={styles.emptyText}>
+              Try a different filter to find a plan that suits your goals.
+            </Text>
+            <TouchableOpacity
+              style={styles.emptyButton}
+              onPress={() => setActiveFilter('all')}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.emptyButtonText}>Show All Plans</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          filtered.map((plan) => (
+            <PlanCard
+              key={plan.id}
+              plan={plan}
+              onPress={() =>
+                navigation.navigate('PlanDetail', { planId: plan.id })
+              }
+            />
+          ))
+        )}
       </ScrollView>
     </View>
   );
@@ -281,5 +300,55 @@ const styles = StyleSheet.create({
     fontSize: 22,
     color: '#cbd5e1',
     paddingRight: 14,
+  },
+
+  // ── Empty filter state ──
+  emptyWrap: {
+    alignItems: 'center',
+    paddingTop: 32,
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+  },
+  emptyIconRing: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 2,
+    borderColor: '#e2e8f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 18,
+  },
+  emptyIconDot: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#cbd5e1',
+  },
+  emptyTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#0f172a',
+    letterSpacing: -0.3,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#64748b',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  emptyButton: {
+    backgroundColor: '#2563eb',
+    borderRadius: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+  },
+  emptyButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

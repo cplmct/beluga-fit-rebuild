@@ -1,11 +1,17 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
 import { safeQuery } from '../lib/safeSupabase';
 import { useAuth } from '../contexts/AuthContext';
-
 
 interface WorkoutSummary {
   id: string;
@@ -20,6 +26,7 @@ export function CalendarScreen({ navigation }: any) {
   const [markedDates, setMarkedDates] = useState<any>({});
   const [workoutsForDate, setWorkoutsForDate] = useState<WorkoutSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dayLoading, setDayLoading] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -27,133 +34,136 @@ export function CalendarScreen({ navigation }: any) {
     }, [])
   );
 
- const fetchWorkouts = async () => {
-  try {
-    if (!user) return;
+  const fetchWorkouts = async () => {
+    try {
+      if (!user) return;
 
-    const workoutsData = await safeQuery<Array<{id: string; date: string; body_parts: string[]}>>(
-      supabase
-        .from('workouts')
-        .select('id, date, body_parts')
-        .eq('user_id', user.id)
-        .order('date', { ascending: false })
-    );
+      const workoutsData = await safeQuery<
+        Array<{ id: string; date: string; body_parts: string[] }>
+      >(
+        supabase
+          .from('workouts')
+          .select('id, date, body_parts')
+          .eq('user_id', user.id)
+          .order('date', { ascending: false })
+      );
 
-    const workoutsWithCounts = await Promise.all(
-      (workoutsData || []).map(async (workout: {id: string; date: string; body_parts: string[]}) => {
-        const { count, error } = await supabase
-          .from('workout_exercises')
-          .select('*', { count: 'exact', head: true })
-          .eq('workout_id', workout.id);
+      const workoutsWithCounts = await Promise.all(
+        (workoutsData || []).map(async (workout) => {
+          const { count } = await supabase
+            .from('workout_exercises')
+            .select('*', { count: 'exact', head: true })
+            .eq('workout_id', workout.id);
+          return {
+            id: workout.id,
+            date: workout.date,
+            body_parts: workout.body_parts || [],
+            exercise_count: count || 0,
+          };
+        })
+      );
 
-        return {
-          id: workout.id,
-          date: workout.date,
-          body_parts: workout.body_parts,
-          exercise_count: count || 0,
-        };
-      })
-    );
+      const marked: any = {};
+      workoutsWithCounts.forEach((workout) => {
+        const dateKey = workout.date.split('T')[0];
+        marked[dateKey] = { marked: true, dotColor: '#2563eb' };
+      });
 
-    const marked: any = {};
-    workoutsWithCounts.forEach((workout: WorkoutSummary) => {
-      const dateKey = workout.date.split('T')[0];
-      marked[dateKey] = {
-        marked: true,
-        dotColor: '#3b82f6',
-      };
-    });
-
-    setMarkedDates(marked);
-  } catch (error) {
-    if (__DEV__) {
-      console.error('Error fetching workouts:', error);
+      setMarkedDates(marked);
+    } catch (err) {
+      if (__DEV__) console.error('CalendarScreen:', err);
+    } finally {
+      setLoading(false);
     }
-  } finally {
-    setLoading(false);
-  }
-};
-  
-const handleDayPress = async (day: any) => {
-  setSelectedDate(day.dateString);
+  };
 
-  try {
-    if (!user) return;
+  const handleDayPress = async (day: any) => {
+    setSelectedDate(day.dateString);
+    setDayLoading(true);
 
-    const startDate = new Date(day.dateString);
-    startDate.setHours(0, 0, 0, 0);
+    try {
+      if (!user) return;
 
-    const endDate = new Date(day.dateString);
-    endDate.setHours(23, 59, 59, 999);
+      const startDate = new Date(day.dateString);
+      startDate.setHours(0, 0, 0, 0);
+      const endDate = new Date(day.dateString);
+      endDate.setHours(23, 59, 59, 999);
 
-    const workoutsData = await safeQuery<Array<{id: string; date: string; body_parts: string[]}>>(
-      supabase
-        .from('workouts')
-        .select('id, date, body_parts')
-        .eq('user_id', user.id)
-        .gte('date', startDate.toISOString())
-        .lte('date', endDate.toISOString())
-        .order('date', { ascending: false })
-    );
+      const workoutsData = await safeQuery<
+        Array<{ id: string; date: string; body_parts: string[] }>
+      >(
+        supabase
+          .from('workouts')
+          .select('id, date, body_parts')
+          .eq('user_id', user.id)
+          .gte('date', startDate.toISOString())
+          .lte('date', endDate.toISOString())
+          .order('date', { ascending: false })
+      );
 
-    const workoutsWithCounts = await Promise.all(
-      (workoutsData || []).map(async (workout: {id: string; date: string; body_parts: string[]}) => {
-        const { count } = await supabase
-          .from('workout_exercises')
-          .select('*', { count: 'exact', head: true })
-          .eq('workout_id', workout.id);
+      const workoutsWithCounts = await Promise.all(
+        (workoutsData || []).map(async (workout) => {
+          const { count } = await supabase
+            .from('workout_exercises')
+            .select('*', { count: 'exact', head: true })
+            .eq('workout_id', workout.id);
+          return {
+            id: workout.id,
+            date: workout.date,
+            body_parts: workout.body_parts || [],
+            exercise_count: count || 0,
+          };
+        })
+      );
 
-        return {
-          id: workout.id,
-          date: workout.date,
-          body_parts: workout.body_parts,
-          exercise_count: count || 0,
-        };
-      })
-    );
-
-    setWorkoutsForDate(workoutsWithCounts);
-  } catch (error) {
-    if (__DEV__) {
-      console.error('Error fetching workouts for date:', error);
+      setWorkoutsForDate(workoutsWithCounts);
+    } catch (err) {
+      if (__DEV__) console.error('CalendarScreen day press:', err);
+      setWorkoutsForDate([]);
+    } finally {
+      setDayLoading(false);
     }
-    setWorkoutsForDate([]);
-  }
-};
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', {
+  };
+
+  const formatTime = (dateString: string) =>
+    new Date(dateString).toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
     });
-  };
+
+  const formatSelectedDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+    });
 
   const renderWorkoutItem = ({ item }: { item: WorkoutSummary }) => (
     <TouchableOpacity
       style={styles.workoutCard}
-      onPress={() => navigation.navigate('WorkoutDetails', { workoutId: item.id })}
+      onPress={() =>
+        navigation.navigate('WorkoutDetails', { workoutId: item.id })
+      }
+      activeOpacity={0.82}
     >
       <View style={styles.workoutHeader}>
         <Text style={styles.workoutTime}>{formatTime(item.date)}</Text>
-        <Text style={styles.exerciseCount}>{item.exercise_count} exercises</Text>
+        <Text style={styles.exerciseCount}>
+          {item.exercise_count}{' '}
+          {item.exercise_count === 1 ? 'exercise' : 'exercises'}
+        </Text>
       </View>
-      <View style={styles.bodyPartsContainer}>
-        {item.body_parts.map((part) => (
-          <View key={part} style={styles.bodyPartTag}>
-            <Text style={styles.bodyPartText}>{part}</Text>
-          </View>
-        ))}
-      </View>
+      {item.body_parts.length > 0 && (
+        <View style={styles.tagsRow}>
+          {item.body_parts.map((part) => (
+            <View key={part} style={styles.tag}>
+              <Text style={styles.tagText}>{part}</Text>
+            </View>
+          ))}
+        </View>
+      )}
     </TouchableOpacity>
   );
-
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3b82f6" />
-      </View>
-    );
-  }
 
   const updatedMarkedDates = {
     ...markedDates,
@@ -161,57 +171,104 @@ const handleDayPress = async (day: any) => {
       [selectedDate]: {
         ...markedDates[selectedDate],
         selected: true,
-        selectedColor: '#3b82f6',
+        selectedColor: '#2563eb',
       },
     }),
   };
 
-  return (
-    <View style={styles.container}>
-      <Calendar
-        markedDates={updatedMarkedDates}
-        onDayPress={handleDayPress}
-        theme={{
-          todayTextColor: '#3b82f6',
-          selectedDayBackgroundColor: '#3b82f6',
-          selectedDayTextColor: '#ffffff',
-          arrowColor: '#3b82f6',
-          monthTextColor: '#1f2937',
-          textDayFontWeight: '500',
-          textMonthFontWeight: 'bold',
-          textDayHeaderFontWeight: '600',
-        }}
-      />
+  const renderDatePanel = () => {
+    if (!selectedDate) {
+      return (
+        <View style={styles.promptWrap}>
+          <View style={styles.promptLine} />
+          <Text style={styles.promptText}>Select a day to view your workouts</Text>
+          <View style={styles.promptLine} />
+        </View>
+      );
+    }
 
-      <View style={styles.workoutsSection}>
-        {selectedDate ? (
-          <>
-            <Text style={styles.sectionTitle}>
-              Workouts on {new Date(selectedDate).toLocaleDateString('en-US', {
-                month: 'long',
-                day: 'numeric',
-                year: 'numeric'
-              })}
-            </Text>
-            {workoutsForDate.length > 0 ? (
-              <FlatList
-                data={workoutsForDate}
-                renderItem={renderWorkoutItem}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={styles.listContent}
-              />
-            ) : (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyText}>No workouts on this day</Text>
-              </View>
-            )}
-          </>
+    if (dayLoading) {
+      return (
+        <View style={styles.dayLoadingWrap}>
+          <ActivityIndicator size="small" color="#2563eb" />
+        </View>
+      );
+    }
+
+    return (
+      <>
+        <View style={styles.dateLabelRow}>
+          <Text style={styles.dateLabel}>{formatSelectedDate(selectedDate)}</Text>
+          {markedDates[selectedDate] && (
+            <View style={styles.workoutDot} />
+          )}
+        </View>
+
+        {workoutsForDate.length > 0 ? (
+          <FlatList
+            data={workoutsForDate}
+            renderItem={renderWorkoutItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.dayListContent}
+            scrollEnabled={false}
+          />
         ) : (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>Select a date to view workouts</Text>
+          <View style={styles.dayEmptyWrap}>
+            <Text style={styles.dayEmptyTitle}>No workouts on this day</Text>
+            <Text style={styles.dayEmptySub}>
+              Rest days are part of the plan too. Log a workout any time.
+            </Text>
+            <TouchableOpacity
+              style={styles.logButton}
+              onPress={() =>
+                navigation.navigate('Workout', { screen: 'StartWorkout' })
+              }
+              activeOpacity={0.85}
+            >
+              <Text style={styles.logButtonText}>Log a Workout</Text>
+            </TouchableOpacity>
           </View>
         )}
+      </>
+    );
+  };
+
+  return (
+    <View style={styles.container}>
+      {/* ── Calendar ── */}
+      <View style={styles.calendarWrap}>
+        {loading ? (
+          <View style={styles.calendarLoading}>
+            <ActivityIndicator size="small" color="#2563eb" />
+          </View>
+        ) : (
+          <Calendar
+            markedDates={updatedMarkedDates}
+            onDayPress={handleDayPress}
+            theme={{
+              backgroundColor: '#ffffff',
+              calendarBackground: '#ffffff',
+              todayTextColor: '#2563eb',
+              selectedDayBackgroundColor: '#2563eb',
+              selectedDayTextColor: '#ffffff',
+              arrowColor: '#2563eb',
+              monthTextColor: '#0f172a',
+              textMonthFontWeight: '700',
+              textDayFontWeight: '500',
+              textDayHeaderFontWeight: '600',
+              dayTextColor: '#0f172a',
+              textDisabledColor: '#cbd5e1',
+              dotColor: '#2563eb',
+            }}
+          />
+        )}
       </View>
+
+      {/* ── Divider ── */}
+      <View style={styles.divider} />
+
+      {/* ── Day panel ── */}
+      <View style={styles.dayPanel}>{renderDatePanel()}</View>
     </View>
   );
 }
@@ -219,77 +276,147 @@ const handleDayPress = async (day: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f7f8fc',
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
+
+  // ── Calendar ──
+  calendarWrap: {
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+  },
+  calendarLoading: {
+    height: 340,
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
   },
-  workoutsSection: {
+  divider: {
+    height: 1,
+    backgroundColor: '#e2e8f0',
+  },
+
+  // ── Day panel ──
+  dayPanel: {
     flex: 1,
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingTop: 16,
   },
-  sectionTitle: {
-    fontSize: 18,
+  dateLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 14,
+  },
+  dateLabel: {
+    fontSize: 15,
     fontWeight: '700',
-    color: '#1f2937',
-    marginBottom: 12,
+    color: '#0f172a',
+    letterSpacing: -0.2,
   },
-  listContent: {
-    paddingBottom: 16,
+  workoutDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: '#2563eb',
   },
+  dayListContent: {
+    paddingBottom: 20,
+  },
+  dayLoadingWrap: {
+    paddingTop: 32,
+    alignItems: 'center',
+  },
+
+  // ── No date selected ──
+  promptWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 12,
+  },
+  promptLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#e2e8f0',
+  },
+  promptText: {
+    fontSize: 13,
+    color: '#94a3b8',
+    fontWeight: '500',
+  },
+
+  // ── Day empty state ──
+  dayEmptyWrap: {
+    alignItems: 'center',
+    paddingTop: 24,
+    paddingHorizontal: 16,
+  },
+  dayEmptyTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#0f172a',
+    marginBottom: 6,
+  },
+  dayEmptySub: {
+    fontSize: 13,
+    color: '#94a3b8',
+    textAlign: 'center',
+    lineHeight: 19,
+    marginBottom: 20,
+  },
+  logButton: {
+    backgroundColor: '#2563eb',
+    borderRadius: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 11,
+  },
+  logButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+
+  // ── Workout cards ──
   workoutCard: {
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: '#e2e8f0',
+    padding: 14,
+    marginBottom: 10,
   },
   workoutHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   workoutTime: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
-    color: '#1f2937',
+    color: '#0f172a',
   },
   exerciseCount: {
-    fontSize: 14,
-    color: '#6b7280',
-  },
-  bodyPartsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  bodyPartTag: {
-    backgroundColor: '#eff6ff',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#3b82f6',
-  },
-  bodyPartText: {
-    fontSize: 14,
-    color: '#3b82f6',
+    fontSize: 13,
+    color: '#94a3b8',
     fontWeight: '500',
   },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 40,
+  tagsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
   },
-  emptyText: {
-    fontSize: 16,
-    color: '#6b7280',
-    textAlign: 'center',
+  tag: {
+    backgroundColor: '#eff6ff',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#dbeafe',
+  },
+  tagText: {
+    fontSize: 12,
+    color: '#2563eb',
+    fontWeight: '600',
   },
 });

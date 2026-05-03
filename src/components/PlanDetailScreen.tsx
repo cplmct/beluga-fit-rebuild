@@ -103,7 +103,22 @@ export function PlanDetailScreen({ route, navigation }: any) {
   if (!plan) {
     return (
       <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Plan not found.</Text>
+        <View style={styles.errorIconRing}>
+          <View style={styles.errorIconDot} />
+        </View>
+        <Text style={styles.errorTitle}>This plan isn't available</Text>
+        <Text style={styles.errorSub}>
+          The plan you're looking for couldn't be found. Browse available plans to find one that fits.
+        </Text>
+        {navigation.canGoBack() && (
+          <TouchableOpacity
+            style={styles.errorButton}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.errorButtonText}>Browse Plans</Text>
+          </TouchableOpacity>
+        )}
       </View>
     );
   }
@@ -620,5 +635,59 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: '#fff',
+  },
+
+  // ── Not found error ──
+  errorContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 40,
+    paddingBottom: 60,
+    backgroundColor: '#f7f8fc',
+  },
+  errorIconRing: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 2,
+    borderColor: '#e2e8f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  errorIconDot: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#cbd5e1',
+  },
+  errorTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0f172a',
+    letterSpacing: -0.3,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  errorSub: {
+    fontSize: 14,
+    color: '#64748b',
+    textAlign: 'center',
+    lineHeight: 21,
+    marginBottom: 28,
+  },
+  errorButton: {
+    backgroundColor: '#f1f5f9',
+    borderRadius: 12,
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  errorButtonText: {
+    color: '#0f172a',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
