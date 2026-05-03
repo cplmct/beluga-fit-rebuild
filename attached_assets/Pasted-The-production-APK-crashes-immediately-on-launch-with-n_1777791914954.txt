@@ -1,0 +1,68 @@
+The production APK crashes immediately on launch with no error screen visible.
+
+This is almost certainly caused by supabase.ts throwing an error during initialization
+or environment variables not being accessible in the production build.
+
+Step 1 — Check current supabase.ts content
+Open src/lib/supabase.ts and show me exactly what it contains right now.
+
+Step 2 — Replace supabase.ts with a crash-proof version
+
+import 'react-native-url-polyfill/auto'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
+
+const url = supabaseUrl?.trim()
+const key = supabaseAnonKey?.trim()
+
+const hasValidUrl = url && url.startsWith('https://')
+const hasValidKey = key && key.length > 20
+
+if (__DEV__) {
+  console.log('[Supabase] URL:', !!url, 'starts https:', hasValidUrl)
+  console.log('[Supabase] Key:', !!key, 'looks valid:', hasValidKey)
+}
+
+if (!hasValidUrl || !hasValidKey) {
+  if (__DEV__) {
+    console.error(
+      '[Supabase] Missing configuration',
+      'URL valid:', hasValidUrl,
+      'Key valid:', hasValidKey
+    )
+  }
+}
+
+const safeClient = createClient(
+  hasValidUrl ? url : 'https://empty.supabase.co',
+  hasValidKey ? key : 'empty',
+  {
+    auth: {
+      storage: AsyncStorage as any,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: false,
+    },
+  }
+)
+
+type ValidSupabaseClient = SupabaseClient & { options: { auth: { storage: any } } }
+
+export const supabase = safeClient as unknown as ValidSupabaseClient
+
+Step 3 — Stop the app from crashing on launch
+The app must open even if Supabase is not configured correctly.
+Environment variable issues should be logged to console but not crash the app.
+
+Step 4 — Restart Metro and test
+Run npx expo start --no-dev --minify
+and confirm the app starts and stays open in this mode.
+
+Step 5 — Rebuild production APK
+Run npx eas-cli build --profile production --platform android
+
+Do not change any screens or features.
+Only fix the crash and rebuild.
