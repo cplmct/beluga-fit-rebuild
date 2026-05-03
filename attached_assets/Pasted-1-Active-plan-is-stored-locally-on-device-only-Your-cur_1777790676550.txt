@@ -1,0 +1,21 @@
+1. Active plan is stored locally on-device only
+Your current workout plan state is saved in a local file (expo-file-system). If a user reinstalls the app, switches phones, or clears app data, their active plan and start date are permanently lost. Moving this to Supabase takes about an hour and makes the app feel significantly more trustworthy.
+
+2. No workout duration tracking
+The app records what exercises were done but not how long the workout took. Every fitness app shows this — it's one of the first things users expect to see in their history. This requires adding a started_at timestamp when the checklist opens and saving the duration on finish.
+
+3. Per-exercise history during a workout ("last time" prompt)
+Right now when you're about to do Bench Press, there's no way to know what weight you used last session. Adding "Last time: 3×8 @ 65 kg" above each exercise in the checklist is one of the highest-value features in fitness tracking — it drives progressive overload, which is the whole point.
+
+4. Personal records (PRs)
+No PR detection exists anywhere. The app could automatically flag when a user logs a new best weight or rep count for an exercise, and show a PR badge on the history card. This is a major motivator and a standard feature in serious fitness apps.
+
+5. No unit system toggle (metric / imperial)
+Body measurements and exercise weights have no unit attached. Users in the US, UK, and several other countries use pounds and inches. Without this, a large portion of potential users will find the app confusing or unusable. This needs a single setting stored on the profile and applied everywhere.
+
+6. CalendarScreen makes one database query per workout (N+1 problem)
+When the Calendar tab loads, it fires a separate Supabase request for every workout just to count its exercises. A user with 50 workouts in history triggers 50 sequential API calls every time they open that tab. This will become noticeably slow. The fix is a single joined query.
+
+7. No progress summary / stats page
+The app has a streak counter and a 7-day bar on the home screen, but no way to see "I did 18 workouts this month," "my total volume was X," or "I've gained 3 kg of muscle over 6 weeks." A simple monthly stats view would make the body tracker and history data feel purposeful.
+

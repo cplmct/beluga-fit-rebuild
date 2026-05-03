@@ -21,6 +21,7 @@ import {
   getWeekNumber,
   ActivePlanState,
 } from '../utils/activePlan';
+import { useAuth } from '../contexts/AuthContext';
 
 const DIFFICULTY_COLOR: Record<string, string> = {
   Beginner:     '#059669',
@@ -85,6 +86,7 @@ function DayAccordion({ day, index }: { day: PlanDay; index: number }) {
 export function PlanDetailScreen({ route, navigation }: any) {
   const { planId } = route.params;
   const plan = getPlanById(planId);
+  const { user } = useAuth();
 
   const [activePlan, setActivePlanState] = useState<ActivePlanState | null>(null);
   const [loading, setLoading] = useState(true);
@@ -93,11 +95,11 @@ export function PlanDetailScreen({ route, navigation }: any) {
   useFocusEffect(
     useCallback(() => {
       (async () => {
-        const ap = await getActivePlan();
+        const ap = user ? await getActivePlan(user.id) : null;
         setActivePlanState(ap);
         setLoading(false);
       })();
-    }, [])
+    }, [user?.id])
   );
 
   if (!plan) {
@@ -150,9 +152,10 @@ export function PlanDetailScreen({ route, navigation }: any) {
   };
 
   const confirmStartPlan = async () => {
+    if (!user) return;
     setSaving(true);
     try {
-      await setActivePlan(plan.id);
+      await setActivePlan(user.id, plan.id);
       setActivePlanState({ planId: plan.id, startDate: new Date().toISOString() });
     } finally {
       setSaving(false);
@@ -169,7 +172,7 @@ export function PlanDetailScreen({ route, navigation }: any) {
           text: 'Stop Plan',
           style: 'destructive',
           onPress: async () => {
-            await clearActivePlan();
+            if (user) await clearActivePlan(user.id);
             setActivePlanState(null);
           },
         },

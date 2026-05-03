@@ -2,22 +2,25 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { HomeScreen } from './HomeScreen';
 import { BodyTrackerScreen } from './BodyTrackerScreen';
+import { StatsScreen } from './StatsScreen';
 
 const Stack = createNativeStackNavigator();
 
+const sharedHeaderOptions = {
+  headerStyle: { backgroundColor: '#2563eb' },
+  headerTintColor: '#fff',
+  headerTitleStyle: { fontWeight: '600' as const },
+};
+
+const lightHeaderOptions = {
+  headerStyle: { backgroundColor: '#ffffff' },
+  headerTintColor: '#0f172a',
+  headerTitleStyle: { fontWeight: '600' as const, color: '#0f172a' },
+};
+
 export function HomeStackNavigator() {
   return (
-    <Stack.Navigator
-      screenOptions={{
-        headerStyle: {
-          backgroundColor: '#2563eb',
-        },
-        headerTintColor: '#fff',
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
-      }}
-    >
+    <Stack.Navigator screenOptions={sharedHeaderOptions}>
       <Stack.Screen
         name="HomeMain"
         component={HomeScreen}
@@ -26,7 +29,12 @@ export function HomeStackNavigator() {
       <Stack.Screen
         name="BodyTracker"
         component={BodyTrackerScreen}
-        options={{ title: 'Body Tracker' }}
+        options={{ title: 'Body Tracker', ...lightHeaderOptions }}
+      />
+      <Stack.Screen
+        name="Stats"
+        component={StatsScreen}
+        options={{ title: 'Progress & Stats', ...lightHeaderOptions }}
       />
     </Stack.Navigator>
   );

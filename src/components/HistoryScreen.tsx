@@ -9,7 +9,6 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
-import { safeQuery } from '../lib/safeSupabase';
 import { useAuth } from '../contexts/AuthContext';
 
 interface WorkoutSummary {
@@ -17,6 +16,16 @@ interface WorkoutSummary {
   date: string;
   body_parts: string[];
   exercise_count: number;
+  duration_seconds: number | null;
+}
+
+function formatDuration(seconds: number | null): string | null {
+  if (!seconds || seconds <= 0) return null;
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m`;
+  return `<1m`;
 }
 
 function SkeletonBlock({
@@ -58,7 +67,12 @@ function WorkoutCardSkeleton() {
 
 function EmptyIcon({ color = '#cbd5e1' }: { color?: string }) {
   return (
-    <View style={[styles.emptyIconRing, { borderColor: color === '#cbd5e1' ? '#e2e8f0' : '#fecaca' }]}>
+    <View
+      style={[
+        styles.emptyIconRing,
+        { borderColor: color === '#cbd5e1' ? '#e2e8f0' : '#fecaca' },
+      ]}
+    >
       <View style={[styles.emptyIconDot, { backgroundColor: color }]} />
     </View>
   );
@@ -82,34 +96,23 @@ export function HistoryScreen({ navigation }: any) {
       if (!user) return;
       setError('');
 
-      const workoutsData = await safeQuery<
-        Array<{ id: string; date: string; body_parts: string[] }>
-      >(
-        supabase
-          .from('workouts')
-          .select('id, date, body_parts')
-          .eq('user_id', user.id)
-          .order('date', { ascending: false })
-      );
+      const { data: workoutsData, error: queryError } = await supabase
+        .from('workouts')
+        .select('id, date, body_parts, duration_seconds, workout_exercises(count)')
+        .eq('user_id', user.id)
+        .order('date', { ascending: false });
 
-      const workoutsWithCounts = await Promise.all(
-        (workoutsData || []).map(async (workout) => {
-          const countResult = await safeQuery<{ count: number }>(
-            supabase
-              .from('workout_exercises')
-              .select('*', { count: 'exact', head: true })
-              .eq('workout_id', workout.id)
-          );
-          return {
-            id: workout.id,
-            date: workout.date,
-            body_parts: workout.body_parts || [],
-            exercise_count: (countResult as any)?.count || 0,
-          };
-        })
-      );
+      if (queryError) throw queryError;
 
-      setWorkouts(workoutsWithCounts);
+      const mapped: WorkoutSummary[] = (workoutsData || []).map((w: any) => ({
+        id: w.id,
+        date: w.date,
+        body_parts: w.body_parts || [],
+        duration_seconds: w.duration_seconds ?? null,
+        exercise_count: w.workout_exercises?.[0]?.count || 0,
+      }));
+
+      setWorkouts(mapped);
     } catch (err: any) {
       setError(
         'Something went wrong loading your history. Check your connection and try again.'
@@ -135,30 +138,38 @@ export function HistoryScreen({ navigation }: any) {
     });
   };
 
-  const renderWorkoutItem = ({ item }: { item: WorkoutSummary }) => (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => navigation.navigate('WorkoutDetails', { workoutId: item.id })}
-      activeOpacity={0.82}
-    >
-      <View style={styles.cardHeader}>
-        <Text style={styles.cardDate}>{formatDate(item.date)}</Text>
-        <Text style={styles.cardCount}>
-          {item.exercise_count}{' '}
-          {item.exercise_count === 1 ? 'exercise' : 'exercises'}
-        </Text>
-      </View>
-      {item.body_parts.length > 0 && (
-        <View style={styles.tagsRow}>
-          {item.body_parts.map((part) => (
-            <View key={part} style={styles.tag}>
-              <Text style={styles.tagText}>{part}</Text>
-            </View>
-          ))}
+  const renderWorkoutItem = ({ item }: { item: WorkoutSummary }) => {
+    const durationLabel = formatDuration(item.duration_seconds);
+    return (
+      <TouchableOpacity
+        style={styles.card}
+        onPress={() => navigation.navigate('WorkoutDetails', { workoutId: item.id })}
+        activeOpacity={0.82}
+      >
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardDate}>{formatDate(item.date)}</Text>
+          <View style={styles.cardMeta}>
+            {durationLabel && (
+              <Text style={styles.cardDuration}>{durationLabel}</Text>
+            )}
+            <Text style={styles.cardCount}>
+              {item.exercise_count}{' '}
+              {item.exercise_count === 1 ? 'exercise' : 'exercises'}
+            </Text>
+          </View>
         </View>
-      )}
-    </TouchableOpacity>
-  );
+        {item.body_parts.length > 0 && (
+          <View style={styles.tagsRow}>
+            {item.body_parts.map((part) => (
+              <View key={part} style={styles.tag}>
+                <Text style={styles.tagText}>{part}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   if (loading) {
     return (
@@ -205,9 +216,7 @@ export function HistoryScreen({ navigation }: any) {
           </Text>
           <TouchableOpacity
             style={styles.primaryButton}
-            onPress={() =>
-              navigation.navigate('Workout', { screen: 'StartWorkout' })
-            }
+            onPress={() => navigation.navigate('Workout', { screen: 'StartWorkout' })}
             activeOpacity={0.85}
           >
             <Text style={styles.primaryButtonText}>Start a Workout</Text>
@@ -259,13 +268,23 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 10,
   },
   cardDate: {
     fontSize: 15,
     fontWeight: '600',
     color: '#0f172a',
+    flex: 1,
+  },
+  cardMeta: {
+    alignItems: 'flex-end',
+    gap: 2,
+  },
+  cardDuration: {
+    fontSize: 12,
+    color: '#2563eb',
+    fontWeight: '600',
   },
   cardCount: {
     fontSize: 13,

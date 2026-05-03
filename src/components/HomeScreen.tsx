@@ -10,6 +10,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useUnits } from '../contexts/UnitsContext';
 import { getActivePlan, ActivePlanState, getWeekNumber } from '../utils/activePlan';
 import { getPlanById, PLAN_CATEGORIES } from '../data/workoutPlans';
 
@@ -201,6 +202,7 @@ function HomeSkeleton() {
 
 export function HomeScreen({ navigation }: any) {
   const { user } = useAuth();
+  const { weightUnit } = useUnits();
   const [data, setData] = useState<DashboardData>({
     profileName: '',
     todayWorkout: null,
@@ -241,7 +243,7 @@ export function HomeScreen({ navigation }: any) {
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle(),
-        getActivePlan(),
+        getActivePlan(user!.id),
       ]);
 
       setActivePlanState(ap);
@@ -383,7 +385,12 @@ export function HomeScreen({ navigation }: any) {
 
       {/* ── Streak Card ── */}
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>STREAK</Text>
+        <View style={styles.sectionRow}>
+          <Text style={styles.sectionLabel}>STREAK</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Stats')}>
+            <Text style={styles.sectionLink}>View stats</Text>
+          </TouchableOpacity>
+        </View>
         <StreakCard
           streak={data.streak}
           weeklyCount={data.weeklyCount}
@@ -493,7 +500,7 @@ export function HomeScreen({ navigation }: any) {
               <View>
                 <Text style={styles.bodyWeight}>
                   {data.latestWeight.value}{' '}
-                  <Text style={styles.bodyWeightUnit}>lbs</Text>
+                  <Text style={styles.bodyWeightUnit}>{weightUnit}</Text>
                 </Text>
                 <Text style={styles.bodyWeightDate}>
                   Last logged{' '}

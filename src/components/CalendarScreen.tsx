@@ -10,7 +10,6 @@ import {
 import { Calendar } from 'react-native-calendars';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
-import { safeQuery } from '../lib/safeSupabase';
 import { useAuth } from '../contexts/AuthContext';
 
 interface WorkoutSummary {
@@ -38,33 +37,14 @@ export function CalendarScreen({ navigation }: any) {
     try {
       if (!user) return;
 
-      const workoutsData = await safeQuery<
-        Array<{ id: string; date: string; body_parts: string[] }>
-      >(
-        supabase
-          .from('workouts')
-          .select('id, date, body_parts')
-          .eq('user_id', user.id)
-          .order('date', { ascending: false })
-      );
-
-      const workoutsWithCounts = await Promise.all(
-        (workoutsData || []).map(async (workout) => {
-          const { count } = await supabase
-            .from('workout_exercises')
-            .select('*', { count: 'exact', head: true })
-            .eq('workout_id', workout.id);
-          return {
-            id: workout.id,
-            date: workout.date,
-            body_parts: workout.body_parts || [],
-            exercise_count: count || 0,
-          };
-        })
-      );
+      const { data: workoutsData } = await supabase
+        .from('workouts')
+        .select('id, date, body_parts, workout_exercises(count)')
+        .eq('user_id', user.id)
+        .order('date', { ascending: false });
 
       const marked: any = {};
-      workoutsWithCounts.forEach((workout) => {
+      (workoutsData || []).forEach((workout: any) => {
         const dateKey = workout.date.split('T')[0];
         marked[dateKey] = { marked: true, dotColor: '#2563eb' };
       });
@@ -89,32 +69,20 @@ export function CalendarScreen({ navigation }: any) {
       const endDate = new Date(day.dateString);
       endDate.setHours(23, 59, 59, 999);
 
-      const workoutsData = await safeQuery<
-        Array<{ id: string; date: string; body_parts: string[] }>
-      >(
-        supabase
-          .from('workouts')
-          .select('id, date, body_parts')
-          .eq('user_id', user.id)
-          .gte('date', startDate.toISOString())
-          .lte('date', endDate.toISOString())
-          .order('date', { ascending: false })
-      );
+      const { data: workoutsData } = await supabase
+        .from('workouts')
+        .select('id, date, body_parts, workout_exercises(count)')
+        .eq('user_id', user.id)
+        .gte('date', startDate.toISOString())
+        .lte('date', endDate.toISOString())
+        .order('date', { ascending: false });
 
-      const workoutsWithCounts = await Promise.all(
-        (workoutsData || []).map(async (workout) => {
-          const { count } = await supabase
-            .from('workout_exercises')
-            .select('*', { count: 'exact', head: true })
-            .eq('workout_id', workout.id);
-          return {
-            id: workout.id,
-            date: workout.date,
-            body_parts: workout.body_parts || [],
-            exercise_count: count || 0,
-          };
-        })
-      );
+      const workoutsWithCounts: WorkoutSummary[] = (workoutsData || []).map((w: any) => ({
+        id: w.id,
+        date: w.date,
+        body_parts: w.body_parts || [],
+        exercise_count: w.workout_exercises?.[0]?.count || 0,
+      }));
 
       setWorkoutsForDate(workoutsWithCounts);
     } catch (err) {
@@ -141,9 +109,7 @@ export function CalendarScreen({ navigation }: any) {
   const renderWorkoutItem = ({ item }: { item: WorkoutSummary }) => (
     <TouchableOpacity
       style={styles.workoutCard}
-      onPress={() =>
-        navigation.navigate('WorkoutDetails', { workoutId: item.id })
-      }
+      onPress={() => navigation.navigate('WorkoutDetails', { workoutId: item.id })}
       activeOpacity={0.82}
     >
       <View style={styles.workoutHeader}>
@@ -199,9 +165,7 @@ export function CalendarScreen({ navigation }: any) {
       <>
         <View style={styles.dateLabelRow}>
           <Text style={styles.dateLabel}>{formatSelectedDate(selectedDate)}</Text>
-          {markedDates[selectedDate] && (
-            <View style={styles.workoutDot} />
-          )}
+          {markedDates[selectedDate] && <View style={styles.workoutDot} />}
         </View>
 
         {workoutsForDate.length > 0 ? (
@@ -220,9 +184,7 @@ export function CalendarScreen({ navigation }: any) {
             </Text>
             <TouchableOpacity
               style={styles.logButton}
-              onPress={() =>
-                navigation.navigate('Workout', { screen: 'StartWorkout' })
-              }
+              onPress={() => navigation.navigate('Workout', { screen: 'StartWorkout' })}
               activeOpacity={0.85}
             >
               <Text style={styles.logButtonText}>Log a Workout</Text>
@@ -235,7 +197,6 @@ export function CalendarScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      {/* ── Calendar ── */}
       <View style={styles.calendarWrap}>
         {loading ? (
           <View style={styles.calendarLoading}>
@@ -264,10 +225,8 @@ export function CalendarScreen({ navigation }: any) {
         )}
       </View>
 
-      {/* ── Divider ── */}
       <View style={styles.divider} />
 
-      {/* ── Day panel ── */}
       <View style={styles.dayPanel}>{renderDatePanel()}</View>
     </View>
   );
@@ -278,8 +237,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f7f8fc',
   },
-
-  // ── Calendar ──
   calendarWrap: {
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
@@ -294,8 +251,6 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#e2e8f0',
   },
-
-  // ── Day panel ──
   dayPanel: {
     flex: 1,
     paddingHorizontal: 20,
@@ -326,8 +281,6 @@ const styles = StyleSheet.create({
     paddingTop: 32,
     alignItems: 'center',
   },
-
-  // ── No date selected ──
   promptWrap: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -344,8 +297,6 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     fontWeight: '500',
   },
-
-  // ── Day empty state ──
   dayEmptyWrap: {
     alignItems: 'center',
     paddingTop: 24,
@@ -375,8 +326,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
-
-  // ── Workout cards ──
   workoutCard: {
     backgroundColor: '#ffffff',
     borderRadius: 12,

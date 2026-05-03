@@ -3,6 +3,7 @@ import { NavigationContainer, useNavigationContainerRef } from '@react-navigatio
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
+import { UnitsProvider } from './src/contexts/UnitsContext';
 import { AuthStackNavigator } from './src/components/AuthStackNavigator';
 import { BottomTabNavigator } from './src/components/BottomTabNavigator';
 import { OnboardingScreen } from './src/components/OnboardingScreen';
@@ -52,7 +53,9 @@ function AppContent() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <UnitsProvider>
+        <AppContent />
+      </UnitsProvider>
     </AuthProvider>
   );
 }

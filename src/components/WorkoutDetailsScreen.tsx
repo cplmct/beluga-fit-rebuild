@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { supabase } from '../lib/supabase';
+import { useUnits } from '../contexts/UnitsContext';
 
 interface WorkoutExercise {
   id: string;
@@ -16,13 +17,25 @@ interface WorkoutExercise {
   reps: number;
   weight: number | null;
   completed: boolean;
+  is_pr: boolean;
 }
 
 interface Workout {
   id: string;
   date: string;
   body_parts: string[];
+  duration_seconds: number | null;
   exercises: WorkoutExercise[];
+}
+
+function formatDuration(seconds: number | null): string {
+  if (!seconds || seconds <= 0) return '—';
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
 }
 
 function SkeletonBlock({
@@ -54,10 +67,10 @@ function WorkoutDetailsSkeleton() {
         <SkeletonBlock width={100} height={14} />
       </View>
       <View style={styles.summaryCard}>
-        {[0, 1, 2].map((i) => (
+        {[0, 1, 2, 3].map((i) => (
           <View key={i} style={{ alignItems: 'center', flex: 1, gap: 6 }}>
             <SkeletonBlock width={40} height={20} />
-            <SkeletonBlock width={64} height={12} />
+            <SkeletonBlock width={52} height={11} />
           </View>
         ))}
       </View>
@@ -73,10 +86,10 @@ function WorkoutDetailsSkeleton() {
               <SkeletonBlock width={80} height={12} />
             </View>
           </View>
-          <View style={{ flexDirection: 'row', gap: 16 }}>
-            <SkeletonBlock width={60} height={36} radius={8} />
-            <SkeletonBlock width={60} height={36} radius={8} />
-            <SkeletonBlock width={80} height={36} radius={8} />
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <SkeletonBlock width={60} height={40} radius={8} />
+            <SkeletonBlock width={60} height={40} radius={8} />
+            <SkeletonBlock width={80} height={40} radius={8} />
           </View>
         </View>
       ))}
@@ -86,6 +99,7 @@ function WorkoutDetailsSkeleton() {
 
 export function WorkoutDetailsScreen({ route, navigation }: any) {
   const { workoutId } = route.params;
+  const { weightUnit } = useUnits();
   const [workout, setWorkout] = useState<Workout | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -117,6 +131,7 @@ export function WorkoutDetailsScreen({ route, navigation }: any) {
         id: workoutData.id,
         date: workoutData.date,
         body_parts: workoutData.body_parts || [],
+        duration_seconds: workoutData.duration_seconds ?? null,
         exercises: exercisesData || [],
       });
     } catch (err) {
@@ -176,6 +191,7 @@ export function WorkoutDetailsScreen({ route, navigation }: any) {
 
   const completedCount = workout.exercises.filter((ex) => ex.completed).length;
   const totalCount = workout.exercises.length;
+  const prCount = workout.exercises.filter((ex) => ex.is_pr).length;
 
   return (
     <View style={styles.container}>
@@ -189,13 +205,6 @@ export function WorkoutDetailsScreen({ route, navigation }: any) {
         {/* ── Summary ── */}
         <View style={styles.summaryCard}>
           <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Body Parts</Text>
-            <Text style={styles.summaryValue} numberOfLines={2}>
-              {workout.body_parts.join(', ') || '—'}
-            </Text>
-          </View>
-          <View style={styles.summaryDivider} />
-          <View style={styles.summaryItem}>
             <Text style={styles.summaryLabel}>Exercises</Text>
             <Text style={styles.summaryValue}>{totalCount}</Text>
           </View>
@@ -206,6 +215,20 @@ export function WorkoutDetailsScreen({ route, navigation }: any) {
               {completedCount}/{totalCount}
             </Text>
           </View>
+          <View style={styles.summaryDivider} />
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>Duration</Text>
+            <Text style={styles.summaryValue}>{formatDuration(workout.duration_seconds)}</Text>
+          </View>
+          {prCount > 0 && (
+            <>
+              <View style={styles.summaryDivider} />
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryLabel}>PRs</Text>
+                <Text style={[styles.summaryValue, styles.prValue]}>{prCount}</Text>
+              </View>
+            </>
+          )}
         </View>
 
         {/* ── Exercises ── */}
@@ -231,20 +254,25 @@ export function WorkoutDetailsScreen({ route, navigation }: any) {
                 <View
                   style={[
                     styles.statusDot,
-                    exercise.completed
-                      ? styles.statusDotCompleted
-                      : styles.statusDotIncomplete,
+                    exercise.completed ? styles.statusDotCompleted : styles.statusDotIncomplete,
                   ]}
                 />
                 <View style={styles.exerciseInfo}>
-                  <Text
-                    style={[
-                      styles.exerciseName,
-                      exercise.completed && styles.exerciseNameCompleted,
-                    ]}
-                  >
-                    {exercise.exercise_name}
-                  </Text>
+                  <View style={styles.exerciseTitleRow}>
+                    <Text
+                      style={[
+                        styles.exerciseName,
+                        exercise.completed && styles.exerciseNameCompleted,
+                      ]}
+                    >
+                      {exercise.exercise_name}
+                    </Text>
+                    {exercise.is_pr && (
+                      <View style={styles.prBadge}>
+                        <Text style={styles.prBadgeText}>PR</Text>
+                      </View>
+                    )}
+                  </View>
                   <Text style={styles.bodyPartLabel}>{exercise.body_part}</Text>
                 </View>
               </View>
@@ -261,7 +289,9 @@ export function WorkoutDetailsScreen({ route, navigation }: any) {
                 {exercise.weight != null && (
                   <View style={styles.detailItem}>
                     <Text style={styles.detailLabel}>Weight</Text>
-                    <Text style={styles.detailValue}>{exercise.weight} lbs</Text>
+                    <Text style={styles.detailValue}>
+                      {exercise.weight} {weightUnit}
+                    </Text>
                   </View>
                 )}
               </View>
@@ -323,7 +353,7 @@ const styles = StyleSheet.create({
     marginVertical: 12,
   },
   summaryLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
     color: '#94a3b8',
     letterSpacing: 0.5,
@@ -335,6 +365,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#0f172a',
     textAlign: 'center',
+  },
+  prValue: {
+    color: '#f59e0b',
   },
 
   // ── Section ──
@@ -403,14 +436,33 @@ const styles = StyleSheet.create({
   exerciseInfo: {
     flex: 1,
   },
+  exerciseTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 2,
+  },
   exerciseName: {
     fontSize: 16,
     fontWeight: '600',
     color: '#0f172a',
-    marginBottom: 2,
   },
   exerciseNameCompleted: {
     color: '#10b981',
+  },
+  prBadge: {
+    backgroundColor: '#fef3c7',
+    borderRadius: 5,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderWidth: 1,
+    borderColor: '#fde68a',
+  },
+  prBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#d97706',
+    letterSpacing: 0.5,
   },
   bodyPartLabel: {
     fontSize: 12,
@@ -419,7 +471,7 @@ const styles = StyleSheet.create({
   },
   exerciseDetails: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
     paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: '#f1f5f9',
@@ -432,7 +484,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   detailLabel: {
-    fontSize: 11,
+    fontSize: 10,
     color: '#94a3b8',
     fontWeight: '600',
     textTransform: 'uppercase',
@@ -440,7 +492,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   detailValue: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     color: '#0f172a',
   },

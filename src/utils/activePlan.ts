@@ -1,41 +1,46 @@
-import * as FileSystem from 'expo-file-system';
-
-const ACTIVE_PLAN_FILE = FileSystem.documentDirectory + 'belugafit_active_plan.json';
+import { supabase } from '../lib/supabase';
 
 export interface ActivePlanState {
   planId: string;
   startDate: string;
 }
 
-export async function getActivePlan(): Promise<ActivePlanState | null> {
+export async function getActivePlan(userId: string): Promise<ActivePlanState | null> {
   try {
-    const info = await FileSystem.getInfoAsync(ACTIVE_PLAN_FILE);
-    if (!info.exists) return null;
-    const content = await FileSystem.readAsStringAsync(ACTIVE_PLAN_FILE);
-    return JSON.parse(content) as ActivePlanState;
+    const { data } = await supabase
+      .from('profiles')
+      .select('active_plan_id, active_plan_start_date')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (!data?.active_plan_id) return null;
+    return {
+      planId: data.active_plan_id,
+      startDate: data.active_plan_start_date,
+    };
   } catch {
     return null;
   }
 }
 
-export async function setActivePlan(planId: string): Promise<void> {
-  const state: ActivePlanState = {
-    planId,
-    startDate: new Date().toISOString(),
-  };
-  await FileSystem.writeAsStringAsync(
-    ACTIVE_PLAN_FILE,
-    JSON.stringify(state),
-    { encoding: FileSystem.EncodingType.UTF8 }
-  );
+export async function setActivePlan(userId: string, planId: string): Promise<void> {
+  await supabase
+    .from('profiles')
+    .upsert({
+      id: userId,
+      active_plan_id: planId,
+      active_plan_start_date: new Date().toISOString(),
+    });
 }
 
-export async function clearActivePlan(): Promise<void> {
-  try {
-    await FileSystem.deleteAsync(ACTIVE_PLAN_FILE, { idempotent: true });
-  } catch {
-    // ignore
-  }
+export async function clearActivePlan(userId: string): Promise<void> {
+  await supabase
+    .from('profiles')
+    .update({
+      active_plan_id: null,
+      active_plan_start_date: null,
+    })
+    .eq('id', userId);
 }
 
 export function getWeekNumber(startDate: string): number {

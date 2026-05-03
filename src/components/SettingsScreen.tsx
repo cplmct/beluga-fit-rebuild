@@ -9,6 +9,7 @@ import {
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Constants from 'expo-constants';
 import { useAuth } from '../contexts/AuthContext';
+import { useUnits } from '../contexts/UnitsContext';
 import { supabase } from '../lib/supabase';
 import { getPrefs, formatTime, NotifPrefs, DEFAULT_PREFS } from '../utils/notifications';
 
@@ -84,6 +85,7 @@ function SkeletonBlock({
 export function SettingsScreen() {
   const navigation = useNavigation();
   const { user, signOut } = useAuth();
+  const { unitSystem, updateUnitSystem } = useUnits();
 
   const [profileName, setProfileName] = useState('');
   const [profileLoading, setProfileLoading] = useState(true);
@@ -158,6 +160,39 @@ export function SettingsScreen() {
           <Text style={styles.profileChevron}>›</Text>
         </View>
       </TouchableOpacity>
+
+      {/* ── Preferences ── */}
+      <SectionLabel title="Preferences" />
+      <View style={styles.card}>
+        <View style={styles.navRow}>
+          <View style={styles.navRowLeft}>
+            <Text style={styles.navRowLabel}>Unit System</Text>
+            <Text style={styles.navRowSub}>
+              {unitSystem === 'metric' ? 'Metric — weights in kg, measurements in cm' : 'Imperial — weights in lbs, measurements in in'}
+            </Text>
+          </View>
+          <View style={styles.unitToggleRow}>
+            <TouchableOpacity
+              style={[styles.unitOption, unitSystem === 'metric' && styles.unitOptionActive]}
+              onPress={() => updateUnitSystem('metric')}
+              activeOpacity={0.75}
+            >
+              <Text style={[styles.unitOptionText, unitSystem === 'metric' && styles.unitOptionTextActive]}>
+                kg
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.unitOption, unitSystem === 'imperial' && styles.unitOptionActive]}
+              onPress={() => updateUnitSystem('imperial')}
+              activeOpacity={0.75}
+            >
+              <Text style={[styles.unitOptionText, unitSystem === 'imperial' && styles.unitOptionTextActive]}>
+                lbs
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
 
       {/* ── Notifications ── */}
       <SectionLabel title="Notifications" />
@@ -376,6 +411,32 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#0f172a',
+  },
+
+  // ── Unit toggle ──
+  unitToggleRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  unitOption: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#e2e8f0',
+    backgroundColor: '#f8fafc',
+  },
+  unitOptionActive: {
+    backgroundColor: '#2563eb',
+    borderColor: '#2563eb',
+  },
+  unitOptionText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#64748b',
+  },
+  unitOptionTextActive: {
+    color: '#ffffff',
   },
 
   // ── Version ──
