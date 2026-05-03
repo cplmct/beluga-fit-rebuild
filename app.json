@@ -88,7 +88,8 @@
     "extra": {
       "eas": {
         "projectId": "322e2792-29c9-4977-ad75-f5e21def0be4"
-      }
+      },
+      "privacyPolicyUrl": "https://belugafit.tranbtc.com/privacy"
     }
   }
 }

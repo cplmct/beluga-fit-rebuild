@@ -9,8 +9,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Linking,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
+
+const PRIVACY_URL = 'https://belugafit.tranbtc.com/privacy';
 
 export function RegisterScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
@@ -135,7 +138,13 @@ export function RegisterScreen({ navigation }: any) {
           {/* Privacy notice inside form, before the CTA */}
           <View style={styles.inlinePrivacy}>
             <Text style={styles.inlinePrivacyText}>
-              Your data is used to save your fitness progress across devices. It is not sold.
+              Your data is used to save your fitness progress across devices. It is not sold.{' '}
+              <Text
+                style={styles.inlinePrivacyLink}
+                onPress={() => Linking.openURL(PRIVACY_URL)}
+              >
+                Privacy Policy
+              </Text>
             </Text>
           </View>
 
@@ -298,6 +307,11 @@ const styles = StyleSheet.create({
     color: '#64748b',
     lineHeight: 18,
     fontWeight: '400',
+  },
+  inlinePrivacyLink: {
+    color: '#2563eb',
+    fontWeight: '500',
+    textDecorationLine: 'underline',
   },
 
   // ── Primary button ──
