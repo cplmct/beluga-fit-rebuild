@@ -1,7 +1,6 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SettingsScreen } from './SettingsScreen';
-import { LegalScreen } from './LegalScreen';
 import { DeleteAccountScreen } from './DeleteAccountScreen';
 import { PrivacyPolicyScreen } from './PrivacyPolicyScreen';
 import { TermsOfUseScreen } from './TermsOfUseScreen';
@@ -28,11 +27,6 @@ export function SettingsStackNavigator() {
         name="SettingsMain"
         component={SettingsScreen}
         options={{ title: 'Settings' }}
-      />
-      <Stack.Screen
-        name="Legal"
-        component={LegalScreen}
-        options={{ title: 'Privacy & Legal' }}
       />
       <Stack.Screen
         name="PrivacyPolicy"

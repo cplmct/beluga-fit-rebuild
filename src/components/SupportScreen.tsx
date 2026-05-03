@@ -35,7 +35,7 @@ const FAQ: FaqItem[] = [
   {
     question: 'How do I update my profile information?',
     answer:
-      'Go to Settings and edit your name, age, gender, height, or weight in the Personal Information section. Tap Save Profile when done.',
+      'Go to Settings and edit your name, age, gender, height, or weight in the Personal Details section. Tap Save Changes when done.',
   },
   {
     question: 'How do I reset my password?',
