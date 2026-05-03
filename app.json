@@ -12,7 +12,6 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "privacy": "public",
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
@@ -30,8 +29,6 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.tranbtc.belugafitworkout",
-      "compileSdkVersion": 34,
-      "targetSdkVersion": 34,
       "permissions": ["INTERNET", "VIBRATE"]
     },
     "plugins": [
@@ -39,9 +36,9 @@
         "expo-build-properties",
         {
           "android": {
-            "compileSdkVersion": 34,
-            "targetSdkVersion": 34,
-            "kotlinVersion": "1.9.24"
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "kotlinVersion": "2.1.0"
           }
         }
       ],
