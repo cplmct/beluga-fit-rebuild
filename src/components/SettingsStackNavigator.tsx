@@ -1,6 +1,7 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SettingsScreen } from './SettingsScreen';
+import { ProfileScreen } from './ProfileScreen';
 import { DeleteAccountScreen } from './DeleteAccountScreen';
 import { PrivacyPolicyScreen } from './PrivacyPolicyScreen';
 import { TermsOfUseScreen } from './TermsOfUseScreen';
@@ -31,6 +32,16 @@ export function SettingsStackNavigator() {
         options={{ title: 'Settings' }}
       />
       <Stack.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{ title: 'My Profile', ...lightHeaderOptions }}
+      />
+      <Stack.Screen
+        name="NotificationSettings"
+        component={NotificationSettingsScreen}
+        options={{ title: 'Daily Reminders', ...sharedHeaderOptions }}
+      />
+      <Stack.Screen
         name="PrivacyPolicy"
         component={PrivacyPolicyScreen}
         options={{ title: 'Privacy Policy', ...sharedHeaderOptions }}
@@ -44,11 +55,6 @@ export function SettingsStackNavigator() {
         name="Support"
         component={SupportScreen}
         options={{ title: 'Support & Contact', ...sharedHeaderOptions }}
-      />
-      <Stack.Screen
-        name="NotificationSettings"
-        component={NotificationSettingsScreen}
-        options={{ title: 'Daily Reminders', ...sharedHeaderOptions }}
       />
       <Stack.Screen
         name="GettingStarted"

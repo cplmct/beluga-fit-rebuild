@@ -1,12 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Constants from 'expo-constants';
@@ -16,15 +14,6 @@ import { getPrefs, formatTime, NotifPrefs, DEFAULT_PREFS } from '../utils/notifi
 
 const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 
-interface Profile {
-  id: string;
-  name: string;
-  height: string;
-  weight: string;
-  gender: string;
-  age: string;
-}
-
 function getInitials(name: string, email: string): string {
   if (name?.trim()) return name.trim()[0].toUpperCase();
   if (email?.trim()) return email.trim()[0].toUpperCase();
@@ -33,8 +22,10 @@ function getInitials(name: string, email: string): string {
 
 function formatMemberSince(dateStr: string | undefined): string {
   if (!dateStr) return '';
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  return new Date(dateStr).toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric',
+  });
 }
 
 function SectionLabel({ title }: { title: string }) {
@@ -47,30 +38,45 @@ function RowDivider() {
 
 function NavRow({
   label,
+  sub,
   onPress,
   destructive = false,
+  rightElement,
 }: {
   label: string;
+  sub?: string;
   onPress: () => void;
   destructive?: boolean;
+  rightElement?: React.ReactNode;
 }) {
   return (
     <TouchableOpacity style={styles.navRow} onPress={onPress} activeOpacity={0.65}>
-      <Text style={destructive ? styles.navRowLabelDestructive : styles.navRowLabel}>
-        {label}
-      </Text>
-      <Text style={styles.navRowChevron}>›</Text>
+      <View style={styles.navRowLeft}>
+        <Text style={destructive ? styles.navRowLabelDestructive : styles.navRowLabel}>
+          {label}
+        </Text>
+        {sub ? <Text style={styles.navRowSub}>{sub}</Text> : null}
+      </View>
+      <View style={styles.navRowRight}>
+        {rightElement ?? null}
+        <Text style={styles.navRowChevron}>›</Text>
+      </View>
     </TouchableOpacity>
   );
 }
 
-function SkeletonBlock({ width, height = 14 }: { width: number | string; height?: number }) {
+function SkeletonBlock({
+  width,
+  height = 14,
+  radius = 6,
+}: {
+  width: number | string;
+  height?: number;
+  radius?: number;
+}) {
   return (
     <View
-      style={[
-        styles.skeletonBlock,
-        { width: width as any, height },
-      ]}
+      style={{ width: width as any, height, borderRadius: radius, backgroundColor: '#f1f5f9' }}
     />
   );
 }
@@ -78,26 +84,14 @@ function SkeletonBlock({ width, height = 14 }: { width: number | string; height?
 export function SettingsScreen() {
   const navigation = useNavigation();
   const { user, signOut } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [profile, setProfile] = useState<Profile>({
-    id: '',
-    name: '',
-    height: '',
-    weight: '',
-    gender: '',
-    age: '',
-  });
-  const [notifPrefs, setNotifPrefs] = useState<NotifPrefs>({ ...DEFAULT_PREFS });
 
-  useEffect(() => {
-    loadProfile();
-  }, []);
+  const [profileName, setProfileName] = useState('');
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [notifPrefs, setNotifPrefs] = useState<NotifPrefs>({ ...DEFAULT_PREFS });
 
   useFocusEffect(
     useCallback(() => {
+      loadProfile();
       getPrefs().then(setNotifPrefs);
     }, [])
   );
@@ -105,60 +99,23 @@ export function SettingsScreen() {
   const loadProfile = async () => {
     if (!user) return;
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('profiles')
-        .select('*')
+        .select('name')
         .eq('id', user.id)
         .maybeSingle();
-      if (error) throw error;
-      if (data) {
-        setProfile({
-          id: data.id,
-          name: data.name || '',
-          height: data.height?.toString() || '',
-          weight: data.weight?.toString() || '',
-          gender: data.gender || '',
-          age: data.age?.toString() || '',
-        });
-      }
-    } catch (err: any) {
-      setError(err.message);
+      setProfileName(data?.name || '');
+    } catch {
+      // ignore — profile card will still show email initial
     } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSave = async () => {
-    if (!user) return;
-    setSaving(true);
-    setError('');
-    setSuccess('');
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          name: profile.name || null,
-          height: profile.height ? parseFloat(profile.height) : null,
-          weight: profile.weight ? parseFloat(profile.weight) : null,
-          gender: profile.gender || null,
-          age: profile.age ? parseInt(profile.age) : null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', user.id);
-      if (error) throw error;
-      setSuccess('Profile saved.');
-      setTimeout(() => setSuccess(''), 2500);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
+      setProfileLoading(false);
     }
   };
 
   const authEmail = user?.email ?? '';
   const memberSince = formatMemberSince(user?.created_at);
-  const initials = getInitials(profile.name, authEmail);
-  const displayName = profile.name.trim() || 'Your Name';
+  const initials = getInitials(profileName, authEmail);
+  const displayName = profileName.trim() || authEmail.split('@')[0] || 'Your Profile';
 
   return (
     <ScrollView
@@ -166,157 +123,76 @@ export function SettingsScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      {/* ── Profile Summary ── */}
-      <View style={styles.profileCard}>
-        {loading ? (
-          <View style={styles.profileCardInner}>
-            <SkeletonBlock width={64} height={64} />
-            <View style={styles.profileCardText}>
-              <SkeletonBlock width={140} height={16} />
-              <View style={{ height: 6 }} />
-              <SkeletonBlock width={180} height={13} />
-              <View style={{ height: 6 }} />
-              <SkeletonBlock width={110} height={12} />
-            </View>
-          </View>
-        ) : (
-          <View style={styles.profileCardInner}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{initials}</Text>
-            </View>
-            <View style={styles.profileCardText}>
-              <Text style={styles.profileName}>{displayName}</Text>
-              <Text style={styles.profileEmail}>{authEmail}</Text>
-              {memberSince ? (
-                <Text style={styles.profileMeta}>Member since {memberSince}</Text>
-              ) : null}
-            </View>
-          </View>
-        )}
-      </View>
-
-      {/* ── Feedback banners ── */}
-      {error ? (
-        <View style={styles.errorBanner}>
-          <Text style={styles.errorBannerText}>{error}</Text>
-        </View>
-      ) : null}
-      {success ? (
-        <View style={styles.successBanner}>
-          <Text style={styles.successBannerText}>{success}</Text>
-        </View>
-      ) : null}
-
-      {/* ── Personal Details ── */}
-      <SectionLabel title="Personal Details" />
-      <View style={styles.card}>
-        {loading ? (
-          <View style={styles.skeletonForm}>
-            {[160, 200, 80, 120, 100, 100].map((w, i) => (
-              <View key={i} style={{ marginBottom: 20 }}>
-                <SkeletonBlock width={70} height={11} />
+      {/* ── Profile card ── */}
+      <TouchableOpacity
+        style={styles.profileCard}
+        onPress={() => navigation.navigate('Profile' as never)}
+        activeOpacity={0.78}
+      >
+        <View style={styles.profileCardInner}>
+          {profileLoading ? (
+            <>
+              <SkeletonBlock width={56} height={56} radius={28} />
+              <View style={styles.profileCardText}>
+                <SkeletonBlock width={130} height={15} />
                 <View style={{ height: 6 }} />
-                <SkeletonBlock width={w} height={42} />
+                <SkeletonBlock width={170} height={12} />
+                <View style={{ height: 5 }} />
+                <SkeletonBlock width={100} height={11} />
               </View>
-            ))}
-          </View>
-        ) : (
-          <>
-            <Field
-              label="Name"
-              placeholder="Add your name"
-              value={profile.name}
-              onChangeText={(t) => setProfile({ ...profile, name: t })}
-              editable={!saving}
-            />
-            <Field
-              label="Age"
-              placeholder="—"
-              value={profile.age}
-              onChangeText={(t) => setProfile({ ...profile, age: t })}
-              keyboardType="numeric"
-              editable={!saving}
-            />
-            <Field
-              label="Gender"
-              placeholder="—"
-              value={profile.gender}
-              onChangeText={(t) => setProfile({ ...profile, gender: t })}
-              editable={!saving}
-            />
-            <Field
-              label="Height (inches)"
-              placeholder="—"
-              value={profile.height}
-              onChangeText={(t) => setProfile({ ...profile, height: t })}
-              keyboardType="numeric"
-              editable={!saving}
-            />
-            <Field
-              label="Weight (lbs)"
-              placeholder="—"
-              value={profile.weight}
-              onChangeText={(t) => setProfile({ ...profile, weight: t })}
-              keyboardType="numeric"
-              editable={!saving}
-              last
-            />
-            <TouchableOpacity
-              style={[styles.saveButton, saving && styles.saveButtonDisabled]}
-              onPress={handleSave}
-              disabled={saving}
-              activeOpacity={0.85}
-            >
-              {saving ? (
-                <ActivityIndicator color="#fff" size="small" />
-              ) : (
-                <Text style={styles.saveButtonText}>Save Changes</Text>
-              )}
-            </TouchableOpacity>
-          </>
-        )}
-      </View>
+            </>
+          ) : (
+            <>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>{initials}</Text>
+              </View>
+              <View style={styles.profileCardText}>
+                <Text style={styles.profileName}>{displayName}</Text>
+                <Text style={styles.profileEmail} numberOfLines={1}>{authEmail}</Text>
+                {memberSince ? (
+                  <Text style={styles.profileMeta}>Member since {memberSince}</Text>
+                ) : null}
+              </View>
+            </>
+          )}
+          <Text style={styles.profileChevron}>›</Text>
+        </View>
+      </TouchableOpacity>
 
       {/* ── Notifications ── */}
       <SectionLabel title="Notifications" />
       <View style={styles.card}>
-        <TouchableOpacity
-          style={styles.navRow}
-          onPress={() => navigation.navigate('NotificationSettings' as never)}
-          activeOpacity={0.65}
-        >
-          <View style={styles.navRowLeft}>
-            <Text style={styles.navRowLabel}>Daily Reminders</Text>
-            {notifPrefs.enabled ? (
-              <Text style={styles.navRowSub}>
-                Every day at {formatTime(notifPrefs.hour, notifPrefs.minute)}
-              </Text>
-            ) : null}
-          </View>
-          <View style={styles.navRowRight}>
-            {notifPrefs.enabled && <View style={styles.activeIndicator} />}
-            <Text style={styles.navRowChevron}>›</Text>
-          </View>
-        </TouchableOpacity>
-      </View>
-
-      {/* ── Help ── */}
-      <SectionLabel title="Help" />
-      <View style={styles.card}>
         <NavRow
-          label="Getting Started"
-          onPress={() => navigation.navigate('GettingStarted' as never)}
+          label="Daily Reminders"
+          sub={
+            notifPrefs.enabled
+              ? `Every day at ${formatTime(notifPrefs.hour, notifPrefs.minute)}`
+              : 'Off'
+          }
+          onPress={() => navigation.navigate('NotificationSettings' as never)}
+          rightElement={
+            notifPrefs.enabled ? <View style={styles.activeIndicator} /> : undefined
+          }
         />
       </View>
 
       {/* ── Privacy & Legal ── */}
       <SectionLabel title="Privacy & Legal" />
       <View style={styles.card}>
-        <NavRow label="Privacy Policy" onPress={() => navigation.navigate('PrivacyPolicy' as never)} />
+        <NavRow
+          label="Privacy Policy"
+          onPress={() => navigation.navigate('PrivacyPolicy' as never)}
+        />
         <RowDivider />
-        <NavRow label="Terms of Use" onPress={() => navigation.navigate('TermsOfUse' as never)} />
+        <NavRow
+          label="Terms of Use"
+          onPress={() => navigation.navigate('TermsOfUse' as never)}
+        />
         <RowDivider />
-        <NavRow label="Support & Contact" onPress={() => navigation.navigate('Support' as never)} />
+        <NavRow
+          label="Support & Contact"
+          onPress={() => navigation.navigate('Support' as never)}
+        />
       </View>
 
       {/* ── Account ── */}
@@ -326,6 +202,15 @@ export function SettingsScreen() {
           label="Delete Account"
           onPress={() => navigation.navigate('DeleteAccount' as never)}
           destructive
+        />
+      </View>
+
+      {/* ── Help ── */}
+      <SectionLabel title="Help" />
+      <View style={styles.card}>
+        <NavRow
+          label="Getting Started"
+          onPress={() => navigation.navigate('GettingStarted' as never)}
         />
       </View>
 
@@ -341,46 +226,6 @@ export function SettingsScreen() {
       {/* ── App Version ── */}
       <Text style={styles.versionText}>Beluga Fit · Version {APP_VERSION}</Text>
     </ScrollView>
-  );
-}
-
-type FieldProps = {
-  label: string;
-  placeholder: string;
-  value: string;
-  onChangeText: (t: string) => void;
-  keyboardType?: 'default' | 'numeric' | 'email-address';
-  editable?: boolean;
-  last?: boolean;
-};
-
-function Field({
-  label,
-  placeholder,
-  value,
-  onChangeText,
-  keyboardType = 'default',
-  editable = true,
-  last = false,
-}: FieldProps) {
-  const [focused, setFocused] = useState(false);
-  return (
-    <View style={[styles.fieldGroup, last && { marginBottom: 0 }]}>
-      <Text style={styles.fieldLabel}>{label}</Text>
-      <TextInput
-        style={[styles.fieldInput, focused && styles.fieldInputFocused]}
-        placeholder={placeholder}
-        placeholderTextColor="#94a3b8"
-        value={value}
-        onChangeText={onChangeText}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        keyboardType={keyboardType}
-        autoCapitalize="none"
-        autoCorrect={false}
-        editable={editable}
-      />
-    </View>
   );
 }
 
@@ -401,18 +246,18 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: '#e2e8f0',
-    padding: 20,
-    marginBottom: 20,
+    padding: 16,
+    marginBottom: 24,
   },
   profileCardInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 14,
   },
   avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: '#2563eb',
     alignItems: 'center',
     justifyContent: 'center',
@@ -420,7 +265,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     color: '#ffffff',
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '700',
     letterSpacing: -0.5,
   },
@@ -428,50 +273,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   profileName: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
     color: '#0f172a',
     letterSpacing: -0.3,
-    marginBottom: 3,
+    marginBottom: 2,
   },
   profileEmail: {
     fontSize: 13,
     color: '#64748b',
-    marginBottom: 3,
+    marginBottom: 2,
   },
   profileMeta: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#94a3b8',
   },
-
-  // ── Banners ──
-  errorBanner: {
-    backgroundColor: '#fef2f2',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#fecaca',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginBottom: 16,
-  },
-  errorBannerText: {
-    fontSize: 13,
-    color: '#dc2626',
-    lineHeight: 19,
-  },
-  successBanner: {
-    backgroundColor: '#f0fdf4',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#bbf7d0',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginBottom: 16,
-  },
-  successBannerText: {
-    fontSize: 13,
-    color: '#15803d',
-    lineHeight: 19,
+  profileChevron: {
+    fontSize: 22,
+    color: '#cbd5e1',
+    lineHeight: 26,
   },
 
   // ── Section label ──
@@ -518,7 +338,7 @@ const styles = StyleSheet.create({
   },
   navRowSub: {
     fontSize: 12,
-    color: '#64748b',
+    color: '#94a3b8',
     marginTop: 2,
   },
   navRowLabelDestructive: {
@@ -542,52 +362,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#e2e8f0',
   },
 
-  // ── Form fields ──
-  skeletonForm: {
-    paddingVertical: 8,
-  },
-  fieldGroup: {
-    marginBottom: 16,
-  },
-  fieldLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#64748b',
-    marginBottom: 6,
-    letterSpacing: 0.1,
-  },
-  fieldInput: {
-    backgroundColor: '#f8fafc',
-    borderWidth: 1.5,
-    borderColor: '#e2e8f0',
-    borderRadius: 10,
-    paddingHorizontal: 13,
-    paddingVertical: 11,
-    fontSize: 15,
-    color: '#0f172a',
-  },
-  fieldInputFocused: {
-    borderColor: '#2563eb',
-    backgroundColor: '#ffffff',
-  },
-  saveButton: {
-    backgroundColor: '#2563eb',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 16,
-    marginBottom: 4,
-  },
-  saveButtonDisabled: {
-    backgroundColor: '#93c5fd',
-  },
-  saveButtonText: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontWeight: '700',
-    letterSpacing: -0.2,
-  },
-
   // ── Sign out ──
   signOutButton: {
     backgroundColor: '#ffffff',
@@ -596,7 +370,7 @@ const styles = StyleSheet.create({
     borderColor: '#e2e8f0',
     paddingVertical: 16,
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 28,
   },
   signOutText: {
     fontSize: 15,
@@ -610,11 +384,5 @@ const styles = StyleSheet.create({
     color: '#cbd5e1',
     textAlign: 'center',
     letterSpacing: 0.2,
-  },
-
-  // ── Skeleton ──
-  skeletonBlock: {
-    backgroundColor: '#e2e8f0',
-    borderRadius: 6,
   },
 });
