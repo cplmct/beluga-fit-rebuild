@@ -105,8 +105,16 @@ export function SettingsScreen() {
     navigation.navigate('DeleteAccount' as never);
   };
 
-  const handleLegalInfo = () => {
-    navigation.navigate('Legal' as never);
+  const handlePrivacyPolicy = () => {
+    navigation.navigate('PrivacyPolicy' as never);
+  };
+
+  const handleTermsOfUse = () => {
+    navigation.navigate('TermsOfUse' as never);
+  };
+
+  const handleSupport = () => {
+    navigation.navigate('Support' as never);
   };
 
   if (loading) {
@@ -228,14 +236,30 @@ export function SettingsScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Account & Privacy</Text>
+        <Text style={styles.sectionTitle}>Privacy & Legal</Text>
 
-        <TouchableOpacity style={styles.listRow} onPress={handleLegalInfo} activeOpacity={0.7}>
-          <Text style={styles.listRowText}>Legal Information</Text>
+        <TouchableOpacity style={styles.listRow} onPress={handlePrivacyPolicy} activeOpacity={0.7}>
+          <Text style={styles.listRowText}>Privacy Policy</Text>
           <Text style={styles.listRowArrow}>›</Text>
         </TouchableOpacity>
 
         <View style={styles.divider} />
+
+        <TouchableOpacity style={styles.listRow} onPress={handleTermsOfUse} activeOpacity={0.7}>
+          <Text style={styles.listRowText}>Terms of Use</Text>
+          <Text style={styles.listRowArrow}>›</Text>
+        </TouchableOpacity>
+
+        <View style={styles.divider} />
+
+        <TouchableOpacity style={styles.listRow} onPress={handleSupport} activeOpacity={0.7}>
+          <Text style={styles.listRowText}>Support & Contact</Text>
+          <Text style={styles.listRowArrow}>›</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Account</Text>
 
         <TouchableOpacity style={styles.listRow} onPress={handleDeleteAccount} activeOpacity={0.7}>
           <Text style={styles.listRowDestructive}>Delete Account</Text>
