@@ -10,12 +10,12 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { WORKOUT_TEMPLATES } from '../data/workoutTemplates';
+import { getActivePlan, ActivePlanState, getWeekNumber } from '../utils/activePlan';
+import { getPlanById, PLAN_CATEGORIES } from '../data/workoutPlans';
 
 interface TodayWorkout {
   bodyParts: string[];
   exerciseCount: number;
-  workoutId: string;
 }
 
 interface DashboardData {
@@ -35,32 +35,21 @@ function getGreeting(): string {
 
 function toLocalDateStr(dateString: string): string {
   const d = new Date(dateString);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 function todayStr(): string {
   const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  const d = String(now.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
 
 function computeStreak(dates: string[]): number {
   if (dates.length === 0) return 0;
   const unique = [...new Set(dates.map(toLocalDateStr))].sort().reverse();
-  const today = todayStr();
   let streak = 0;
-  let cursor = new Date(today);
+  const cursor = new Date(todayStr());
   for (const d of unique) {
-    const curStr = [
-      cursor.getFullYear(),
-      String(cursor.getMonth() + 1).padStart(2, '0'),
-      String(cursor.getDate()).padStart(2, '0'),
-    ].join('-');
+    const curStr = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${String(cursor.getDate()).padStart(2, '0')}`;
     if (d === curStr) {
       streak++;
       cursor.setDate(cursor.getDate() - 1);
@@ -80,6 +69,7 @@ export function HomeScreen({ navigation }: any) {
     streak: 0,
     latestWeight: null,
   });
+  const [activePlan, setActivePlanState] = useState<ActivePlanState | null>(null);
   const [loading, setLoading] = useState(true);
 
   useFocusEffect(
@@ -94,12 +84,8 @@ export function HomeScreen({ navigation }: any) {
       const sixtyDaysAgo = new Date();
       sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
 
-      const [profileRes, workoutsRes, weightRes] = await Promise.all([
-        supabase
-          .from('profiles')
-          .select('name')
-          .eq('id', user!.id)
-          .maybeSingle(),
+      const [profileRes, workoutsRes, weightRes, ap] = await Promise.all([
+        supabase.from('profiles').select('name').eq('id', user!.id).maybeSingle(),
         supabase
           .from('workouts')
           .select('id, date, body_parts')
@@ -114,14 +100,14 @@ export function HomeScreen({ navigation }: any) {
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle(),
+        getActivePlan(),
       ]);
+
+      setActivePlanState(ap);
 
       const workouts = workoutsRes.data || [];
       const today = todayStr();
-
-      const todayWorkouts = workouts.filter(
-        (w) => toLocalDateStr(w.date) === today
-      );
+      const todayWorkouts = workouts.filter((w) => toLocalDateStr(w.date) === today);
 
       let todayWorkout: TodayWorkout | null = null;
       if (todayWorkouts.length > 0) {
@@ -129,12 +115,8 @@ export function HomeScreen({ navigation }: any) {
           .from('workout_exercises')
           .select('id')
           .eq('workout_id', todayWorkouts[0].id);
-        const allParts = [
-          ...new Set(todayWorkouts.flatMap((w) => w.body_parts || [])),
-        ];
         todayWorkout = {
-          workoutId: todayWorkouts[0].id,
-          bodyParts: allParts,
+          bodyParts: [...new Set(todayWorkouts.flatMap((w) => w.body_parts || []))],
           exerciseCount: exRows?.length || 0,
         };
       }
@@ -144,22 +126,15 @@ export function HomeScreen({ navigation }: any) {
       const monday = new Date(now);
       monday.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1));
       monday.setHours(0, 0, 0, 0);
-      const weeklyCount = workouts.filter(
-        (w) => new Date(w.date) >= monday
-      ).length;
-
-      const streak = computeStreak(workouts.map((w) => w.date));
-
-      const latestWeight = weightRes.data
-        ? { value: weightRes.data.weight, date: weightRes.data.created_at }
-        : null;
 
       setData({
         profileName: profileRes.data?.name || '',
         todayWorkout,
-        weeklyCount,
-        streak,
-        latestWeight,
+        weeklyCount: workouts.filter((w) => new Date(w.date) >= monday).length,
+        streak: computeStreak(workouts.map((w) => w.date)),
+        latestWeight: weightRes.data
+          ? { value: weightRes.data.weight, date: weightRes.data.created_at }
+          : null,
       });
     } catch (err) {
       if (__DEV__) console.error('HomeScreen:', err);
@@ -168,10 +143,10 @@ export function HomeScreen({ navigation }: any) {
     }
   };
 
-  const displayName =
-    data.profileName ||
-    user?.email?.split('@')[0] ||
-    'Athlete';
+  const displayName = data.profileName || user?.email?.split('@')[0] || 'Athlete';
+  const activePlanData = activePlan ? getPlanById(activePlan.planId) : null;
+  const activePlanCat = activePlanData ? PLAN_CATEGORIES[activePlanData.category] : null;
+  const weekNumber = activePlan ? getWeekNumber(activePlan.startDate) : null;
 
   const formattedDate = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -215,9 +190,7 @@ export function HomeScreen({ navigation }: any) {
                 {data.todayWorkout.bodyParts.join(' · ')}
                 {'  ·  '}
                 {data.todayWorkout.exerciseCount}{' '}
-                {data.todayWorkout.exerciseCount === 1
-                  ? 'exercise'
-                  : 'exercises'}
+                {data.todayWorkout.exerciseCount === 1 ? 'exercise' : 'exercises'}
               </Text>
             </View>
             <TouchableOpacity
@@ -230,9 +203,7 @@ export function HomeScreen({ navigation }: any) {
         ) : (
           <TouchableOpacity
             style={styles.todayStartCard}
-            onPress={() =>
-              navigation.navigate('Workout', { screen: 'StartWorkout' })
-            }
+            onPress={() => navigation.navigate('Workout', { screen: 'StartWorkout' })}
             activeOpacity={0.88}
           >
             <View style={styles.todayStartLeft}>
@@ -257,46 +228,92 @@ export function HomeScreen({ navigation }: any) {
         <View style={styles.statDivider} />
         <View style={styles.statBlock}>
           <Text style={styles.statNumber}>{data.streak}</Text>
-          <Text style={styles.statLabel}>
-            {data.streak === 1 ? 'Day' : 'Day'} streak
-          </Text>
+          <Text style={styles.statLabel}>Day streak</Text>
         </View>
       </View>
 
-      {/* ── Plans ── */}
+      {/* ── Active Plan ── */}
       <View style={styles.section}>
         <View style={styles.sectionRow}>
-          <Text style={styles.sectionLabel}>PLANS</Text>
+          <Text style={styles.sectionLabel}>YOUR PLAN</Text>
           <TouchableOpacity
-            onPress={() =>
-              navigation.navigate('Workout', { screen: 'Templates' })
-            }
+            onPress={() => navigation.navigate('Workout', { screen: 'PlanLibrary' })}
           >
-            <Text style={styles.sectionLink}>Browse all</Text>
+            <Text style={styles.sectionLink}>
+              {activePlanData ? 'Browse plans' : 'Find a plan'}
+            </Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.plansCard}>
-          {WORKOUT_TEMPLATES.slice(0, 3).map((t, i) => (
-            <TouchableOpacity
-              key={t.id}
-              style={[
-                styles.planRow,
-                i < 2 && styles.planRowBorder,
-              ]}
-              onPress={() =>
-                navigation.navigate('Workout', { screen: 'Templates' })
-              }
-              activeOpacity={0.75}
-            >
-              <View style={styles.planRowLeft}>
-                <Text style={styles.planRowName}>{t.name}</Text>
-                <Text style={styles.planRowDesc}>{t.description}</Text>
+        {activePlanData && activePlanCat ? (
+          <TouchableOpacity
+            style={[styles.activePlanCard, { borderTopColor: activePlanCat.color }]}
+            onPress={() =>
+              navigation.navigate('Workout', {
+                screen: 'PlanDetail',
+                params: { planId: activePlanData.id },
+              })
+            }
+            activeOpacity={0.85}
+          >
+            <View style={styles.activePlanTop}>
+              <View
+                style={[styles.activePlanBadge, { backgroundColor: activePlanCat.accent }]}
+              >
+                <Text style={[styles.activePlanBadgeText, { color: activePlanCat.color }]}>
+                  {activePlanCat.label}
+                </Text>
               </View>
-              <Text style={styles.planRowArrow}>›</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+              <Text style={styles.activePlanWeek}>
+                Week {weekNumber} of {activePlanData.durationWeeks}
+              </Text>
+            </View>
+            <Text style={styles.activePlanTitle}>{activePlanData.title}</Text>
+            <View style={styles.activePlanMeta}>
+              <Text style={styles.activePlanMetaText}>
+                {activePlanData.workoutsPerWeek}x / week
+              </Text>
+              <Text style={styles.activePlanMetaDot}>·</Text>
+              <Text style={styles.activePlanMetaText}>
+                {activePlanData.difficulty}
+              </Text>
+              <Text style={styles.activePlanMetaDot}>·</Text>
+              <Text style={styles.activePlanMetaText}>
+                {activePlanData.equipmentLevel}
+              </Text>
+            </View>
+
+            {/* Progress bar */}
+            <View style={styles.progressBarTrack}>
+              <View
+                style={[
+                  styles.progressBarFill,
+                  {
+                    backgroundColor: activePlanCat.color,
+                    width: `${Math.min(
+                      ((weekNumber! - 1) / activePlanData.durationWeeks) * 100,
+                      100
+                    )}%`,
+                  },
+                ]}
+              />
+            </View>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={styles.noPlanCard}
+            onPress={() => navigation.navigate('Workout', { screen: 'PlanLibrary' })}
+            activeOpacity={0.85}
+          >
+            <View style={styles.noPlanLeft}>
+              <Text style={styles.noPlanTitle}>No active plan</Text>
+              <Text style={styles.noPlanSub}>
+                Choose a structured plan to guide your training
+              </Text>
+            </View>
+            <Text style={styles.noPlanArrow}>›</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* ── Body Progress ── */}
@@ -322,10 +339,10 @@ export function HomeScreen({ navigation }: any) {
                 </Text>
                 <Text style={styles.bodyWeightDate}>
                   Last logged{' '}
-                  {new Date(data.latestWeight.date).toLocaleDateString(
-                    'en-US',
-                    { month: 'short', day: 'numeric' }
-                  )}
+                  {new Date(data.latestWeight.date).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                  })}
                 </Text>
               </View>
               <Text style={styles.bodyArrow}>›</Text>
@@ -333,9 +350,7 @@ export function HomeScreen({ navigation }: any) {
           ) : (
             <View style={styles.bodyCardInner}>
               <View>
-                <Text style={styles.bodyEmptyTitle}>
-                  No measurements logged
-                </Text>
+                <Text style={styles.bodyEmptyTitle}>No measurements logged</Text>
                 <Text style={styles.bodyEmptySub}>
                   Track weight and body measurements over time
                 </Text>
@@ -367,9 +382,7 @@ const styles = StyleSheet.create({
   },
 
   // ── Header ──
-  header: {
-    marginBottom: 28,
-  },
+  header: { marginBottom: 28 },
   headerDate: {
     fontSize: 12,
     fontWeight: '600',
@@ -378,11 +391,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     marginBottom: 10,
   },
-  headerGreeting: {
-    fontSize: 15,
-    fontWeight: '400',
-    color: '#64748b',
-  },
+  headerGreeting: { fontSize: 15, fontWeight: '400', color: '#64748b' },
   headerName: {
     fontSize: 30,
     fontWeight: '700',
@@ -393,9 +402,7 @@ const styles = StyleSheet.create({
   },
 
   // ── Section chrome ──
-  section: {
-    marginBottom: 24,
-  },
+  section: { marginBottom: 24 },
   sectionLabel: {
     fontSize: 11,
     fontWeight: '700',
@@ -410,13 +417,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
-  sectionLink: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#2563eb',
-  },
+  sectionLink: { fontSize: 13, fontWeight: '600', color: '#2563eb' },
 
-  // ── Today: start card ──
+  // ── Today: start ──
   todayStartCard: {
     backgroundColor: '#2563eb',
     borderRadius: 14,
@@ -425,35 +428,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  todayStartLeft: {
-    flex: 1,
-    paddingRight: 16,
-  },
-  todayStartHint: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#93c5fd',
-    marginBottom: 4,
-  },
-  todayStartCta: {
-    fontSize: 19,
-    fontWeight: '700',
-    color: '#ffffff',
-    letterSpacing: -0.3,
-  },
+  todayStartLeft: { flex: 1, paddingRight: 16 },
+  todayStartHint: { fontSize: 12, fontWeight: '500', color: '#93c5fd', marginBottom: 4 },
+  todayStartCta: { fontSize: 19, fontWeight: '700', color: '#ffffff', letterSpacing: -0.3 },
   todayStartBadge: {
     backgroundColor: 'rgba(255,255,255,0.18)',
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
-  todayStartBadgeText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#ffffff',
-  },
+  todayStartBadgeText: { fontSize: 14, fontWeight: '700', color: '#ffffff' },
 
-  // ── Today: done card ──
+  // ── Today: done ──
   todayDoneCard: {
     backgroundColor: '#ffffff',
     borderRadius: 14,
@@ -463,36 +449,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     overflow: 'hidden',
   },
-  todayDoneAccent: {
-    width: 4,
-    alignSelf: 'stretch',
-    backgroundColor: '#10b981',
-  },
-  todayDoneBody: {
-    flex: 1,
-    paddingVertical: 18,
-    paddingHorizontal: 16,
-  },
-  todayDoneTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#0f172a',
-    marginBottom: 4,
-  },
-  todayDoneSub: {
-    fontSize: 13,
-    color: '#64748b',
-    fontWeight: '400',
-  },
-  todayDoneLink: {
-    paddingHorizontal: 18,
-    paddingVertical: 18,
-  },
-  todayDoneLinkText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#2563eb',
-  },
+  todayDoneAccent: { width: 4, alignSelf: 'stretch', backgroundColor: '#10b981' },
+  todayDoneBody: { flex: 1, paddingVertical: 18, paddingHorizontal: 16 },
+  todayDoneTitle: { fontSize: 15, fontWeight: '700', color: '#0f172a', marginBottom: 4 },
+  todayDoneSub: { fontSize: 13, color: '#64748b' },
+  todayDoneLink: { paddingHorizontal: 18, paddingVertical: 18 },
+  todayDoneLinkText: { fontSize: 13, fontWeight: '600', color: '#2563eb' },
 
   // ── Stats ──
   statsCard: {
@@ -503,11 +465,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom: 24,
   },
-  statBlock: {
-    flex: 1,
-    paddingVertical: 20,
-    alignItems: 'center',
-  },
+  statBlock: { flex: 1, paddingVertical: 20, alignItems: 'center' },
   statNumber: {
     fontSize: 32,
     fontWeight: '700',
@@ -515,56 +473,68 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
     marginBottom: 4,
   },
-  statLabel: {
-    fontSize: 12,
-    color: '#94a3b8',
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-  statDivider: {
-    width: 1,
-    backgroundColor: '#e2e8f0',
-    marginVertical: 16,
-  },
+  statLabel: { fontSize: 12, color: '#94a3b8', fontWeight: '500', textAlign: 'center' },
+  statDivider: { width: 1, backgroundColor: '#e2e8f0', marginVertical: 16 },
 
-  // ── Plans ──
-  plansCard: {
-    backgroundColor: '#ffffff',
+  // ── Active plan ──
+  activePlanCard: {
+    backgroundColor: '#fff',
     borderRadius: 14,
     borderWidth: 1,
     borderColor: '#e2e8f0',
-    overflow: 'hidden',
+    borderTopWidth: 3,
+    padding: 18,
   },
-  planRow: {
+  activePlanTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  activePlanBadge: {
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  activePlanBadgeText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.3 },
+  activePlanWeek: { fontSize: 12, color: '#94a3b8', fontWeight: '600' },
+  activePlanTitle: {
+    fontSize: 19,
+    fontWeight: '700',
+    color: '#0f172a',
+    letterSpacing: -0.3,
+    marginBottom: 6,
+  },
+  activePlanMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 18,
-    paddingVertical: 16,
+    gap: 6,
+    marginBottom: 16,
   },
-  planRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+  activePlanMetaText: { fontSize: 12, color: '#64748b', fontWeight: '500' },
+  activePlanMetaDot: { fontSize: 12, color: '#cbd5e1' },
+  progressBarTrack: {
+    height: 4,
+    backgroundColor: '#f1f5f9',
+    borderRadius: 2,
+    overflow: 'hidden',
   },
-  planRowLeft: {
-    flex: 1,
+  progressBarFill: { height: '100%', borderRadius: 2, minWidth: 4 },
+
+  // ── No plan ──
+  noPlanCard: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    padding: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  planRowName: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#0f172a',
-    marginBottom: 2,
-  },
-  planRowDesc: {
-    fontSize: 12,
-    color: '#94a3b8',
-    fontWeight: '400',
-  },
-  planRowArrow: {
-    fontSize: 22,
-    color: '#cbd5e1',
-    fontWeight: '300',
-    marginLeft: 12,
-  },
+  noPlanLeft: { flex: 1 },
+  noPlanTitle: { fontSize: 15, fontWeight: '600', color: '#0f172a', marginBottom: 4 },
+  noPlanSub: { fontSize: 13, color: '#94a3b8', lineHeight: 18 },
+  noPlanArrow: { fontSize: 22, color: '#cbd5e1', marginLeft: 12 },
 
   // ── Body ──
   bodyCard: {
@@ -587,32 +557,9 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
     marginBottom: 4,
   },
-  bodyWeightUnit: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#64748b',
-  },
-  bodyWeightDate: {
-    fontSize: 12,
-    color: '#94a3b8',
-    fontWeight: '400',
-  },
-  bodyArrow: {
-    fontSize: 22,
-    color: '#cbd5e1',
-    fontWeight: '300',
-  },
-  bodyEmptyTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#0f172a',
-    marginBottom: 4,
-  },
-  bodyEmptySub: {
-    fontSize: 12,
-    color: '#94a3b8',
-    fontWeight: '400',
-    maxWidth: 220,
-    lineHeight: 17,
-  },
+  bodyWeightUnit: { fontSize: 16, fontWeight: '500', color: '#64748b' },
+  bodyWeightDate: { fontSize: 12, color: '#94a3b8' },
+  bodyArrow: { fontSize: 22, color: '#cbd5e1' },
+  bodyEmptyTitle: { fontSize: 15, fontWeight: '600', color: '#0f172a', marginBottom: 4 },
+  bodyEmptySub: { fontSize: 12, color: '#94a3b8', maxWidth: 220, lineHeight: 17 },
 });

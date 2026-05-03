@@ -4,34 +4,59 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 export function StartWorkoutScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Ready to Work Out?</Text>
-      <Text style={styles.subtitle}>Choose how you want to start</Text>
+      <Text style={styles.title}>Start a Workout</Text>
+      <Text style={styles.subtitle}>Choose how you want to train today</Text>
 
-      <View style={styles.optionsContainer}>
+      <View style={styles.options}>
+        <TouchableOpacity
+          style={styles.optionCard}
+          onPress={() => navigation.navigate('PlanLibrary')}
+          activeOpacity={0.85}
+        >
+          <View style={[styles.optionIconBox, { backgroundColor: '#eff6ff' }]}>
+            <Text style={styles.optionIconText}>📋</Text>
+          </View>
+          <View style={styles.optionText}>
+            <Text style={styles.optionTitle}>Workout Plans</Text>
+            <Text style={styles.optionDesc}>
+              Browse structured multi-week programs and commit to a plan
+            </Text>
+          </View>
+          <Text style={styles.optionArrow}>›</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity
           style={styles.optionCard}
           onPress={() => navigation.navigate('Templates')}
+          activeOpacity={0.85}
         >
-          <View style={styles.optionIconContainer}>
-            <Text style={styles.optionIconText}>📋</Text>
+          <View style={[styles.optionIconBox, { backgroundColor: '#f0fdf4' }]}>
+            <Text style={styles.optionIconText}>⚡</Text>
           </View>
-          <Text style={styles.optionTitle}>Use a Plan</Text>
-          <Text style={styles.optionDescription}>
-            Start with a structured pre-built workout
-          </Text>
+          <View style={styles.optionText}>
+            <Text style={styles.optionTitle}>Quick Start</Text>
+            <Text style={styles.optionDesc}>
+              Jump into a single pre-built session — Push, Pull, Legs, or Full Body
+            </Text>
+          </View>
+          <Text style={styles.optionArrow}>›</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.optionCard}
           onPress={() => navigation.navigate('BodyParts')}
+          activeOpacity={0.85}
         >
-          <View style={styles.optionIconContainer}>
+          <View style={[styles.optionIconBox, { backgroundColor: '#fdf4ff' }]}>
             <Text style={styles.optionIconText}>💪</Text>
           </View>
-          <Text style={styles.optionTitle}>Custom Workout</Text>
-          <Text style={styles.optionDescription}>
-            Build your own workout from the exercise library
-          </Text>
+          <View style={styles.optionText}>
+            <Text style={styles.optionTitle}>Custom Workout</Text>
+            <Text style={styles.optionDesc}>
+              Build your own session from the full exercise library
+            </Text>
+          </View>
+          <Text style={styles.optionArrow}>›</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -41,55 +66,65 @@ export function StartWorkoutScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f7f8fc',
     padding: 20,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 8,
-    marginTop: 40,
-    textAlign: 'center',
+    fontSize: 26,
+    fontWeight: '700',
+    color: '#0f172a',
+    marginTop: 16,
+    marginBottom: 6,
+    letterSpacing: -0.4,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#6b7280',
-    marginBottom: 40,
-    textAlign: 'center',
+    fontSize: 15,
+    color: '#64748b',
+    marginBottom: 32,
+    fontWeight: '400',
   },
-  optionsContainer: {
-    gap: 16,
+  options: {
+    gap: 12,
   },
   optionCard: {
     backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    borderColor: '#e2e8f0',
+    padding: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
   },
-  optionIconContainer: {
-    marginBottom: 12,
+  optionIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
   },
   optionIconText: {
-    fontSize: 40,
+    fontSize: 24,
+  },
+  optionText: {
+    flex: 1,
   },
   optionTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '700',
-    color: '#1f2937',
-    marginBottom: 6,
+    color: '#0f172a',
+    marginBottom: 3,
+    letterSpacing: -0.2,
   },
-  optionDescription: {
-    fontSize: 14,
-    color: '#6b7280',
-    textAlign: 'center',
-    lineHeight: 20,
+  optionDesc: {
+    fontSize: 13,
+    color: '#64748b',
+    lineHeight: 18,
+  },
+  optionArrow: {
+    fontSize: 22,
+    color: '#cbd5e1',
+    flexShrink: 0,
   },
 });
