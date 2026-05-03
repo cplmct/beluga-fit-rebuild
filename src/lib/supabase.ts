@@ -1,32 +1,32 @@
 import 'react-native-url-polyfill/auto'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
 
-const resolvedUrl = supabaseUrl?.trim()
-const resolvedKey = supabaseAnonKey?.trim()
+const url = supabaseUrl?.trim()
+const key = supabaseAnonKey?.trim()
 
-const isValidUrl = resolvedUrl?.startsWith('https://')
-const isValidKey = resolvedKey && resolvedKey.length > 20
+const hasValidUrl = url?.startsWith('https://')
+const hasValidKey = key && key.length > 20
 
 if (__DEV__) {
-  console.log('Supabase URL available:', !!resolvedUrl)
-  console.log('Supabase Key available:', !!resolvedKey)
-  console.log('URL starts with https:', !!isValidUrl)
-  console.log('Key looks valid:', !!isValidKey)
+  console.log('[Supabase] URL present:', !!url)
+  console.log('[Supabase] Key present:', !!key)
+  console.log('[Supabase] URL valid:', !!hasValidUrl)
+  console.log('[Supabase] Key valid:', !!hasValidKey)
 }
 
-if (!isValidUrl || !isValidKey) {
+if (!hasValidUrl || !hasValidKey) {
   console.error(
-    'Supabase configuration is invalid or missing.',
-    'URL valid:', isValidUrl,
-    'Key valid:', isValidKey
+    '[Supabase] Invalid configuration',
+    'URL valid:', hasValidUrl,
+    'Key valid:', hasValidKey
   )
 }
 
-export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
+export const supabase = createClient(url || '', key || '', {
   auth: {
     storage: AsyncStorage as any,
     autoRefreshToken: true,
