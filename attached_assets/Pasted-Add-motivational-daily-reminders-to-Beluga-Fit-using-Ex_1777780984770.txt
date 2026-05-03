@@ -1,0 +1,66 @@
+Add motivational daily reminders to Beluga Fit using Expo local notifications.
+
+Requirements:
+
+1. Install expo-notifications and expo-device if not already present.
+
+2. Create a NotificationSettingsScreen with the following toggles:
+   - Enable reminders (on/off master switch)
+   - Preferred time picker (user selects a time of day, e.g. 8:00 AM)
+   - Reminder type selector (dropdown or segmented picker):
+     a. "Did you work out today?" — casual check-in
+     b. "Time to move" — light activity nudge
+     c. "Gym motivation" — motivational quote prompt
+     d. "Random rotation" — randomly picks one of the above each day
+
+3. Create a notifications utility with these features:
+   - Request notification permission on first app launch after enablement
+   - Schedule the daily notification at the user's preferred time
+   - Rotating message pool for each reminder type so notifications
+     don't feel repetitive:
+     * 5–8 casual check-in messages (e.g. "Have you trained yet today?")
+     * 5–8 move/motion nudges (e.g. "Your body was built to move")
+     * 8–10 motivational gym quotes (e.g. "The only bad workout is the one that didn't happen")
+   - Each message should feel authentic to Beluga Fit's tone:
+     premium, calm, practical, and trustworthy — not gimmicky or aggressive
+   - Cancel and reschedule the notification when the user changes
+     their preferred time or toggle state
+   - Handle app cold start vs warm state correctly
+   - Work in both foreground and background states
+
+4. Add the notification settings option to Settings screen:
+   - Section label: "Notifications"
+   - One row: "Daily Reminders" with a toggle and time preview
+     (e.g. "Daily Reminders · Every day at 8:00 AM")
+   - Tapping the row opens NotificationSettingsScreen
+
+5. Handle the following edge cases:
+   - User denies permission: show a friendly prompt directing them
+     to device settings to re-enable
+   - User changes time: cancel old scheduled notification and
+     schedule new one immediately
+   - User turns reminders off: cancel all pending notifications
+   - App uninstall/reinstall: schedule the notification again
+     on first app open if reminders were previously enabled
+   - Work across Android and iOS consistently
+
+6. UX requirements:
+   - Notifications should never feel spammy or guilt-inducing
+   - Messages should respect the user's training level and goals
+     without assumptions about what exercises they're doing
+   - Silent reminders are not useful — ensure sound plays
+   - If on Android, create a proper notification channel for
+     Beluga Fit reminders
+   - Add a small badge or indicator in Settings showing
+     notifications are active when enabled
+
+7. Do not change:
+   - The existing Settings layout outside of the new section
+   - Auth, plans, or workout flows
+   - Any existing screens
+
+8. After completing the implementation, summarize:
+   - Which Expo packages were added
+   - How many unique notification messages were created
+   - Whether testing instructions require a physical device
+     (push notifications require a real device, not a simulator)

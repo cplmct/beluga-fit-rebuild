@@ -5,6 +5,7 @@ import { DeleteAccountScreen } from './DeleteAccountScreen';
 import { PrivacyPolicyScreen } from './PrivacyPolicyScreen';
 import { TermsOfUseScreen } from './TermsOfUseScreen';
 import { SupportScreen } from './SupportScreen';
+import { NotificationSettingsScreen } from './NotificationSettingsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -42,6 +43,11 @@ export function SettingsStackNavigator() {
         name="Support"
         component={SupportScreen}
         options={{ title: 'Support & Contact', ...sharedHeaderOptions }}
+      />
+      <Stack.Screen
+        name="NotificationSettings"
+        component={NotificationSettingsScreen}
+        options={{ title: 'Daily Reminders', ...sharedHeaderOptions }}
       />
       <Stack.Screen
         name="DeleteAccount"

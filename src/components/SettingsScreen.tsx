@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,11 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Constants from 'expo-constants';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { getPrefs, formatTime, NotifPrefs, DEFAULT_PREFS } from '../utils/notifications';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 
@@ -89,10 +90,17 @@ export function SettingsScreen() {
     gender: '',
     age: '',
   });
+  const [notifPrefs, setNotifPrefs] = useState<NotifPrefs>({ ...DEFAULT_PREFS });
 
   useEffect(() => {
     loadProfile();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      getPrefs().then(setNotifPrefs);
+    }, [])
+  );
 
   const loadProfile = async () => {
     if (!user) return;
@@ -267,6 +275,29 @@ export function SettingsScreen() {
             </TouchableOpacity>
           </>
         )}
+      </View>
+
+      {/* ── Notifications ── */}
+      <SectionLabel title="Notifications" />
+      <View style={styles.card}>
+        <TouchableOpacity
+          style={styles.navRow}
+          onPress={() => navigation.navigate('NotificationSettings' as never)}
+          activeOpacity={0.65}
+        >
+          <View style={styles.navRowLeft}>
+            <Text style={styles.navRowLabel}>Daily Reminders</Text>
+            {notifPrefs.enabled ? (
+              <Text style={styles.navRowSub}>
+                Every day at {formatTime(notifPrefs.hour, notifPrefs.minute)}
+              </Text>
+            ) : null}
+          </View>
+          <View style={styles.navRowRight}>
+            {notifPrefs.enabled && <View style={styles.activeIndicator} />}
+            <Text style={styles.navRowChevron}>›</Text>
+          </View>
+        </TouchableOpacity>
       </View>
 
       {/* ── Privacy & Legal ── */}
@@ -463,10 +494,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
   },
+  navRowLeft: {
+    flex: 1,
+  },
+  navRowRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   navRowLabel: {
     fontSize: 15,
     color: '#0f172a',
     fontWeight: '500',
+  },
+  navRowSub: {
+    fontSize: 12,
+    color: '#64748b',
+    marginTop: 2,
   },
   navRowLabelDestructive: {
     fontSize: 15,
@@ -477,6 +521,12 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: '#cbd5e1',
     lineHeight: 24,
+  },
+  activeIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#2563eb',
   },
   rowDivider: {
     height: StyleSheet.hairlineWidth,

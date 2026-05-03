@@ -29,7 +29,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.tranbtc.belugafitworkout",
-      "permissions": ["INTERNET", "VIBRATE"]
+      "permissions": ["INTERNET", "VIBRATE", "RECEIVE_BOOT_COMPLETED", "SCHEDULE_EXACT_ALARM", "POST_NOTIFICATIONS"]
     },
     "plugins": [
       "expo-dev-client",
@@ -44,7 +44,17 @@
         }
       ],
       "expo-font",
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#2563eb",
+          "sounds": [],
+          "androidMode": "default",
+          "androidCollapsedTitle": "Beluga Fit"
+        }
+      ]
     ],
     "web": {
       "favicon": "./assets/favicon.png"
