@@ -1,5 +1,8 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Linking } from 'react-native';
+import Constants from 'expo-constants';
+
+const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 
 const SUPPORT_EMAIL = 'developer@tranbtc.com';
 
@@ -22,7 +25,7 @@ const FAQ: FaqItem[] = [
   {
     question: 'Can I create my own workout plan?',
     answer:
-      'Yes. In the Workout tab you can browse pre-built plans or build your own. [PLACEHOLDER — update this answer once custom plan creation is fully released.]',
+      'Yes. In the Workout tab you can browse pre-built plans organized by goal and difficulty. Select a plan and follow the structured sessions at your own pace.',
   },
   {
     question: 'How do I view my workout history?',
@@ -37,7 +40,7 @@ const FAQ: FaqItem[] = [
   {
     question: 'How do I reset my password?',
     answer:
-      'On the login screen, tap "Forgot password?" to receive a password reset link by email. [PLACEHOLDER — confirm this flow is implemented before publishing.]',
+      'On the login screen, tap "Forgot password?" and enter your email address. You will receive a reset link by email. Check your spam folder if it does not arrive within a few minutes.',
   },
   {
     question: 'How do I delete my account?',
@@ -101,10 +104,7 @@ export function SupportScreen() {
       </View>
 
       <View style={styles.footer}>
-        <Text style={styles.footerText}>
-          Beluga Fit — Version 1.0.0{'\n'}
-          [PLACEHOLDER — pull version from app config before publishing.]
-        </Text>
+        <Text style={styles.footerText}>Beluga Fit — Version {APP_VERSION}</Text>
       </View>
     </ScrollView>
   );
