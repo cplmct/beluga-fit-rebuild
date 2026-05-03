@@ -1,5 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 
 export function LoginScreen({ navigation }: any) {
@@ -7,172 +17,283 @@ export function LoginScreen({ navigation }: any) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
   const { signIn } = useAuth();
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      setError('Please fill in all fields');
+    if (!email.trim() || !password) {
+      setError('Please enter your email and password.');
       return;
     }
-
     setLoading(true);
     setError('');
-
     try {
-      const { error: signInError } = await signIn(email, password);
-
+      const { error: signInError } = await signIn(email.trim(), password);
       if (signInError) {
-        setError(signInError.message);
+        setError(
+          signInError.message === 'Invalid login credentials'
+            ? 'Incorrect email or password. Please try again.'
+            : signInError.message
+        );
       }
     } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred');
+      setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Welcome Back</Text>
-        <Text style={styles.subtitle}>Sign in to continue your fitness journey</Text>
-
-        {error ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
+    <KeyboardAvoidingView
+      style={styles.root}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── Brand ── */}
+        <View style={styles.brand}>
+          <View style={styles.logoMark}>
+            <Text style={styles.logoLetter}>B</Text>
           </View>
-        ) : null}
+          <Text style={styles.appName}>Beluga Fit</Text>
+          <Text style={styles.tagline}>Structured training. Real progress.</Text>
+        </View>
 
-        <View style={styles.form}>
-          <View style={styles.inputGroup}>
+        {/* ── Form card ── */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Sign in</Text>
+
+          {error ? (
+            <View style={styles.errorBox}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          ) : null}
+
+          <View style={styles.fieldGroup}>
             <Text style={styles.label}>Email</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, emailFocused && styles.inputFocused]}
               placeholder="your@email.com"
+              placeholderTextColor="#94a3b8"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(t) => { setEmail(t); setError(''); }}
+              onFocus={() => setEmailFocused(true)}
+              onBlur={() => setEmailFocused(false)}
               autoCapitalize="none"
+              autoCorrect={false}
               keyboardType="email-address"
+              textContentType="emailAddress"
               editable={!loading}
             />
           </View>
 
-          <View style={styles.inputGroup}>
+          <View style={styles.fieldGroup}>
             <Text style={styles.label}>Password</Text>
             <TextInput
-              style={styles.input}
-              placeholder="Enter your password"
+              style={[styles.input, passwordFocused && styles.inputFocused]}
+              placeholder="Your password"
+              placeholderTextColor="#94a3b8"
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(t) => { setPassword(t); setError(''); }}
+              onFocus={() => setPasswordFocused(true)}
+              onBlur={() => setPasswordFocused(false)}
               secureTextEntry
+              textContentType="password"
               editable={!loading}
             />
           </View>
 
           <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
+            style={[styles.primaryButton, loading && styles.primaryButtonDisabled]}
             onPress={handleLogin}
             disabled={loading}
+            activeOpacity={0.88}
           >
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.buttonText}>Sign In</Text>
+              <Text style={styles.primaryButtonText}>Sign In</Text>
             )}
           </TouchableOpacity>
-
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-              <Text style={styles.link}>Sign Up</Text>
-            </TouchableOpacity>
-          </View>
         </View>
-      </View>
-    </View>
+
+        {/* ── Switch to register ── */}
+        <View style={styles.switchRow}>
+          <Text style={styles.switchText}>New to Beluga Fit? </Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Register')}
+            disabled={loading}
+          >
+            <Text style={styles.switchLink}>Create an account</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* ── Privacy notice ── */}
+        <View style={styles.privacyBox}>
+          <Text style={styles.privacyText}>
+            Your data is used to save your fitness progress across devices. It is not sold.
+          </Text>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f7f8fc',
   },
-  content: {
-    flex: 1,
-    padding: 20,
+  scroll: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingTop: 72,
+    paddingBottom: 48,
     justifyContent: 'center',
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 8,
-    textAlign: 'center',
+
+  // ── Brand ──
+  brand: {
+    alignItems: 'center',
+    marginBottom: 40,
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#6b7280',
-    marginBottom: 32,
-    textAlign: 'center',
+  logoMark: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: '#2563eb',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
   },
-  errorContainer: {
-    backgroundColor: '#fee2e2',
-    padding: 12,
-    borderRadius: 8,
+  logoLetter: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#fff',
+    letterSpacing: -0.5,
+  },
+  appName: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#0f172a',
+    letterSpacing: -0.5,
+    marginBottom: 6,
+  },
+  tagline: {
+    fontSize: 14,
+    color: '#64748b',
+    fontWeight: '400',
+    letterSpacing: 0.1,
+  },
+
+  // ── Card ──
+  card: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    padding: 24,
+    marginBottom: 20,
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#0f172a',
+    marginBottom: 20,
+    letterSpacing: -0.3,
+  },
+
+  // ── Error ──
+  errorBox: {
+    backgroundColor: '#fef2f2',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#fecaca',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     marginBottom: 16,
   },
   errorText: {
+    fontSize: 13,
     color: '#dc2626',
-    fontSize: 14,
-    textAlign: 'center',
+    fontWeight: '500',
+    lineHeight: 18,
   },
-  form: {
-    gap: 16,
-  },
-  inputGroup: {
-    gap: 8,
+
+  // ── Fields ──
+  fieldGroup: {
+    marginBottom: 16,
   },
   label: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: '#374151',
+    marginBottom: 7,
+    letterSpacing: 0.1,
   },
   input: {
-    backgroundColor: '#fff',
-    padding: 16,
+    backgroundColor: '#f8fafc',
+    borderWidth: 1.5,
+    borderColor: '#e2e8f0',
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    fontSize: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    fontSize: 15,
+    color: '#0f172a',
   },
-  button: {
-    backgroundColor: '#3b82f6',
-    padding: 16,
+  inputFocused: {
+    borderColor: '#2563eb',
+    backgroundColor: '#ffffff',
+  },
+
+  // ── Primary button ──
+  primaryButton: {
+    backgroundColor: '#2563eb',
     borderRadius: 12,
+    paddingVertical: 15,
     alignItems: 'center',
     marginTop: 8,
   },
-  buttonDisabled: {
+  primaryButtonDisabled: {
     backgroundColor: '#93c5fd',
   },
-  buttonText: {
+  primaryButtonText: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: -0.2,
   },
-  footer: {
+
+  // ── Switch ──
+  switchRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 16,
+    alignItems: 'center',
+    marginBottom: 32,
   },
-  footerText: {
+  switchText: {
     fontSize: 14,
-    color: '#6b7280',
+    color: '#64748b',
   },
-  link: {
+  switchLink: {
     fontSize: 14,
-    color: '#3b82f6',
-    fontWeight: '600',
+    color: '#2563eb',
+    fontWeight: '700',
+  },
+
+  // ── Privacy ──
+  privacyBox: {
+    paddingHorizontal: 8,
+  },
+  privacyText: {
+    fontSize: 12,
+    color: '#94a3b8',
+    textAlign: 'center',
+    lineHeight: 18,
+    fontWeight: '400',
   },
 });

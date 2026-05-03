@@ -1,5 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 
 export function RegisterScreen({ navigation }: any) {
@@ -8,197 +18,318 @@ export function RegisterScreen({ navigation }: any) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
+  const [confirmFocused, setConfirmFocused] = useState(false);
   const { signUp } = useAuth();
 
   const handleRegister = async () => {
-    if (!email || !password || !confirmPassword) {
-      setError('Please fill in all fields');
+    if (!email.trim() || !password || !confirmPassword) {
+      setError('Please fill in all fields.');
       return;
     }
-
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError('Passwords do not match.');
       return;
     }
-
     if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setError('Password must be at least 6 characters.');
       return;
     }
-
     setLoading(true);
     setError('');
-
     try {
-      const { error: signUpError } = await signUp(email, password);
-
+      const { error: signUpError } = await signUp(email.trim(), password);
       if (signUpError) {
         setError(signUpError.message);
       }
     } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred');
+      setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Create Account</Text>
-        <Text style={styles.subtitle}>Start tracking your workouts today</Text>
-
-        {error ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
+    <KeyboardAvoidingView
+      style={styles.root}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── Brand ── */}
+        <View style={styles.brand}>
+          <View style={styles.logoMark}>
+            <Text style={styles.logoLetter}>B</Text>
           </View>
-        ) : null}
+          <Text style={styles.appName}>Beluga Fit</Text>
+          <Text style={styles.tagline}>Structured training. Real progress.</Text>
+        </View>
 
-        <View style={styles.form}>
-          <View style={styles.inputGroup}>
+        {/* ── Form card ── */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Create your account</Text>
+          <Text style={styles.cardSubtitle}>
+            Your progress is saved securely and synced across your devices.
+          </Text>
+
+          {error ? (
+            <View style={styles.errorBox}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          ) : null}
+
+          <View style={styles.fieldGroup}>
             <Text style={styles.label}>Email</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, emailFocused && styles.inputFocused]}
               placeholder="your@email.com"
+              placeholderTextColor="#94a3b8"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(t) => { setEmail(t); setError(''); }}
+              onFocus={() => setEmailFocused(true)}
+              onBlur={() => setEmailFocused(false)}
               autoCapitalize="none"
+              autoCorrect={false}
               keyboardType="email-address"
+              textContentType="emailAddress"
               editable={!loading}
             />
           </View>
 
-          <View style={styles.inputGroup}>
+          <View style={styles.fieldGroup}>
             <Text style={styles.label}>Password</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, passwordFocused && styles.inputFocused]}
               placeholder="At least 6 characters"
+              placeholderTextColor="#94a3b8"
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(t) => { setPassword(t); setError(''); }}
+              onFocus={() => setPasswordFocused(true)}
+              onBlur={() => setPasswordFocused(false)}
               secureTextEntry
+              textContentType="newPassword"
               editable={!loading}
             />
           </View>
 
-          <View style={styles.inputGroup}>
+          <View style={styles.fieldGroup}>
             <Text style={styles.label}>Confirm Password</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, confirmFocused && styles.inputFocused]}
               placeholder="Re-enter your password"
+              placeholderTextColor="#94a3b8"
               value={confirmPassword}
-              onChangeText={setConfirmPassword}
+              onChangeText={(t) => { setConfirmPassword(t); setError(''); }}
+              onFocus={() => setConfirmFocused(true)}
+              onBlur={() => setConfirmFocused(false)}
               secureTextEntry
+              textContentType="newPassword"
               editable={!loading}
             />
+          </View>
+
+          {/* Privacy notice inside form, before the CTA */}
+          <View style={styles.inlinePrivacy}>
+            <Text style={styles.inlinePrivacyText}>
+              Your data is used to save your fitness progress across devices. It is not sold.
+            </Text>
           </View>
 
           <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
+            style={[styles.primaryButton, loading && styles.primaryButtonDisabled]}
             onPress={handleRegister}
             disabled={loading}
+            activeOpacity={0.88}
           >
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.buttonText}>Sign Up</Text>
+              <Text style={styles.primaryButtonText}>Create Account</Text>
             )}
           </TouchableOpacity>
-
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-              <Text style={styles.link}>Sign In</Text>
-            </TouchableOpacity>
-          </View>
         </View>
-      </View>
-    </ScrollView>
+
+        {/* ── Switch to login ── */}
+        <View style={styles.switchRow}>
+          <Text style={styles.switchText}>Already have an account? </Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Login')}
+            disabled={loading}
+          >
+            <Text style={styles.switchLink}>Sign in</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f7f8fc',
   },
-  contentContainer: {
+  scroll: {
     flexGrow: 1,
-  },
-  content: {
-    flex: 1,
-    padding: 20,
+    paddingHorizontal: 24,
+    paddingTop: 60,
+    paddingBottom: 48,
     justifyContent: 'center',
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 8,
-    textAlign: 'center',
+
+  // ── Brand ──
+  brand: {
+    alignItems: 'center',
+    marginBottom: 36,
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#6b7280',
-    marginBottom: 32,
-    textAlign: 'center',
+  logoMark: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: '#2563eb',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
   },
-  errorContainer: {
-    backgroundColor: '#fee2e2',
-    padding: 12,
-    borderRadius: 8,
+  logoLetter: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#fff',
+    letterSpacing: -0.5,
+  },
+  appName: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#0f172a',
+    letterSpacing: -0.5,
+    marginBottom: 6,
+  },
+  tagline: {
+    fontSize: 14,
+    color: '#64748b',
+    fontWeight: '400',
+    letterSpacing: 0.1,
+  },
+
+  // ── Card ──
+  card: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    padding: 24,
+    marginBottom: 20,
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#0f172a',
+    marginBottom: 6,
+    letterSpacing: -0.3,
+  },
+  cardSubtitle: {
+    fontSize: 13,
+    color: '#64748b',
+    lineHeight: 19,
+    marginBottom: 20,
+    fontWeight: '400',
+  },
+
+  // ── Error ──
+  errorBox: {
+    backgroundColor: '#fef2f2',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#fecaca',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     marginBottom: 16,
   },
   errorText: {
+    fontSize: 13,
     color: '#dc2626',
-    fontSize: 14,
-    textAlign: 'center',
+    fontWeight: '500',
+    lineHeight: 18,
   },
-  form: {
-    gap: 16,
-  },
-  inputGroup: {
-    gap: 8,
+
+  // ── Fields ──
+  fieldGroup: {
+    marginBottom: 14,
   },
   label: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: '#374151',
+    marginBottom: 7,
+    letterSpacing: 0.1,
   },
   input: {
-    backgroundColor: '#fff',
-    padding: 16,
+    backgroundColor: '#f8fafc',
+    borderWidth: 1.5,
+    borderColor: '#e2e8f0',
     borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    fontSize: 15,
+    color: '#0f172a',
+  },
+  inputFocused: {
+    borderColor: '#2563eb',
+    backgroundColor: '#ffffff',
+  },
+
+  // ── Inline privacy (inside card, above button) ──
+  inlinePrivacy: {
+    backgroundColor: '#f8fafc',
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
-    fontSize: 16,
+    borderColor: '#e2e8f0',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 16,
+    marginTop: 4,
   },
-  button: {
-    backgroundColor: '#10b981',
-    padding: 16,
+  inlinePrivacyText: {
+    fontSize: 12,
+    color: '#64748b',
+    lineHeight: 18,
+    fontWeight: '400',
+  },
+
+  // ── Primary button ──
+  primaryButton: {
+    backgroundColor: '#2563eb',
     borderRadius: 12,
+    paddingVertical: 15,
     alignItems: 'center',
-    marginTop: 8,
   },
-  buttonDisabled: {
-    backgroundColor: '#86efac',
+  primaryButtonDisabled: {
+    backgroundColor: '#93c5fd',
   },
-  buttonText: {
+  primaryButtonText: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: -0.2,
   },
-  footer: {
+
+  // ── Switch ──
+  switchRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 16,
+    alignItems: 'center',
   },
-  footerText: {
+  switchText: {
     fontSize: 14,
-    color: '#6b7280',
+    color: '#64748b',
   },
-  link: {
+  switchLink: {
     fontSize: 14,
-    color: '#3b82f6',
-    fontWeight: '600',
+    color: '#2563eb',
+    fontWeight: '700',
   },
 });
