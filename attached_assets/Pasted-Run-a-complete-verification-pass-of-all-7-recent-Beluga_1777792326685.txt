@@ -1,0 +1,74 @@
+Run a complete verification pass of all 7 recent Beluga Fit improvements.
+
+Test each feature systematically and fix any issues found.
+
+Feature 1 — Active plan in Supabase
+- Verify profiles table has active_plan_id and active_plan_start_date columns
+- Verify the app reads active plan from Supabase on login
+- Verify setting an active plan saves to Supabase
+- Verify the plan persists across app restarts
+- Check for null/undefined handling if no active plan exists
+- Fix any crash that occurs when a user has no active plan
+
+Feature 2 — Workout duration tracking
+- Verify starting a workout saves a started_at timestamp
+- Verify finishing saves duration_seconds correctly
+- Verify duration displays in WorkoutDetailsScreen
+- Verify duration displays on HistoryScreen cards
+- Check that duration is 0 or null if workout was never started
+- Fix any division by zero or NaN issues
+
+Feature 3 — "Last time" prompt
+- Verify each exercise shows last performance when checklist opens
+- Verify the blue badge shows correct sets × reps × weight
+- Verify exercises with no history show no badge or a "First time" message
+- Check for null handling when querying last workout performance
+- Fix any crash on checklist open
+
+Feature 4 — PR detection
+- Verify max weight is queried from all historical workouts
+- Verify beating max weight sets is_pr = true
+- Verify PR badges show on WorkoutDetailsScreen
+- Verify save confirmation mentions how many PRs were set
+- Check for null handling when user has no workout history
+- Fix any crash on workout finish
+
+Feature 5 — Unit system toggle (kg / lbs)
+- Verify UnitsContext exists and reads unit_system from profile
+- Verify Settings screen shows Preferences section with kg/lbs toggle
+- Verify toggle saves to Supabase profile
+- Verify all weight labels update when unit changes:
+  checklist exercises, workout details, history cards, home body card
+- Verify default is reasonable (lbs for Canada/US)
+- Check for null handling when user has no unit preference set
+- Fix any crash on unit toggle change
+
+Feature 6 — N+1 query fix
+- Verify CalendarScreen uses a single Supabase query with embedded count
+- Verify HistoryScreen uses a single Supabase query with embedded count
+- Verify workout exercise counts are correct
+- Check that no separate query is fired per workout row
+- Fix any incorrect count or null entry
+
+Feature 7 — Stats screen
+- Verify Stats screen opens from home dashboard "View stats" button
+- Verify This Month stats are correct (workouts, active time, PRs)
+- Verify All Time stats are correct (totals, streak, total PRs)
+- Verify body weight comparison vs 30 days ago works
+- Verify Training Breakdown bar chart renders without crash
+- Check for null/empty data handling
+- Fix any crash on stats screen open
+
+General checks across all 7 features:
+- App must not crash on launch under any user state
+- All screens must have safe null/undefined guards
+- All Supabase queries must handle empty results
+- No console errors appear in dev mode for any feature
+- App works for a user with zero workout history
+- App works for a user with extensive workout history
+
+After verification:
+- List every file that was changed
+- List every bug that was found and fixed
+- List any remaining issues noted
+- Confirm whether app starts and opens correctly in --no-dev --minify mode

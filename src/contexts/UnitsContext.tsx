@@ -15,7 +15,7 @@ const UnitsContext = createContext<UnitsContextType | undefined>(undefined);
 
 export function UnitsProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const [unitSystem, setUnitSystem] = useState<UnitSystem>('metric');
+  const [unitSystem, setUnitSystem] = useState<UnitSystem>('imperial');
 
   useEffect(() => {
     if (!user) return;
@@ -25,11 +25,12 @@ export function UnitsProvider({ children }: { children: React.ReactNode }) {
       .eq('id', user.id)
       .maybeSingle()
       .then(({ data }) => {
-        if (data?.unit_system === 'imperial') {
-          setUnitSystem('imperial');
-        } else {
+        if (data?.unit_system === 'metric') {
           setUnitSystem('metric');
+        } else if (data?.unit_system === 'imperial') {
+          setUnitSystem('imperial');
         }
+        // if null/unset, keep the default ('imperial')
       });
   }, [user?.id]);
 

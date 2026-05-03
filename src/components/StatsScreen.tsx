@@ -146,7 +146,10 @@ export function StatsScreen({ navigation }: any) {
   }, []);
 
   const fetchStats = async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     try {
       setError('');
 

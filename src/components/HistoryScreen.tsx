@@ -93,7 +93,11 @@ export function HistoryScreen({ navigation }: any) {
 
   const fetchWorkouts = async () => {
     try {
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
       setError('');
 
       const { data: workoutsData, error: queryError } = await supabase
