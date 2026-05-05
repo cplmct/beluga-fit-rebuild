@@ -115,10 +115,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Deletion confirmed server-side. Now clean up local state.
+      // Clear every known AsyncStorage key for this device so a new user
+      // signing in on the same device starts fresh.
+      const localKeys = [
+        onboardingKey(userId),
+        'beluga_notif_prefs',   // notification preferences (fixed key, not user-scoped)
+        'beluga_notif_id',      // scheduled notification ID
+      ];
       try {
-        await AsyncStorage.removeItem(onboardingKey(userId));
+        await AsyncStorage.multiRemove(localKeys);
       } catch {
-        // Non-fatal — local key is orphaned but harmless after account deletion.
+        // Non-fatal — orphaned local keys are harmless after server-side deletion.
       }
 
       // Sign out — the session is already invalidated server-side after the

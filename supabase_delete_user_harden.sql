@@ -1,86 +1,138 @@
-/*
-  delete_user() — hardened replacement
-  =====================================
-  Run this in your Supabase SQL Editor (Dashboard → SQL Editor → New Query).
+-- ============================================================
+-- Beluga Fit — Hardened delete_user() function
+-- Run this in: Supabase Dashboard → SQL Editor → New Query
+-- ============================================================
+--
+-- AUDIT SUMMARY
+-- ─────────────
+-- Tables confirmed in use (from RLS policies + all app source):
+--
+--   profiles          FK: id = auth.uid()   (NOT user_id — confirmed by RLS)
+--   workouts          FK: user_id
+--   workout_exercises FK: workout_id        (child of workouts; no direct user_id)
+--   body_measurements FK: user_id
+--
+-- ai_workout_plans: not referenced anywhere in the app's TypeScript source.
+--   Included with an existence guard in case it exists in the database.
+--
+-- Supabase Storage buckets: NONE found in the app.
+--   All "storage" in the codebase is AsyncStorage (local device only).
+--   Nothing will block auth.users deletion.
+--
+-- Notification preferences: stored in AsyncStorage only (beluga_notif_prefs,
+--   beluga_notif_id). No Supabase table involved — no server-side cleanup needed.
+--   The client already clears these on sign-out.
+--
+-- WHY SECURITY DEFINER IS REQUIRED
+-- ─────────────────────────────────
+-- The authenticated role cannot delete from auth.users directly.
+-- SECURITY DEFINER allows the function to run with the privileges of its
+-- definer (postgres), which has access to the auth schema.
+-- SET search_path = public prevents search-path injection attacks.
+-- The explicit auth.uid() check ensures a user can only delete their own row.
+--
+-- WHAT CHANGED FROM THE ORIGINAL
+-- ────────────────────────────────
+-- 1. EXCEPTION block now uses RAISE EXCEPTION instead of
+--    RETURN json_build_object('error', ...). The old version returned errors
+--    as a successful JSON payload — supabase.rpc() saw error: null and silently
+--    swallowed every failure. Now errors surface as { error: { message: "..." } }.
+--
+-- 2. Return type changed from json to void. Cleaner — the client only needs to
+--    check whether error is null.
+--
+-- 3. profiles.id (not profiles.user_id) is confirmed as the auth FK.
+--    The DELETE uses WHERE id = uid, matching the actual RLS policies.
+--
+-- 4. Cleanup order is explicit and dependency-safe:
+--    workout_exercises → workouts → body_measurements
+--    → ai_workout_plans (guarded) → profiles → auth.users
+--
+-- 5. ai_workout_plans delete is wrapped in an information_schema existence check
+--    so the function succeeds whether or not that table exists.
+-- ============================================================
 
-  Changes from the original:
-  1. EXCEPTION block now uses RAISE EXCEPTION instead of RETURN json_build_object.
-     Previously, errors inside the function were returned as a successful JSON
-     payload { "error": "..." } — the Supabase client saw error: null and silently
-     swallowed the failure. Now errors propagate as real PostgreSQL exceptions,
-     which the client correctly surfaces as { error: { message: "..." } }.
-
-  2. Client-side profiles delete removed from the app. The RPC is now the single
-     authoritative place for all cleanup, making the operation atomic. If any
-     step fails the whole transaction rolls back — no partial deletion states.
-
-  3. Cleanup order is explicit and dependency-safe:
-     workout_exercises → workouts → body_measurements → ai_workout_plans
-     → profiles → auth.users
-
-  4. The function still uses SECURITY DEFINER so it can access auth.users, and
-     still validates auth.uid() so a user can only ever delete their own account.
-
-  Security:
-  - Only authenticated users can call this (GRANT EXECUTE ... TO authenticated).
-  - auth.uid() is checked server-side — no client-supplied user ID is trusted.
-  - SECURITY DEFINER + SET search_path = public prevents search-path injection.
-*/
 
 CREATE OR REPLACE FUNCTION delete_user()
-RETURNS json
+RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  deleted_user_id uuid;
+  uid uuid;
 BEGIN
-  deleted_user_id := auth.uid();
+  -- Resolve the caller's identity server-side. Never trust a client-supplied ID.
+  uid := auth.uid();
 
-  IF deleted_user_id IS NULL THEN
+  IF uid IS NULL THEN
     RAISE EXCEPTION 'Not authenticated';
   END IF;
 
-  -- Delete child rows before parents to respect foreign key constraints.
+  -- ── Step 1: workout_exercises ──────────────────────────────────────────────
+  -- No direct user_id column. Delete via the parent workouts rows.
   DELETE FROM workout_exercises
   WHERE workout_id IN (
-    SELECT id FROM workouts WHERE user_id = deleted_user_id
+    SELECT id FROM workouts WHERE user_id = uid
   );
 
+  -- ── Step 2: workouts ───────────────────────────────────────────────────────
   DELETE FROM workouts
-  WHERE user_id = deleted_user_id;
+  WHERE user_id = uid;
 
+  -- ── Step 3: body_measurements ──────────────────────────────────────────────
   DELETE FROM body_measurements
-  WHERE user_id = deleted_user_id;
+  WHERE user_id = uid;
 
-  -- ai_workout_plans may not exist in all environments; guard with a
-  -- conditional delete so the function still runs even if the table is absent.
+  -- ── Step 4: ai_workout_plans (guarded) ────────────────────────────────────
+  -- This table is not used in the current app but may exist from an earlier
+  -- schema version. The existence check prevents a runtime error either way.
   IF EXISTS (
-    SELECT 1 FROM information_schema.tables
-    WHERE table_schema = 'public' AND table_name = 'ai_workout_plans'
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name   = 'ai_workout_plans'
   ) THEN
-    EXECUTE 'DELETE FROM ai_workout_plans WHERE user_id = $1'
-    USING deleted_user_id;
+    EXECUTE 'DELETE FROM ai_workout_plans WHERE user_id = $1' USING uid;
   END IF;
 
-  -- profiles is deleted last among public tables so FK references are clear.
+  -- ── Step 5: profiles ───────────────────────────────────────────────────────
+  -- profiles.id is the auth FK (confirmed by RLS: USING (id = auth.uid())).
+  -- This is NOT profiles.user_id.
   DELETE FROM profiles
-  WHERE id = deleted_user_id;
+  WHERE id = uid;
 
-  -- Remove the auth user. SECURITY DEFINER gives us access to auth.users.
+  -- ── Step 6: auth.users ─────────────────────────────────────────────────────
+  -- Must be last. Requires SECURITY DEFINER to access the auth schema.
+  -- Deleting this row immediately invalidates all active sessions for this user.
   DELETE FROM auth.users
-  WHERE id = deleted_user_id;
-
-  RETURN json_build_object('success', true);
+  WHERE id = uid;
 
 EXCEPTION
   WHEN OTHERS THEN
-    -- Re-raise as a real PostgreSQL exception so the Supabase client surfaces
-    -- it as { error: { message: "..." } } instead of a silent success payload.
+    -- Re-raise as a real PostgreSQL exception so supabase.rpc() surfaces it as
+    -- { error: { message: "..." } } instead of a silent success payload.
     RAISE EXCEPTION '%', SQLERRM;
 END;
 $$;
 
--- Ensure only authenticated users can invoke this function.
+-- Only authenticated users may call this function.
+-- Unauthenticated callers will fail the auth.uid() IS NULL check above even
+-- if they somehow invoke it directly.
 GRANT EXECUTE ON FUNCTION delete_user() TO authenticated;
+
+
+-- ============================================================
+-- VERIFICATION QUERY
+-- Run this after the block above to confirm the function exists
+-- with the correct security settings.
+-- ============================================================
+SELECT
+  p.proname                              AS function_name,
+  p.prosecdef                            AS security_definer,
+  pg_get_function_result(p.oid)          AS return_type,
+  pg_get_functiondef(p.oid)              AS definition
+FROM pg_proc p
+JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE p.proname = 'delete_user'
+  AND n.nspname = 'public';
