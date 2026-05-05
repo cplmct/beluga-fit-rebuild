@@ -1,12 +1,14 @@
 import React, { createContext, useState, useEffect, useContext, useRef } from 'react';
+import { Linking } from 'react-native';
 import { Session, User } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
 
-// ── Local cache ───────────────────────────────────────────────────────────────
-// AsyncStorage holds a fast-path boolean so the app can render without waiting
-// for a Supabase round-trip on every cold start. Supabase is always the source
-// of truth; the cache is only used when Supabase is temporarily unreachable.
+// ── Deep link scheme ──────────────────────────────────────────────────────────
+// Must match app.json "scheme" and the redirectTo passed to resetPasswordForEmail.
+const APP_SCHEME = 'belugafit';
+
+// ── Local onboarding cache ────────────────────────────────────────────────────
 
 function onboardingKey(userId: string) {
   return `@beluga/onboarding_${userId}`;
@@ -31,14 +33,8 @@ async function writeOnboardingCache(userId: string, completed: boolean): Promise
   } catch {}
 }
 
-// ── Supabase resolution ───────────────────────────────────────────────────────
-// Returns true if the user has completed onboarding, false if not.
-// Falls back to the local cache if Supabase is unreachable, then to false
-// (show onboarding) when neither source has data.
-
 async function resolveOnboardingCompleted(userId: string): Promise<boolean> {
   const cached = await readOnboardingCache(userId);
-
   try {
     const { data, error } = await supabase
       .from('profiles')
@@ -48,7 +44,6 @@ async function resolveOnboardingCompleted(userId: string): Promise<boolean> {
 
     if (error) throw error;
 
-    // null data means no profile row yet — brand new user, needs onboarding.
     const completed = data?.onboarding_completed === true;
     await writeOnboardingCache(userId, completed);
     return completed;
@@ -56,10 +51,49 @@ async function resolveOnboardingCompleted(userId: string): Promise<boolean> {
     if (__DEV__) {
       console.warn('[Onboarding] Supabase unavailable — falling back to cache:', cached);
     }
-    // Cache === true  →  existing user on a flaky network, trust the cache.
-    // Cache === null  →  unknown (possibly brand new user), show onboarding.
     return cached === true;
   }
+}
+
+// ── Deep link parser ──────────────────────────────────────────────────────────
+// Supabase password recovery emails redirect to:
+//   belugafit://reset-password#access_token=xxx&refresh_token=xxx&type=recovery
+//
+// React Native's Linking module does not expose URL fragments on Android, so
+// Supabase actually encodes the tokens as query params when using a custom
+// scheme redirect. We parse both locations to be safe.
+
+function parseRecoveryUrl(url: string): {
+  accessToken: string;
+  refreshToken: string;
+} | null {
+  if (!url || !url.startsWith(APP_SCHEME)) return null;
+
+  // Try fragment first (#access_token=…)
+  const hashIdx = url.indexOf('#');
+  const qIdx    = url.indexOf('?');
+
+  const paramStr = hashIdx !== -1
+    ? url.slice(hashIdx + 1)
+    : qIdx !== -1
+      ? url.slice(qIdx + 1)
+      : '';
+
+  if (!paramStr) return null;
+
+  const params: Record<string, string> = {};
+  paramStr.split('&').forEach((pair) => {
+    const eqIdx = pair.indexOf('=');
+    if (eqIdx === -1) return;
+    const k = decodeURIComponent(pair.slice(0, eqIdx));
+    const v = decodeURIComponent(pair.slice(eqIdx + 1));
+    params[k] = v;
+  });
+
+  if (params.type !== 'recovery') return null;
+  if (!params.access_token || !params.refresh_token) return null;
+
+  return { accessToken: params.access_token, refreshToken: params.refresh_token };
 }
 
 // ── Context types ─────────────────────────────────────────────────────────────
@@ -69,11 +103,13 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   needsOnboarding: boolean;
+  isPasswordRecovery: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   deleteAccount: () => Promise<{ error: any }>;
   resetPassword: (email: string) => Promise<{ error: any }>;
+  updatePassword: (newPassword: string) => Promise<{ error: any }>;
   completeOnboarding: () => Promise<void>;
   triggerOnboarding: () => Promise<void>;
 }
@@ -83,19 +119,62 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // ── Provider ──────────────────────────────────────────────────────────────────
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession]           = useState<Session | null>(null);
-  const [user, setUser]                 = useState<User | null>(null);
-  const [loading, setLoading]           = useState(true);
-  const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [session, setSession]                   = useState<Session | null>(null);
+  const [user, setUser]                         = useState<User | null>(null);
+  const [loading, setLoading]                   = useState(true);
+  const [needsOnboarding, setNeedsOnboarding]   = useState(false);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
 
-  // Track which user ID we last resolved onboarding for. Prevents re-fetching
-  // on TOKEN_REFRESHED events where the user hasn't changed.
   const resolvedUserRef = useRef<string | null>(null);
+
+  // ── Deep link handler ─────────────────────────────────────────────────────
+  // Called for both cold-start URLs and URLs received while the app is open.
+  // If the URL contains a Supabase recovery token, we call setSession so that
+  // onAuthStateChange fires PASSWORD_RECOVERY and the app shows the reset screen.
 
   useEffect(() => {
     let mounted = true;
 
-    // ── Initial session load ──────────────────────────────────────────────────
+    const applyRecoveryUrl = async (url: string | null) => {
+      if (!url) return;
+      const tokens = parseRecoveryUrl(url);
+      if (!tokens) return;
+
+      if (__DEV__) console.log('[Auth] Recovery deep link detected');
+
+      const { error } = await supabase.auth.setSession({
+        access_token:  tokens.accessToken,
+        refresh_token: tokens.refreshToken,
+      });
+
+      if (error) {
+        if (__DEV__) console.error('[Auth] setSession error:', error.message);
+      }
+      // On success, onAuthStateChange fires PASSWORD_RECOVERY which sets
+      // isPasswordRecovery = true. No further action needed here.
+    };
+
+    // Cold start — app opened by tapping the reset link
+    Linking.getInitialURL().then((url) => {
+      if (mounted) applyRecoveryUrl(url);
+    });
+
+    // Warm start — link tapped while app is already running
+    const linkSub = Linking.addEventListener('url', ({ url }) => {
+      applyRecoveryUrl(url);
+    });
+
+    return () => {
+      mounted = false;
+      linkSub.remove();
+    };
+  }, []);
+
+  // ── Auth state listener ───────────────────────────────────────────────────
+
+  useEffect(() => {
+    let mounted = true;
+
     const init = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!mounted) return;
@@ -114,26 +193,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     init();
 
-    // ── Auth state changes ────────────────────────────────────────────────────
-    // Fires on: SIGNED_IN, SIGNED_OUT, TOKEN_REFRESHED, USER_UPDATED, etc.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
 
+        if (__DEV__) console.log('[Auth] event:', event);
+
         setSession(session);
         setUser(session?.user ?? null);
 
+        // Password recovery — show the new password screen instead of normal app.
+        if (event === 'PASSWORD_RECOVERY') {
+          setIsPasswordRecovery(true);
+          return;
+        }
+
         if (!session?.user) {
-          // Signed out or session expired.
           setNeedsOnboarding(false);
+          setIsPasswordRecovery(false);
           resolvedUserRef.current = null;
           return;
         }
 
-        // Re-resolve only when the user actually changes (new sign-in on a
-        // different account, or first sign-in on this device). Skip the fetch
-        // for TOKEN_REFRESHED and other events for the same user since the
-        // onboarding state won't have changed.
+        // Only re-resolve onboarding when the authenticated user actually changes.
+        // Skips TOKEN_REFRESHED and other events for the same user.
         if (session.user.id !== resolvedUserRef.current) {
           resolvedUserRef.current = session.user.id;
           const completed = await resolveOnboardingCompleted(session.user.id);
@@ -165,53 +248,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const resetPassword = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    // redirectTo must use the registered app scheme so the OS routes the link
+    // back into the app. The path after :// is arbitrary but helps with parsing.
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${APP_SCHEME}://reset-password`,
+    });
     return { error };
+  };
+
+  // Called from ResetPasswordScreen after the user enters their new password.
+  const updatePassword = async (newPassword: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (!error) {
+        // Clear recovery mode — App.tsx re-renders and shows the main app.
+        setIsPasswordRecovery(false);
+      }
+      return { error };
+    } catch (error: any) {
+      return { error };
+    }
   };
 
   // ── Onboarding actions ────────────────────────────────────────────────────
 
   const completeOnboarding = async () => {
     if (!user) return;
-
-    // Persist to Supabase first (source of truth). upsert handles the case
-    // where no profile row exists yet (brand new user completing onboarding
-    // before any other profile interaction).
     try {
       await supabase
         .from('profiles')
-        .upsert(
-          { id: user.id, onboarding_completed: true },
-          { onConflict: 'id' }
-        );
+        .upsert({ id: user.id, onboarding_completed: true }, { onConflict: 'id' });
     } catch {
-      if (__DEV__) {
-        console.warn('[Onboarding] Failed to persist completion to Supabase');
-      }
-      // Non-fatal: still update local state so the user is not blocked.
+      if (__DEV__) console.warn('[Onboarding] Failed to persist completion to Supabase');
     }
-
     await writeOnboardingCache(user.id, true);
     setNeedsOnboarding(false);
   };
 
-  // Called from the Settings → Getting Started flow to replay onboarding.
   const triggerOnboarding = async () => {
     if (!user) return;
-
     try {
       await supabase
         .from('profiles')
-        .upsert(
-          { id: user.id, onboarding_completed: false },
-          { onConflict: 'id' }
-        );
+        .upsert({ id: user.id, onboarding_completed: false }, { onConflict: 'id' });
     } catch {
-      if (__DEV__) {
-        console.warn('[Onboarding] Failed to reset onboarding in Supabase');
-      }
+      if (__DEV__) console.warn('[Onboarding] Failed to reset onboarding in Supabase');
     }
-
     await writeOnboardingCache(user.id, false);
     setNeedsOnboarding(true);
   };
@@ -226,17 +308,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const userId = user.id;
 
-      // Single RPC call — handles all table cleanup atomically server-side.
       const { error: rpcError } = await supabase.rpc('delete_user');
 
       if (rpcError) {
-        if (__DEV__) {
-          console.error('[deleteAccount] RPC error:', rpcError.message);
-        }
+        if (__DEV__) console.error('[deleteAccount] RPC error:', rpcError.message);
         return { error: rpcError };
       }
 
-      // Deletion confirmed. Clear all local state for this device.
       const localKeys = [
         onboardingKey(userId),
         'beluga_notif_prefs',
@@ -263,11 +341,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     loading,
     needsOnboarding,
+    isPasswordRecovery,
     signIn,
     signUp,
     signOut,
     deleteAccount,
     resetPassword,
+    updatePassword,
     completeOnboarding,
     triggerOnboarding,
   };
