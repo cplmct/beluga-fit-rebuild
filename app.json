@@ -2,6 +2,7 @@
   "expo": {
     "name": "Beluga Fit",
     "slug": "beluga-fit",
+    "scheme": "belugafit",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -51,7 +52,19 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.tranbtc.belugafitworkout",
-      "permissions": ["INTERNET"]
+      "permissions": ["INTERNET"],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "belugafit"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "plugins": [
       "expo-dev-client",

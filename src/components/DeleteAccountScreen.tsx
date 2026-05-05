@@ -41,6 +41,21 @@ const DATA_DELETED = [
   'All other account data',
 ];
 
+function friendlyError(message: string): string {
+  if (!message) return 'Something went wrong. Please try again.';
+  const lower = message.toLowerCase();
+  if (lower.includes('network') || lower.includes('fetch')) {
+    return 'Could not reach the server. Check your internet connection and try again.';
+  }
+  if (lower.includes('not authenticated') || lower.includes('jwt')) {
+    return 'Your session has expired. Please sign out and sign back in, then try again.';
+  }
+  if (lower.includes('permission') || lower.includes('policy')) {
+    return 'Permission denied. Please contact support if this continues.';
+  }
+  return message;
+}
+
 export function DeleteAccountScreen() {
   const navigation = useNavigation();
   const { user, deleteAccount } = useAuth();
@@ -111,9 +126,9 @@ export function DeleteAccountScreen() {
   };
 
   const handleDelete = async () => {
-    if (!emailMatches) return;
+    if (!emailMatches || deleting) return;
 
-    if (__DEV__) console.log('[DeleteAccount] deletion initiated (email withheld)');
+    if (__DEV__) console.log('[DeleteAccount] deletion initiated');
 
     setDeleting(true);
     setError('');
@@ -121,9 +136,14 @@ export function DeleteAccountScreen() {
     const { error: deleteError } = await deleteAccount();
 
     if (deleteError) {
-      setError(deleteError.message || 'Something went wrong. Please try again.');
+      // Deletion failed — stay on the screen with an error message.
+      // The account still exists; do not navigate away.
+      setError(friendlyError(deleteError.message));
       setDeleting(false);
     }
+    // On success: supabase.auth.signOut() inside deleteAccount() triggers
+    // onAuthStateChange, which clears the session and navigates the user
+    // out of the authenticated stack automatically. No explicit navigation needed.
   };
 
   const formatDate = (iso: string) =>

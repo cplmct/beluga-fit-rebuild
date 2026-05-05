@@ -11,11 +11,14 @@ import {
   Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import {
   NotifPrefs,
   ReminderType,
   getPrefs,
   savePrefs,
+  hasLocalPrefs,
   scheduleDaily,
   cancelAll,
   requestPermission,
@@ -100,6 +103,7 @@ function TimeStep({
 }
 
 export function NotificationSettingsScreen() {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [prefs, setPrefs] = useState<NotifPrefs>({ ...DEFAULT_PREFS });
@@ -111,24 +115,83 @@ export function NotificationSettingsScreen() {
     }, [])
   );
 
+  // Push prefs to Supabase in the background (non-blocking).
+  // Allows the same time/style settings to be restored on a new device install.
+  const syncPrefsToCloud = (updated: NotifPrefs) => {
+    if (!user) return;
+    supabase
+      .from('profiles')
+      .upsert(
+        {
+          id:            user.id,
+          notif_enabled: updated.enabled,
+          notif_hour:    updated.hour,
+          notif_minute:  updated.minute,
+          notif_type:    updated.type,
+        },
+        { onConflict: 'id' }
+      )
+      .then(({ error }) => {
+        if (error && __DEV__) console.warn('[Notif] Cloud sync failed:', error.message);
+      });
+  };
+
   const loadPrefs = async () => {
     setLoading(true);
-    const [stored, perm] = await Promise.all([getPrefs(), getPermissionStatus()]);
-    setPrefs(stored);
+    const [stored, perm, hadLocal] = await Promise.all([
+      getPrefs(),
+      getPermissionStatus(),
+      hasLocalPrefs(),
+    ]);
     setPermStatus(perm);
+
+    if (!hadLocal && user) {
+      // No local prefs yet — check Supabase to restore from another device
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('notif_enabled, notif_hour, notif_minute, notif_type')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (data !== null) {
+          const cloudPrefs: NotifPrefs = {
+            enabled: data.notif_enabled ?? DEFAULT_PREFS.enabled,
+            hour:    data.notif_hour    ?? DEFAULT_PREFS.hour,
+            minute:  data.notif_minute  ?? DEFAULT_PREFS.minute,
+            type:    (data.notif_type as ReminderType) ?? DEFAULT_PREFS.type,
+          };
+          // Cache locally so subsequent opens are instant
+          await savePrefs(cloudPrefs);
+          // Re-schedule if the user had notifications enabled on their old device
+          if (cloudPrefs.enabled) {
+            await scheduleDaily(cloudPrefs);
+          }
+          setPrefs(cloudPrefs);
+          setLoading(false);
+          return;
+        }
+      } catch {
+        // Cloud fallback failed — fall through to local defaults
+      }
+    }
+
+    setPrefs(stored);
     setLoading(false);
   };
 
   const applyPrefs = async (updated: NotifPrefs) => {
     setSaving(true);
     await savePrefs(updated);
+    syncPrefsToCloud(updated);
+
     if (updated.enabled) {
       const ok = await scheduleDaily(updated);
       if (!ok) {
-        // Permission was denied — reflect that
         setPermStatus('denied');
         const fixed = { ...updated, enabled: false };
         await savePrefs(fixed);
+        syncPrefsToCloud(fixed);
         setPrefs(fixed);
         setSaving(false);
         return;
@@ -140,9 +203,13 @@ export function NotificationSettingsScreen() {
     setSaving(false);
   };
 
+  const persistPrefs = (updated: NotifPrefs) => {
+    savePrefs(updated);
+    syncPrefsToCloud(updated);
+  };
+
   const handleToggle = async (val: boolean) => {
     if (val && permStatus === 'denied') {
-      // Try requesting again — if still denied, stay off
       const result = await requestPermission();
       setPermStatus(result);
       if (result !== 'granted') return;
@@ -155,7 +222,7 @@ export function NotificationSettingsScreen() {
     const updated = { ...prefs, hour: h };
     setPrefs(updated);
     if (prefs.enabled) applyPrefs(updated);
-    else savePrefs(updated);
+    else persistPrefs(updated);
   };
 
   const handleMinuteChange = (delta: number) => {
@@ -163,14 +230,14 @@ export function NotificationSettingsScreen() {
     const updated = { ...prefs, minute: m };
     setPrefs(updated);
     if (prefs.enabled) applyPrefs(updated);
-    else savePrefs(updated);
+    else persistPrefs(updated);
   };
 
   const handleTypeChange = (type: ReminderType) => {
     const updated = { ...prefs, type };
     setPrefs(updated);
     if (prefs.enabled) applyPrefs(updated);
-    else savePrefs(updated);
+    else persistPrefs(updated);
   };
 
   const openDeviceSettings = () => {

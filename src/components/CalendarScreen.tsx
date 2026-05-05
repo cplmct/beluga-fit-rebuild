@@ -99,12 +99,14 @@ export function CalendarScreen({ navigation }: any) {
       minute: '2-digit',
     });
 
-  const formatSelectedDate = (dateString: string) =>
-    new Date(dateString).toLocaleDateString('en-US', {
+  const formatSelectedDate = (dateString: string) => {
+    const [y, m, d] = dateString.split('-').map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString('en-US', {
       weekday: 'long',
       month: 'long',
       day: 'numeric',
     });
+  };
 
   const renderWorkoutItem = ({ item }: { item: WorkoutSummary }) => (
     <TouchableOpacity

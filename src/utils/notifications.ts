@@ -73,6 +73,7 @@ function pickMessage(type: ReminderType): { title: string; body: string } {
 }
 
 // ── Prefs persistence ────────────────────────────────────────
+
 export async function getPrefs(): Promise<NotifPrefs> {
   try {
     const raw = await AsyncStorage.getItem(PREFS_KEY);
@@ -85,6 +86,18 @@ export async function getPrefs(): Promise<NotifPrefs> {
 
 export async function savePrefs(prefs: NotifPrefs): Promise<void> {
   await AsyncStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+}
+
+// Returns true if the user has ever saved notification preferences on this
+// device. Used by NotificationSettingsScreen to decide whether to check
+// Supabase for cloud-synced preferences from another device.
+export async function hasLocalPrefs(): Promise<boolean> {
+  try {
+    const raw = await AsyncStorage.getItem(PREFS_KEY);
+    return raw !== null;
+  } catch {
+    return false;
+  }
 }
 
 async function getScheduledId(): Promise<string | null> {
@@ -195,16 +208,16 @@ export function formatTime(hour: number, minute: number): string {
 
 export function reminderTypeLabel(type: ReminderType): string {
   switch (type) {
-    case 'checkin': return 'Daily check-in';
-    case 'move': return 'Time to move';
+    case 'checkin':    return 'Daily check-in';
+    case 'move':       return 'Time to move';
     case 'motivation': return 'Gym motivation';
-    case 'random': return 'Random rotation';
+    case 'random':     return 'Random rotation';
   }
 }
 
 export const MESSAGE_COUNTS = {
-  checkin: MESSAGES_CHECKIN.length,
-  move: MESSAGES_MOVE.length,
+  checkin:    MESSAGES_CHECKIN.length,
+  move:       MESSAGES_MOVE.length,
   motivation: MESSAGES_MOTIVATION.length,
-  total: MESSAGES_CHECKIN.length + MESSAGES_MOVE.length + MESSAGES_MOTIVATION.length,
+  total:      MESSAGES_CHECKIN.length + MESSAGES_MOVE.length + MESSAGES_MOTIVATION.length,
 };

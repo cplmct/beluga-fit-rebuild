@@ -36,8 +36,8 @@ export function RegisterScreen({ navigation }: any) {
       setError('Passwords do not match.');
       return;
     }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.');
       return;
     }
     setLoading(true);
@@ -108,7 +108,7 @@ export function RegisterScreen({ navigation }: any) {
             <Text style={styles.label}>Password</Text>
             <TextInput
               style={[styles.input, passwordFocused && styles.inputFocused]}
-              placeholder="At least 6 characters"
+              placeholder="At least 8 characters"
               placeholderTextColor="#94a3b8"
               value={password}
               onChangeText={(t) => { setPassword(t); setError(''); }}

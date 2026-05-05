@@ -7,12 +7,14 @@ import { UnitsProvider } from './src/contexts/UnitsContext';
 import { AuthStackNavigator } from './src/components/AuthStackNavigator';
 import { BottomTabNavigator } from './src/components/BottomTabNavigator';
 import { OnboardingScreen } from './src/components/OnboardingScreen';
+import { ResetPasswordScreen } from './src/components/ResetPasswordScreen';
 
 function AppContent() {
-  const { user, loading, needsOnboarding, completeOnboarding } = useAuth();
+  const { user, loading, needsOnboarding, completeOnboarding, isPasswordRecovery } = useAuth();
   const navigationRef = useNavigationContainerRef();
   const pendingTabRef = useRef<string | null>(null);
 
+  // ── Loading ───────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -21,6 +23,14 @@ function AppContent() {
     );
   }
 
+  // ── Password recovery ─────────────────────────────────────────────────────
+  // Shown when the user opens the app via the reset-password deep link.
+  // Rendered outside NavigationContainer — no navigation needed for this screen.
+  if (isPasswordRecovery) {
+    return <ResetPasswordScreen />;
+  }
+
+  // ── Onboarding ────────────────────────────────────────────────────────────
   if (user && needsOnboarding) {
     return (
       <OnboardingScreen
@@ -34,6 +44,7 @@ function AppContent() {
     );
   }
 
+  // ── Main app ──────────────────────────────────────────────────────────────
   return (
     <NavigationContainer
       ref={navigationRef}
