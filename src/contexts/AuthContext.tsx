@@ -1,57 +1,64 @@
-import React, { createContext, useState, useEffect, useContext, useRef } from 'react';
-import { Linking } from 'react-native';
-import { Session, User } from '@supabase/supabase-js';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { supabase } from '../lib/supabase';
+import React, { createContext, useState, useEffect, useContext, useRef } from 'react'
+import { Linking } from 'react-native'
+import { Session, User, AuthError } from '@supabase/supabase-js'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { supabase } from '../lib/supabase'
 
 // ── Deep link scheme ──────────────────────────────────────────────────────────
 // Must match app.json "scheme" and the redirectTo passed to resetPasswordForEmail.
-const APP_SCHEME = 'belugafit';
+const APP_SCHEME = 'belugafit'
+
+// ── Error type ────────────────────────────────────────────────────────────────
+// Minimal interface satisfied by AuthError, PostgrestError, and plain Error.
+// Used for operations that can fail at either the auth or database layer.
+export interface AppError {
+  message: string
+}
 
 // ── Local onboarding cache ────────────────────────────────────────────────────
 
 function onboardingKey(userId: string) {
-  return `@beluga/onboarding_${userId}`;
+  return `@beluga/onboarding_${userId}`
 }
 
 async function readOnboardingCache(userId: string): Promise<boolean | null> {
   try {
-    const val = await AsyncStorage.getItem(onboardingKey(userId));
-    return val === 'true' ? true : null;
+    const val = await AsyncStorage.getItem(onboardingKey(userId))
+    return val === 'true' ? true : null
   } catch {
-    return null;
+    return null
   }
 }
 
 async function writeOnboardingCache(userId: string, completed: boolean): Promise<void> {
   try {
     if (completed) {
-      await AsyncStorage.setItem(onboardingKey(userId), 'true');
+      await AsyncStorage.setItem(onboardingKey(userId), 'true')
     } else {
-      await AsyncStorage.removeItem(onboardingKey(userId));
+      await AsyncStorage.removeItem(onboardingKey(userId))
     }
   } catch {}
 }
 
 async function resolveOnboardingCompleted(userId: string): Promise<boolean> {
-  const cached = await readOnboardingCache(userId);
+  const cached = await readOnboardingCache(userId)
   try {
     const { data, error } = await supabase
       .from('profiles')
       .select('onboarding_completed')
       .eq('id', userId)
-      .maybeSingle();
+      .maybeSingle()
 
-    if (error) throw error;
+    if (error) throw error
 
-    const completed = data?.onboarding_completed === true;
-    await writeOnboardingCache(userId, completed);
-    return completed;
+    const completed = data?.onboarding_completed === true
+    await writeOnboardingCache(userId, completed)
+    return completed
   } catch {
     if (__DEV__) {
-      console.warn('[Onboarding] Supabase unavailable — falling back to cache:', cached);
+      console.warn('[Onboarding] Supabase unavailable — falling back to cache:', cached)
     }
-    return cached === true;
+    return cached === true
   }
 }
 
@@ -60,279 +67,313 @@ async function resolveOnboardingCompleted(userId: string): Promise<boolean> {
 //   belugafit://reset-password#access_token=xxx&refresh_token=xxx&type=recovery
 //
 // React Native's Linking module does not expose URL fragments on Android, so
-// Supabase actually encodes the tokens as query params when using a custom
-// scheme redirect. We parse both locations to be safe.
+// Supabase encodes the tokens as query params when using a custom scheme.
+// We parse both locations to be safe.
 
 function parseRecoveryUrl(url: string): {
-  accessToken: string;
-  refreshToken: string;
+  accessToken: string
+  refreshToken: string
 } | null {
-  if (!url || !url.startsWith(APP_SCHEME)) return null;
+  if (!url || !url.startsWith(APP_SCHEME)) return null
 
-  // Try fragment first (#access_token=…)
-  const hashIdx = url.indexOf('#');
-  const qIdx    = url.indexOf('?');
+  const hashIdx = url.indexOf('#')
+  const qIdx    = url.indexOf('?')
 
   const paramStr = hashIdx !== -1
     ? url.slice(hashIdx + 1)
     : qIdx !== -1
       ? url.slice(qIdx + 1)
-      : '';
+      : ''
 
-  if (!paramStr) return null;
+  if (!paramStr) return null
 
-  const params: Record<string, string> = {};
+  const params: Record<string, string> = {}
   paramStr.split('&').forEach((pair) => {
-    const eqIdx = pair.indexOf('=');
-    if (eqIdx === -1) return;
-    const k = decodeURIComponent(pair.slice(0, eqIdx));
-    const v = decodeURIComponent(pair.slice(eqIdx + 1));
-    params[k] = v;
-  });
+    const eqIdx = pair.indexOf('=')
+    if (eqIdx === -1) return
+    params[decodeURIComponent(pair.slice(0, eqIdx))] =
+      decodeURIComponent(pair.slice(eqIdx + 1))
+  })
 
-  if (params.type !== 'recovery') return null;
-  if (!params.access_token || !params.refresh_token) return null;
+  if (params.type !== 'recovery') return null
+  if (!params.access_token || !params.refresh_token) return null
 
-  return { accessToken: params.access_token, refreshToken: params.refresh_token };
+  return { accessToken: params.access_token, refreshToken: params.refresh_token }
 }
 
 // ── Context types ─────────────────────────────────────────────────────────────
 
 interface AuthContextType {
-  session: Session | null;
-  user: User | null;
-  loading: boolean;
-  needsOnboarding: boolean;
-  isPasswordRecovery: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string) => Promise<{ error: any }>;
-  signOut: () => Promise<void>;
-  deleteAccount: () => Promise<{ error: any }>;
-  resetPassword: (email: string) => Promise<{ error: any }>;
-  updatePassword: (newPassword: string) => Promise<{ error: any }>;
-  completeOnboarding: () => Promise<void>;
-  triggerOnboarding: () => Promise<void>;
+  session:            Session | null
+  user:               User | null
+  loading:            boolean
+  needsOnboarding:    boolean
+  isPasswordRecovery: boolean
+  signIn:             (email: string, password: string) => Promise<{ error: AuthError | null }>
+  signUp:             (email: string, password: string) => Promise<{ error: AuthError | null }>
+  signOut:            () => Promise<void>
+  deleteAccount:      () => Promise<{ error: AppError | null }>
+  resetPassword:      (email: string) => Promise<{ error: AuthError | null }>
+  updatePassword:     (newPassword: string) => Promise<{ error: AuthError | null }>
+  completeOnboarding: () => Promise<void>
+  triggerOnboarding:  () => Promise<void>
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 // ── Provider ──────────────────────────────────────────────────────────────────
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession]                   = useState<Session | null>(null);
-  const [user, setUser]                         = useState<User | null>(null);
-  const [loading, setLoading]                   = useState(true);
-  const [needsOnboarding, setNeedsOnboarding]   = useState(false);
-  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
+  const [session, setSession]                       = useState<Session | null>(null)
+  const [user, setUser]                             = useState<User | null>(null)
+  const [loading, setLoading]                       = useState(true)
+  const [needsOnboarding, setNeedsOnboarding]       = useState(false)
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false)
 
-  const resolvedUserRef = useRef<string | null>(null);
+  // Tracks which user we last resolved onboarding for. Prevents redundant
+  // Supabase round-trips on TOKEN_REFRESHED events for the same user.
+  const resolvedUserRef = useRef<string | null>(null)
+
+  // Incremented on every auth event. Async onboarding resolution checks this
+  // before applying state — stale results from earlier events are discarded.
+  const authEventVersion = useRef(0)
 
   // ── Deep link handler ─────────────────────────────────────────────────────
-  // Called for both cold-start URLs and URLs received while the app is open.
-  // If the URL contains a Supabase recovery token, we call setSession so that
-  // onAuthStateChange fires PASSWORD_RECOVERY and the app shows the reset screen.
+  // Parses recovery tokens from belugafit:// URLs and calls setSession so that
+  // onAuthStateChange fires PASSWORD_RECOVERY. Handles both cold starts
+  // (app opened via tapping the link) and warm starts (app already open).
 
   useEffect(() => {
-    let mounted = true;
+    let mounted = true
 
-    const applyRecoveryUrl = async (url: string | null) => {
-      if (!url) return;
-      const tokens = parseRecoveryUrl(url);
-      if (!tokens) return;
+    const applyRecoveryUrl = async (url: string | null): Promise<void> => {
+      if (!url) return
+      const tokens = parseRecoveryUrl(url)
+      if (!tokens) return
 
-      if (__DEV__) console.log('[Auth] Recovery deep link detected');
+      if (__DEV__) console.log('[Auth] Recovery deep link received')
 
       const { error } = await supabase.auth.setSession({
         access_token:  tokens.accessToken,
         refresh_token: tokens.refreshToken,
-      });
+      })
 
-      if (error) {
-        if (__DEV__) console.error('[Auth] setSession error:', error.message);
+      if (error && __DEV__) {
+        console.error('[Auth] setSession error:', error.message)
       }
-      // On success, onAuthStateChange fires PASSWORD_RECOVERY which sets
-      // isPasswordRecovery = true. No further action needed here.
-    };
+      // On success, onAuthStateChange fires PASSWORD_RECOVERY, which sets
+      // isPasswordRecovery = true. Nothing else to do here.
+    }
 
-    // Cold start — app opened by tapping the reset link
-    Linking.getInitialURL().then((url) => {
-      if (mounted) applyRecoveryUrl(url);
-    });
+    Linking.getInitialURL()
+      .then((url) => { if (mounted) applyRecoveryUrl(url) })
+      .catch((err) => { if (__DEV__) console.warn('[Auth] getInitialURL error:', err) })
 
-    // Warm start — link tapped while app is already running
-    const linkSub = Linking.addEventListener('url', ({ url }) => {
-      applyRecoveryUrl(url);
-    });
+    const linkSub = Linking.addEventListener('url', ({ url }) => { applyRecoveryUrl(url) })
 
     return () => {
-      mounted = false;
-      linkSub.remove();
-    };
-  }, []);
+      mounted = false
+      linkSub.remove()
+    }
+  }, [])
 
   // ── Auth state listener ───────────────────────────────────────────────────
 
   useEffect(() => {
-    let mounted = true;
+    let mounted = true
 
-    const init = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!mounted) return;
+    // Initial session load. The finally block guarantees loading is always
+    // cleared even if getSession rejects (e.g. corrupted storage).
+    const init = async (): Promise<void> => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession()
 
-      setSession(session);
-      setUser(session?.user ?? null);
+        if (error) {
+          if (__DEV__) console.error('[Auth] getSession error:', error.message)
+          // Continue — user is simply unauthenticated.
+          return
+        }
 
-      if (session?.user) {
-        resolvedUserRef.current = session.user.id;
-        const completed = await resolveOnboardingCompleted(session.user.id);
-        if (mounted) setNeedsOnboarding(!completed);
+        if (!mounted) return
+
+        setSession(session)
+        setUser(session?.user ?? null)
+
+        if (session?.user) {
+          resolvedUserRef.current = session.user.id
+          const version   = ++authEventVersion.current
+          const completed = await resolveOnboardingCompleted(session.user.id)
+          if (mounted && authEventVersion.current === version) {
+            setNeedsOnboarding(!completed)
+          }
+        }
+      } catch (err) {
+        if (__DEV__) console.error('[Auth] init error:', err)
+      } finally {
+        if (mounted) setLoading(false)
       }
+    }
 
-      if (mounted) setLoading(false);
-    };
+    init()
 
-    init();
-
+    // onAuthStateChange callback is intentionally NOT async.
+    // Synchronous state updates are applied immediately; the one piece of
+    // async work (onboarding resolution) runs as a guarded promise chain.
+    // The authEventVersion counter ensures only the most recent event's
+    // async result is applied — earlier in-flight results are discarded.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (!mounted) return;
+      (event, session) => {
+        if (__DEV__) console.log('[Auth] event:', event)
 
-        if (__DEV__) console.log('[Auth] event:', event);
+        // ── Synchronous updates (always safe, last write wins) ──────────────
+        setSession(session)
+        setUser(session?.user ?? null)
 
-        setSession(session);
-        setUser(session?.user ?? null);
-
-        // Password recovery — show the new password screen instead of normal app.
         if (event === 'PASSWORD_RECOVERY') {
-          setIsPasswordRecovery(true);
-          return;
+          setIsPasswordRecovery(true)
+          return
         }
 
         if (!session?.user) {
-          setNeedsOnboarding(false);
-          setIsPasswordRecovery(false);
-          resolvedUserRef.current = null;
-          return;
+          setNeedsOnboarding(false)
+          setIsPasswordRecovery(false)
+          resolvedUserRef.current = null
+          return
         }
 
-        // Only re-resolve onboarding when the authenticated user actually changes.
-        // Skips TOKEN_REFRESHED and other events for the same user.
-        if (session.user.id !== resolvedUserRef.current) {
-          resolvedUserRef.current = session.user.id;
-          const completed = await resolveOnboardingCompleted(session.user.id);
-          if (mounted) setNeedsOnboarding(!completed);
-        }
+        // ── Async onboarding resolution ────────────────────────────────────
+        // Only runs when the authenticated user actually changes. Skip
+        // TOKEN_REFRESHED and other events for the same user.
+        if (session.user.id === resolvedUserRef.current) return
+
+        resolvedUserRef.current = session.user.id
+        const version = ++authEventVersion.current
+
+        resolveOnboardingCompleted(session.user.id)
+          .then((completed) => {
+            if (mounted && authEventVersion.current === version) {
+              setNeedsOnboarding(!completed)
+            }
+          })
+          .catch((err) => {
+            if (__DEV__) console.error('[Auth] onboarding resolve error:', err)
+            if (mounted && authEventVersion.current === version) {
+              setNeedsOnboarding(false)
+            }
+          })
       }
-    );
+    )
 
     return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
+      mounted = false
+      subscription.unsubscribe()
+    }
+  }, [])
 
   // ── Auth actions ──────────────────────────────────────────────────────────
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error };
-  };
+  const signIn = async (
+    email: string,
+    password: string,
+  ): Promise<{ error: AuthError | null }> => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    return { error }
+  }
 
-  const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password });
-    return { error };
-  };
+  const signUp = async (
+    email: string,
+    password: string,
+  ): Promise<{ error: AuthError | null }> => {
+    const { error } = await supabase.auth.signUp({ email, password })
+    return { error }
+  }
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
-  };
+  const signOut = async (): Promise<void> => {
+    const { error } = await supabase.auth.signOut()
+    if (error && __DEV__) console.error('[Auth] signOut error:', error.message)
+  }
 
-  const resetPassword = async (email: string) => {
-    // redirectTo must use the registered app scheme so the OS routes the link
-    // back into the app. The path after :// is arbitrary but helps with parsing.
+  const resetPassword = async (email: string): Promise<{ error: AuthError | null }> => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${APP_SCHEME}://reset-password`,
-    });
-    return { error };
-  };
+    })
+    return { error }
+  }
 
-  // Called from ResetPasswordScreen after the user enters their new password.
-  const updatePassword = async (newPassword: string) => {
-    try {
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (!error) {
-        // Clear recovery mode — App.tsx re-renders and shows the main app.
-        setIsPasswordRecovery(false);
-      }
-      return { error };
-    } catch (error: any) {
-      return { error };
-    }
-  };
+  const updatePassword = async (
+    newPassword: string,
+  ): Promise<{ error: AuthError | null }> => {
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    if (!error) setIsPasswordRecovery(false)
+    return { error }
+  }
 
   // ── Onboarding actions ────────────────────────────────────────────────────
 
-  const completeOnboarding = async () => {
-    if (!user) return;
+  const completeOnboarding = async (): Promise<void> => {
+    if (!user) return
     try {
       await supabase
         .from('profiles')
-        .upsert({ id: user.id, onboarding_completed: true }, { onConflict: 'id' });
+        .upsert({ id: user.id, onboarding_completed: true }, { onConflict: 'id' })
     } catch {
-      if (__DEV__) console.warn('[Onboarding] Failed to persist completion to Supabase');
+      if (__DEV__) console.warn('[Onboarding] Failed to persist completion to Supabase')
     }
-    await writeOnboardingCache(user.id, true);
-    setNeedsOnboarding(false);
-  };
+    await writeOnboardingCache(user.id, true)
+    setNeedsOnboarding(false)
+  }
 
-  const triggerOnboarding = async () => {
-    if (!user) return;
+  const triggerOnboarding = async (): Promise<void> => {
+    if (!user) return
     try {
       await supabase
         .from('profiles')
-        .upsert({ id: user.id, onboarding_completed: false }, { onConflict: 'id' });
+        .upsert({ id: user.id, onboarding_completed: false }, { onConflict: 'id' })
     } catch {
-      if (__DEV__) console.warn('[Onboarding] Failed to reset onboarding in Supabase');
+      if (__DEV__) console.warn('[Onboarding] Failed to reset onboarding in Supabase')
     }
-    await writeOnboardingCache(user.id, false);
-    setNeedsOnboarding(true);
-  };
+    await writeOnboardingCache(user.id, false)
+    setNeedsOnboarding(true)
+  }
 
   // ── Account deletion ──────────────────────────────────────────────────────
 
-  const deleteAccount = async () => {
+  const deleteAccount = async (): Promise<{ error: AppError | null }> => {
+    if (!user) {
+      return { error: { message: 'No user logged in' } }
+    }
+
+    const userId = user.id
+
     try {
-      if (!user) {
-        return { error: { message: 'No user logged in' } };
-      }
-
-      const userId = user.id;
-
-      const { error: rpcError } = await supabase.rpc('delete_user');
+      const { error: rpcError } = await supabase.rpc('delete_user')
 
       if (rpcError) {
-        if (__DEV__) console.error('[deleteAccount] RPC error:', rpcError.message);
-        return { error: rpcError };
+        if (__DEV__) console.error('[Auth] deleteAccount RPC error:', rpcError.message)
+        return { error: rpcError }
       }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unexpected error during account deletion'
+      if (__DEV__) console.error('[Auth] deleteAccount error:', message)
+      return { error: { message } }
+    }
 
-      const localKeys = [
+    // Deletion confirmed server-side. Clean up local state.
+    try {
+      await AsyncStorage.multiRemove([
         onboardingKey(userId),
         'beluga_notif_prefs',
         'beluga_notif_id',
-      ];
-      try {
-        await AsyncStorage.multiRemove(localKeys);
-      } catch {}
+      ])
+    } catch {}
 
-      try {
-        await supabase.auth.signOut();
-      } catch {}
+    // Session is already invalidated server-side; signOut may fail — ignore it.
+    try {
+      await supabase.auth.signOut()
+    } catch {}
 
-      return { error: null };
-    } catch (error: any) {
-      return { error };
-    }
-  };
+    return { error: null }
+  }
 
   // ── Context value ─────────────────────────────────────────────────────────
 
@@ -350,15 +391,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     updatePassword,
     completeOnboarding,
     triggerOnboarding,
-  };
+  }
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
+  const context = useContext(AuthContext)
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuth must be used within an AuthProvider')
   }
-  return context;
+  return context
 }
