@@ -154,12 +154,18 @@ export function PlanDetailScreen({ route, navigation }: any) {
   const confirmStartPlan = async () => {
     if (!user) return;
     setSaving(true);
-    try {
-      await setActivePlan(user.id, plan.id);
-      setActivePlanState({ planId: plan.id, startDate: new Date().toISOString() });
-    } finally {
-      setSaving(false);
+    const { error } = await setActivePlan(user.id, plan.id);
+    setSaving(false);
+
+    if (error) {
+      Alert.alert(
+        'Could not save plan',
+        'Your plan could not be saved. Please check your connection and try again.\n\nIf this keeps happening, the required database migration may not have been run — see supabase_migration.sql.',
+      );
+      return;
     }
+
+    setActivePlanState({ planId: plan.id, startDate: new Date().toISOString() });
   };
 
   const handleStopPlan = () => {
@@ -172,7 +178,12 @@ export function PlanDetailScreen({ route, navigation }: any) {
           text: 'Stop Plan',
           style: 'destructive',
           onPress: async () => {
-            if (user) await clearActivePlan(user.id);
+            if (!user) return;
+            const { error } = await clearActivePlan(user.id);
+            if (error) {
+              Alert.alert('Could not stop plan', 'Please check your connection and try again.');
+              return;
+            }
             setActivePlanState(null);
           },
         },

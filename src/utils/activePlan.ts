@@ -6,41 +6,57 @@ export interface ActivePlanState {
 }
 
 export async function getActivePlan(userId: string): Promise<ActivePlanState | null> {
-  try {
-    const { data } = await supabase
-      .from('profiles')
-      .select('active_plan_id, active_plan_start_date')
-      .eq('id', userId)
-      .maybeSingle();
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('active_plan_id, active_plan_start_date')
+    .eq('id', userId)
+    .maybeSingle();
 
-    if (!data?.active_plan_id) return null;
-    return {
-      planId: data.active_plan_id,
-      startDate: data.active_plan_start_date,
-    };
-  } catch {
+  if (error) {
+    if (__DEV__) console.error('[ActivePlan] getActivePlan failed:', error.message, error.code);
     return null;
   }
+
+  if (!data?.active_plan_id) return null;
+  return {
+    planId: data.active_plan_id,
+    startDate: data.active_plan_start_date,
+  };
 }
 
-export async function setActivePlan(userId: string, planId: string): Promise<void> {
-  await supabase
+export async function setActivePlan(
+  userId: string,
+  planId: string,
+): Promise<{ error: Error | null }> {
+  const { error } = await supabase
     .from('profiles')
-    .upsert({
-      id: userId,
+    .update({
       active_plan_id: planId,
       active_plan_start_date: new Date().toISOString(),
-    });
+    })
+    .eq('id', userId);
+
+  if (error) {
+    if (__DEV__) console.error('[ActivePlan] setActivePlan failed:', error.message, error.code);
+    return { error: new Error(error.message) };
+  }
+  return { error: null };
 }
 
-export async function clearActivePlan(userId: string): Promise<void> {
-  await supabase
+export async function clearActivePlan(userId: string): Promise<{ error: Error | null }> {
+  const { error } = await supabase
     .from('profiles')
     .update({
       active_plan_id: null,
       active_plan_start_date: null,
     })
     .eq('id', userId);
+
+  if (error) {
+    if (__DEV__) console.error('[ActivePlan] clearActivePlan failed:', error.message, error.code);
+    return { error: new Error(error.message) };
+  }
+  return { error: null };
 }
 
 export function getWeekNumber(startDate: string): number {
