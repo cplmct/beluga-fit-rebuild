@@ -99,22 +99,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: { message: 'No user logged in' } };
       }
 
-      const { error: dbError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', user.id);
+      const userId = user.id;
 
-      if (dbError) {
-        return { error: dbError };
+      // Single RPC call — handles all table cleanup atomically server-side.
+      // No client-side data deletes before this point: a partial failure would
+      // leave the account in a broken state.
+      const { error: rpcError } = await supabase.rpc('delete_user');
+
+      if (rpcError) {
+        // Deletion failed — do NOT sign out. The account still exists.
+        if (__DEV__) {
+          console.error('[deleteAccount] RPC error:', rpcError.message);
+        }
+        return { error: rpcError };
       }
 
-      const { error: authError } = await supabase.rpc('delete_user');
-
-      if (authError) {
-        return { error: authError };
+      // Deletion confirmed server-side. Now clean up local state.
+      try {
+        await AsyncStorage.removeItem(onboardingKey(userId));
+      } catch {
+        // Non-fatal — local key is orphaned but harmless after account deletion.
       }
 
-      await signOut();
+      // Sign out — the session is already invalidated server-side after the
+      // auth.users row was deleted, so this call may return an error; ignore it
+      // and let the auth state listener handle navigation.
+      try {
+        await supabase.auth.signOut();
+      } catch {
+        // Session already destroyed server-side; local state will clear via
+        // the onAuthStateChange listener.
+      }
+
       return { error: null };
     } catch (error: any) {
       return { error };
