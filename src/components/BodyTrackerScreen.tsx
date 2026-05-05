@@ -14,6 +14,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { LineChart } from 'react-native-chart-kit';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useUnits } from '../contexts/UnitsContext';
 
 interface BodyMeasurement {
   id: string;
@@ -56,6 +57,7 @@ function SkeletonBlock({
 
 export function BodyTrackerScreen() {
   const { user } = useAuth();
+  const { weightUnit, lengthUnit } = useUnits();
 
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
@@ -247,7 +249,7 @@ export function BodyTrackerScreen() {
       {/* ── Charts ── */}
       {weightChartData && (
         <View style={styles.chartCard}>
-          <Text style={styles.chartTitle}>Weight Trend</Text>
+          <Text style={styles.chartTitle}>Weight Trend ({weightUnit})</Text>
           <LineChart
             data={weightChartData}
             width={screenWidth - 40}
@@ -265,7 +267,7 @@ export function BodyTrackerScreen() {
 
       {waistChartData && (
         <View style={styles.chartCard}>
-          <Text style={styles.chartTitle}>Waist Trend</Text>
+          <Text style={styles.chartTitle}>Waist Trend ({lengthUnit})</Text>
           <LineChart
             data={waistChartData}
             width={screenWidth - 40}
@@ -292,34 +294,34 @@ export function BodyTrackerScreen() {
         ) : null}
 
         <View style={styles.row}>
-          <MeasurementField label="Height (in)" value={height} onChange={setHeight} />
-          <MeasurementField label="Weight (lbs)" value={weight} onChange={setWeight} />
+          <MeasurementField label={`Height (${lengthUnit})`} value={height} onChange={setHeight} />
+          <MeasurementField label={`Weight (${weightUnit})`} value={weight} onChange={setWeight} />
         </View>
         <View style={styles.row}>
-          <MeasurementField label="Chest (in)" value={chest} onChange={setChest} />
-          <MeasurementField label="Waist (in)" value={waist} onChange={setWaist} />
+          <MeasurementField label={`Chest (${lengthUnit})`} value={chest} onChange={setChest} />
+          <MeasurementField label={`Waist (${lengthUnit})`} value={waist} onChange={setWaist} />
         </View>
         <View style={styles.row}>
-          <MeasurementField label="Hips (in)" value={hips} onChange={setHips} />
-          <MeasurementField label="Neck (in)" value={neck} onChange={setNeck} />
+          <MeasurementField label={`Hips (${lengthUnit})`}  value={hips}  onChange={setHips} />
+          <MeasurementField label={`Neck (${lengthUnit})`}  value={neck}  onChange={setNeck} />
         </View>
 
         <Text style={styles.subLabel}>Arms</Text>
         <View style={styles.row}>
-          <MeasurementField label="Left (in)" value={leftArm} onChange={setLeftArm} />
-          <MeasurementField label="Right (in)" value={rightArm} onChange={setRightArm} />
+          <MeasurementField label={`Left (${lengthUnit})`}  value={leftArm}   onChange={setLeftArm} />
+          <MeasurementField label={`Right (${lengthUnit})`} value={rightArm}  onChange={setRightArm} />
         </View>
 
         <Text style={styles.subLabel}>Thighs</Text>
         <View style={styles.row}>
-          <MeasurementField label="Left (in)" value={leftThigh} onChange={setLeftThigh} />
-          <MeasurementField label="Right (in)" value={rightThigh} onChange={setRightThigh} />
+          <MeasurementField label={`Left (${lengthUnit})`}  value={leftThigh}  onChange={setLeftThigh} />
+          <MeasurementField label={`Right (${lengthUnit})`} value={rightThigh} onChange={setRightThigh} />
         </View>
 
         <Text style={styles.subLabel}>Calves</Text>
         <View style={styles.row}>
-          <MeasurementField label="Left (in)" value={leftCalf} onChange={setLeftCalf} />
-          <MeasurementField label="Right (in)" value={rightCalf} onChange={setRightCalf} />
+          <MeasurementField label={`Left (${lengthUnit})`}  value={leftCalf}  onChange={setLeftCalf} />
+          <MeasurementField label={`Right (${lengthUnit})`} value={rightCalf} onChange={setRightCalf} />
         </View>
 
         <TouchableOpacity
@@ -358,42 +360,18 @@ export function BodyTrackerScreen() {
                 <Text style={styles.measurementTime}>{formatTime(m.created_at)}</Text>
               </View>
               <View style={styles.measurementGrid}>
-                {m.weight != null && (
-                  <MeasurementItem label="Weight" value={`${m.weight} lbs`} />
-                )}
-                {m.waist != null && (
-                  <MeasurementItem label="Waist" value={`${m.waist} in`} />
-                )}
-                {m.height != null && (
-                  <MeasurementItem label="Height" value={`${m.height} in`} />
-                )}
-                {m.chest != null && (
-                  <MeasurementItem label="Chest" value={`${m.chest} in`} />
-                )}
-                {m.hips != null && (
-                  <MeasurementItem label="Hips" value={`${m.hips} in`} />
-                )}
-                {m.neck != null && (
-                  <MeasurementItem label="Neck" value={`${m.neck} in`} />
-                )}
-                {m.left_arm != null && (
-                  <MeasurementItem label="L. Arm" value={`${m.left_arm} in`} />
-                )}
-                {m.right_arm != null && (
-                  <MeasurementItem label="R. Arm" value={`${m.right_arm} in`} />
-                )}
-                {m.left_thigh != null && (
-                  <MeasurementItem label="L. Thigh" value={`${m.left_thigh} in`} />
-                )}
-                {m.right_thigh != null && (
-                  <MeasurementItem label="R. Thigh" value={`${m.right_thigh} in`} />
-                )}
-                {m.left_calf != null && (
-                  <MeasurementItem label="L. Calf" value={`${m.left_calf} in`} />
-                )}
-                {m.right_calf != null && (
-                  <MeasurementItem label="R. Calf" value={`${m.right_calf} in`} />
-                )}
+                {m.weight      != null && <MeasurementItem label="Weight"   value={`${m.weight} ${weightUnit}`} />}
+                {m.waist       != null && <MeasurementItem label="Waist"    value={`${m.waist} ${lengthUnit}`} />}
+                {m.height      != null && <MeasurementItem label="Height"   value={`${m.height} ${lengthUnit}`} />}
+                {m.chest       != null && <MeasurementItem label="Chest"    value={`${m.chest} ${lengthUnit}`} />}
+                {m.hips        != null && <MeasurementItem label="Hips"     value={`${m.hips} ${lengthUnit}`} />}
+                {m.neck        != null && <MeasurementItem label="Neck"     value={`${m.neck} ${lengthUnit}`} />}
+                {m.left_arm    != null && <MeasurementItem label="L. Arm"   value={`${m.left_arm} ${lengthUnit}`} />}
+                {m.right_arm   != null && <MeasurementItem label="R. Arm"   value={`${m.right_arm} ${lengthUnit}`} />}
+                {m.left_thigh  != null && <MeasurementItem label="L. Thigh" value={`${m.left_thigh} ${lengthUnit}`} />}
+                {m.right_thigh != null && <MeasurementItem label="R. Thigh" value={`${m.right_thigh} ${lengthUnit}`} />}
+                {m.left_calf   != null && <MeasurementItem label="L. Calf"  value={`${m.left_calf} ${lengthUnit}`} />}
+                {m.right_calf  != null && <MeasurementItem label="R. Calf"  value={`${m.right_calf} ${lengthUnit}`} />}
               </View>
             </View>
           ))

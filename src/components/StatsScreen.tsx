@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useUnits } from '../contexts/UnitsContext';
@@ -41,9 +42,7 @@ function computeStreak(dates: string[]): number {
   if (!dates.length) return 0;
   const dateStrs = [...new Set(dates.map(toLocalDateStr))].sort().reverse();
   const today = toLocalDateStr(new Date().toISOString());
-  const yesterday = toLocalDateStr(
-    new Date(Date.now() - 86400000).toISOString()
-  );
+  const yesterday = toLocalDateStr(new Date(Date.now() - 86400000).toISOString());
   if (dateStrs[0] !== today && dateStrs[0] !== yesterday) return 0;
   let streak = 1;
   for (let i = 1; i < dateStrs.length; i++) {
@@ -141,18 +140,24 @@ export function StatsScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
+  // useFocusEffect ensures stats refresh every time the user navigates to
+  // this screen, so data stays current after completing a workout.
+  useFocusEffect(
+    useCallback(() => {
+      fetchStats();
+    }, [user])
+  );
 
   const fetchStats = async () => {
     if (!user) {
       setLoading(false);
       return;
     }
-    try {
-      setError('');
 
+    setLoading(true);
+    setError('');
+
+    try {
       const now = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
@@ -214,8 +219,7 @@ export function StatsScreen({ navigation }: any) {
       const bodyData = bodyRes.data || [];
       const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
       const latestWeight = bodyData[0] ?? null;
-      const previousWeight =
-        bodyData.find((b) => b.created_at <= thirtyDaysAgo) ?? null;
+      const previousWeight = bodyData.find((b) => b.created_at <= thirtyDaysAgo) ?? null;
 
       setStats({
         thisMonth: {
@@ -316,19 +320,9 @@ export function StatsScreen({ navigation }: any) {
         <SectionHeader title={monthName.toUpperCase()} />
         <View style={styles.card}>
           <View style={styles.statGrid}>
-            <StatBox
-              label="Workouts"
-              value={String(stats.thisMonth.workoutCount)}
-              accent
-            />
-            <StatBox
-              label="Active time"
-              value={formatMinutes(stats.thisMonth.totalMinutes)}
-            />
-            <StatBox
-              label="PRs set"
-              value={String(stats.thisMonth.prCount)}
-            />
+            <StatBox label="Workouts"    value={String(stats.thisMonth.workoutCount)} accent />
+            <StatBox label="Active time" value={formatMinutes(stats.thisMonth.totalMinutes)} />
+            <StatBox label="PRs set"     value={String(stats.thisMonth.prCount)} />
           </View>
         </View>
 
@@ -336,11 +330,11 @@ export function StatsScreen({ navigation }: any) {
         <SectionHeader title="ALL TIME" />
         <View style={styles.card}>
           <View style={styles.statGrid}>
-            <StatBox label="Total workouts" value={String(stats.allTime.totalWorkouts)} accent />
-            <StatBox label="Active time" value={formatMinutes(stats.allTime.totalMinutes)} />
-            <StatBox label="Current streak" value={`${stats.allTime.currentStreak}d`} />
-            <StatBox label="Longest streak" value={`${stats.allTime.longestStreak}d`} />
-            <StatBox label="Total PRs" value={String(stats.allTime.totalPrs)} />
+            <StatBox label="Total workouts"  value={String(stats.allTime.totalWorkouts)} accent />
+            <StatBox label="Active time"     value={formatMinutes(stats.allTime.totalMinutes)} />
+            <StatBox label="Current streak"  value={`${stats.allTime.currentStreak}d`} />
+            <StatBox label="Longest streak"  value={`${stats.allTime.longestStreak}d`} />
+            <StatBox label="Total PRs"       value={String(stats.allTime.totalPrs)} />
           </View>
         </View>
 
@@ -399,12 +393,13 @@ export function StatsScreen({ navigation }: any) {
                 const maxCount = stats.topBodyParts[0].count;
                 const pct = maxCount > 0 ? bp.count / maxCount : 0;
                 return (
-                  <View key={bp.name} style={[styles.breakdownRow, i > 0 && styles.breakdownRowBorder]}>
+                  <View
+                    key={bp.name}
+                    style={[styles.breakdownRow, i > 0 && styles.breakdownRowBorder]}
+                  >
                     <Text style={styles.breakdownLabel}>{bp.name}</Text>
                     <View style={styles.breakdownBarTrack}>
-                      <View
-                        style={[styles.breakdownBarFill, { width: `${pct * 100}%` }]}
-                      />
+                      <View style={[styles.breakdownBarFill, { width: `${pct * 100}%` }]} />
                     </View>
                     <Text style={styles.breakdownCount}>{bp.count}</Text>
                   </View>
@@ -582,12 +577,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
-  changeTextDown: {
-    color: '#059669',
-  },
-  changeTextUp: {
-    color: '#ea580c',
-  },
+  changeTextDown: { color: '#059669' },
+  changeTextUp:   { color: '#ea580c' },
   changeSubText: {
     fontSize: 10,
     fontWeight: '500',
