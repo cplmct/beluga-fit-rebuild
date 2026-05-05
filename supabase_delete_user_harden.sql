@@ -53,6 +53,11 @@
 -- ============================================================
 
 
+-- Drop the existing function first so we can change the return type from
+-- json (original) to void (hardened). PostgreSQL blocks CREATE OR REPLACE
+-- when the return type changes.
+DROP FUNCTION IF EXISTS delete_user();
+
 CREATE OR REPLACE FUNCTION delete_user()
 RETURNS void
 LANGUAGE plpgsql
