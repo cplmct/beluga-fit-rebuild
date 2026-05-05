@@ -6,14 +6,39 @@ export interface ActivePlanState {
 }
 
 export async function getActivePlan(userId: string): Promise<ActivePlanState | null> {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('active_plan_id, active_plan_start_date')
-    .eq('id', userId)
-    .maybeSingle();
+  const run = () =>
+    supabase
+      .from('profiles')
+      .select('active_plan_id, active_plan_start_date')
+      .eq('id', userId)
+      .maybeSingle();
+
+  let { data, error } = await run();
+
+  // PGRST002 = PostgREST schema-cache reload in progress (transient).
+  // Wait 1.5 s and retry once before giving up.
+  if (error?.code === 'PGRST002') {
+    if (__DEV__) {
+      console.warn(
+        '[ActivePlan] PGRST002 on first attempt — retrying in 1.5 s.\n',
+        JSON.stringify(error),
+      );
+    }
+    await new Promise<void>((resolve) => setTimeout(resolve, 1500));
+    ({ data, error } = await run());
+  }
 
   if (error) {
-    if (__DEV__) console.error('[ActivePlan] getActivePlan failed:', error.message, error.code);
+    if (__DEV__) {
+      console.error(
+        '[ActivePlan] getActivePlan failed.',
+        '| message:', error.message,
+        '| code:', error.code,
+        '| details:', error.details,
+        '| hint:', error.hint,
+        '\nFull error:', JSON.stringify(error),
+      );
+    }
     return null;
   }
 
@@ -37,7 +62,14 @@ export async function setActivePlan(
     .eq('id', userId);
 
   if (error) {
-    if (__DEV__) console.error('[ActivePlan] setActivePlan failed:', error.message, error.code);
+    if (__DEV__) {
+      console.error(
+        '[ActivePlan] setActivePlan failed.',
+        '| message:', error.message,
+        '| code:', error.code,
+        '\nFull error:', JSON.stringify(error),
+      );
+    }
     return { error: new Error(error.message) };
   }
   return { error: null };
@@ -53,7 +85,14 @@ export async function clearActivePlan(userId: string): Promise<{ error: Error | 
     .eq('id', userId);
 
   if (error) {
-    if (__DEV__) console.error('[ActivePlan] clearActivePlan failed:', error.message, error.code);
+    if (__DEV__) {
+      console.error(
+        '[ActivePlan] clearActivePlan failed.',
+        '| message:', error.message,
+        '| code:', error.code,
+        '\nFull error:', JSON.stringify(error),
+      );
+    }
     return { error: new Error(error.message) };
   }
   return { error: null };

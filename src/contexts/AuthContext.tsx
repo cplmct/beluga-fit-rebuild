@@ -42,24 +42,46 @@ async function writeOnboardingCache(userId: string, completed: boolean): Promise
 
 async function resolveOnboardingCompleted(userId: string): Promise<boolean> {
   const cached = await readOnboardingCache(userId)
-  try {
-    const { data, error } = await supabase
+
+  const run = () =>
+    supabase
       .from('profiles')
       .select('onboarding_completed')
       .eq('id', userId)
       .maybeSingle()
 
-    if (error) throw error
+  let { data, error } = await run()
 
-    const completed = data?.onboarding_completed === true
-    await writeOnboardingCache(userId, completed)
-    return completed
-  } catch {
+  // PGRST002 = PostgREST schema-cache reload in progress (transient).
+  // Wait 1.5 s and retry once before falling back to the local cache.
+  if (error?.code === 'PGRST002') {
     if (__DEV__) {
-      console.warn('[Onboarding] Supabase unavailable — falling back to cache:', cached)
+      console.warn(
+        '[Onboarding] PGRST002 on first attempt — retrying in 1.5 s.\n',
+        JSON.stringify(error),
+      )
+    }
+    await new Promise<void>((resolve) => setTimeout(resolve, 1500))
+    ;({ data, error } = await run())
+  }
+
+  if (error) {
+    if (__DEV__) {
+      console.warn(
+        '[Onboarding] Supabase unavailable — falling back to cache:', cached,
+        '\nmessage:', error.message,
+        '| code:', error.code,
+        '| details:', error.details,
+        '| hint:', error.hint,
+        '\nFull error:', JSON.stringify(error),
+      )
     }
     return cached === true
   }
+
+  const completed = data?.onboarding_completed === true
+  await writeOnboardingCache(userId, completed)
+  return completed
 }
 
 // ── Deep link parser ──────────────────────────────────────────────────────────

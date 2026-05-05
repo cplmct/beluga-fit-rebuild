@@ -1,0 +1,42 @@
+I need a focused root-cause investigation for a persistent Supabase/PostgREST issue in Beluga Fit.
+
+Current confirmed facts:
+- The app can sign in successfully
+- Gmail SMTP now works for password reset
+- In Supabase SQL editor, `profiles` is queryable
+- `active_plan_id` and `active_plan_start_date` now exist on `profiles`
+- Running `NOTIFY pgrst, 'reload schema';` succeeds
+- But immediately after login the app still logs:
+  [ActivePlan] getActivePlan failed: Could not query the database for the schema cache. Retrying. PGRST002
+  [Onboarding] Supabase unavailable — falling back to cache: true
+
+This started after we discovered the active plan was not persisting.
+
+I do NOT want guesses. I want you to inspect the actual code paths and identify the exact cause.
+
+Tasks:
+1. Audit every `profiles` query in the app, especially:
+   - src/utils/activePlan.ts
+   - src/contexts/AuthContext.tsx
+   - any screen or helper that reads onboarding_completed, active_plan_id, active_plan_start_date, or notif_* fields
+2. Audit `src/lib/supabase.ts` and confirm exactly which Supabase URL/project the app is hitting at runtime
+3. Add temporary __DEV__ logs to print:
+   - resolved Supabase URL
+   - which table/query is failing
+   - full Supabase/PostgREST error object (not just error.message)
+4. Check whether any code is querying columns that do NOT actually exist in the live `profiles` table anymore
+5. Check whether any query references a wrong schema, wrong table alias, or stale select list that could cause PostgREST schema-cache issues
+6. Check whether multiple Supabase clients or multiple config sources are being used inconsistently
+7. Check whether app code is reading from a different Supabase project than the SQL editor project
+8. If you find the issue, fix it with the minimum necessary code changes
+9. Return:
+   - exact root cause
+   - exact files changed
+   - exact temporary logs added
+   - exact SQL, if any, still required
+   - exact manual test steps
+
+Important:
+- Do not assume the migration is missing; the columns now exist in SQL editor
+- Do not assume this is just “Supabase outage”
+- Prove the cause from the current codebase
