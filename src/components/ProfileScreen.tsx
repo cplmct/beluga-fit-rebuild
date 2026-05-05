@@ -13,6 +13,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useUnits } from '../contexts/UnitsContext';
 
 interface ProfileData {
   name: string;
@@ -137,6 +138,7 @@ function FieldInput({
 
 export function ProfileScreen() {
   const { user } = useAuth();
+  const { weightUnit, lengthUnit } = useUnits();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -317,14 +319,14 @@ export function ProfileScreen() {
           ) : (
             <>
               <FieldInput
-                label="Height (inches)"
+                label={`Height (${lengthUnit})`}
                 value={profile.height}
                 onChange={(t) => setProfile((p) => ({ ...p, height: t }))}
                 keyboardType="numeric"
                 editable={!saving}
               />
               <FieldInput
-                label="Weight (lbs)"
+                label={`Weight (${weightUnit})`}
                 value={profile.weight}
                 onChange={(t) => setProfile((p) => ({ ...p, weight: t }))}
                 keyboardType="numeric"
