@@ -5,6 +5,13 @@ export interface ActivePlanState {
   startDate: string;
 }
 
+export interface ActivePlanError {
+  message: string;
+  code: string | null;
+  details: string | null;
+  hint: string | null;
+}
+
 export async function getActivePlan(userId: string): Promise<ActivePlanState | null> {
   const run = () =>
     supabase
@@ -52,7 +59,7 @@ export async function getActivePlan(userId: string): Promise<ActivePlanState | n
 export async function setActivePlan(
   userId: string,
   planId: string,
-): Promise<{ error: Error | null }> {
+): Promise<{ error: ActivePlanError | null }> {
   const { error } = await supabase
     .from('profiles')
     .update({
@@ -67,15 +74,17 @@ export async function setActivePlan(
         '[ActivePlan] setActivePlan failed.',
         '| message:', error.message,
         '| code:', error.code,
+        '| details:', error.details,
+        '| hint:', error.hint,
         '\nFull error:', JSON.stringify(error),
       );
     }
-    return { error: new Error(error.message) };
+    return { error: { message: error.message, code: error.code, details: error.details, hint: error.hint } };
   }
   return { error: null };
 }
 
-export async function clearActivePlan(userId: string): Promise<{ error: Error | null }> {
+export async function clearActivePlan(userId: string): Promise<{ error: ActivePlanError | null }> {
   const { error } = await supabase
     .from('profiles')
     .update({
@@ -90,10 +99,12 @@ export async function clearActivePlan(userId: string): Promise<{ error: Error | 
         '[ActivePlan] clearActivePlan failed.',
         '| message:', error.message,
         '| code:', error.code,
+        '| details:', error.details,
+        '| hint:', error.hint,
         '\nFull error:', JSON.stringify(error),
       );
     }
-    return { error: new Error(error.message) };
+    return { error: { message: error.message, code: error.code, details: error.details, hint: error.hint } };
   }
   return { error: null };
 }

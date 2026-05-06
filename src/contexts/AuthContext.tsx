@@ -334,12 +334,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const completeOnboarding = async (): Promise<void> => {
     if (!user) return
-    try {
-      await supabase
-        .from('profiles')
-        .upsert({ id: user.id, onboarding_completed: true }, { onConflict: 'id' })
-    } catch {
-      if (__DEV__) console.warn('[Onboarding] Failed to persist completion to Supabase')
+    const { error } = await supabase
+      .from('profiles')
+      .upsert({ id: user.id, onboarding_completed: true }, { onConflict: 'id' })
+    if (error && __DEV__) {
+      console.warn(
+        '[Onboarding] completeOnboarding: Supabase write failed — local state will still update.',
+        '| message:', error.message,
+        '| code:', error.code,
+        '| details:', error.details,
+        '| hint:', error.hint,
+        '\nFull error:', JSON.stringify(error),
+      )
     }
     await writeOnboardingCache(user.id, true)
     setNeedsOnboarding(false)
@@ -347,12 +353,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const triggerOnboarding = async (): Promise<void> => {
     if (!user) return
-    try {
-      await supabase
-        .from('profiles')
-        .upsert({ id: user.id, onboarding_completed: false }, { onConflict: 'id' })
-    } catch {
-      if (__DEV__) console.warn('[Onboarding] Failed to reset onboarding in Supabase')
+    const { error } = await supabase
+      .from('profiles')
+      .upsert({ id: user.id, onboarding_completed: false }, { onConflict: 'id' })
+    if (error && __DEV__) {
+      console.warn(
+        '[Onboarding] triggerOnboarding: Supabase write failed — local state will still update.',
+        '| message:', error.message,
+        '| code:', error.code,
+        '| details:', error.details,
+        '| hint:', error.hint,
+        '\nFull error:', JSON.stringify(error),
+      )
     }
     await writeOnboardingCache(user.id, false)
     setNeedsOnboarding(true)

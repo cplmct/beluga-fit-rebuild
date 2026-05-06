@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -215,13 +215,20 @@ export function HomeScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Incremented each time a load is initiated or the screen loses focus.
+  // Async state updates check this before committing — stale in-flight
+  // loads (e.g. from a previous focus event) are silently discarded.
+  const loadGenRef = useRef(0);
+
   useFocusEffect(
     useCallback(() => {
       if (user) loadDashboard();
+      return () => { loadGenRef.current++; };
     }, [user])
   );
 
   const loadDashboard = async () => {
+    const gen = ++loadGenRef.current;
     setLoading(true);
     try {
       const sixtyDaysAgo = new Date();
@@ -246,6 +253,10 @@ export function HomeScreen({ navigation }: any) {
         getActivePlan(user!.id),
       ]);
 
+      // Discard results if the screen blurred or a newer load started
+      // while the Promise.all (or PGRST002 retry inside getActivePlan) was in flight.
+      if (loadGenRef.current !== gen) return;
+
       setActivePlanState(ap);
 
       const workouts = workoutsRes.data || [];
@@ -258,6 +269,10 @@ export function HomeScreen({ navigation }: any) {
           .from('workout_exercises')
           .select('id')
           .eq('workout_id', todayWorkouts[0].id);
+
+        // Check again after the second await point.
+        if (loadGenRef.current !== gen) return;
+
         todayWorkout = {
           bodyParts: [...new Set(todayWorkouts.flatMap((w) => w.body_parts || []))],
           exerciseCount: exRows?.length || 0,
@@ -283,10 +298,11 @@ export function HomeScreen({ navigation }: any) {
           : null,
       });
     } catch (err) {
+      if (loadGenRef.current !== gen) return;
       if (__DEV__) console.error('HomeScreen:', err);
       setError("Couldn't load your dashboard. Check your connection and try again.");
     } finally {
-      setLoading(false);
+      if (loadGenRef.current === gen) setLoading(false);
     }
   };
 
