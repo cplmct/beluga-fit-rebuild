@@ -21,16 +21,15 @@ yarn-error.log*
 dist/
 web-build/
 
-# macOS / Windows
+# macOS
 .DS_Store
-Thumbs.db
 
-# Replit
-.replit
+# Android
+android/app/build/
+android/.gradle/
+android/.idea/
+android/local.properties
 
-# Native generated folders
-android/
-ios/
-
-# IDE / misc
-*.iml
+# iOS
+ios/Pods/
+ios/build/
