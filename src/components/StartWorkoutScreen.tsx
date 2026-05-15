@@ -11,7 +11,9 @@ export function StartWorkoutScreen({ navigation, route }: any) {
     if (pendingPlanId) {
       if (__DEV__) console.log('[StartWorkoutScreen] Relay → PlanDetail, planId:', pendingPlanId);
       navigation.setParams({ pendingPlanId: undefined });
-      navigation.navigate('PlanDetail', { planId: pendingPlanId });
+      setTimeout(() => {
+        navigation.push('PlanDetail', { planId: pendingPlanId });
+      }, 0);
     }
   }, [route.params?.pendingPlanId]);
 
