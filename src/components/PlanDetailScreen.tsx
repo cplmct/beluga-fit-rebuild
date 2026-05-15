@@ -84,9 +84,15 @@ function DayAccordion({ day, index }: { day: PlanDay; index: number }) {
 }
 
 export function PlanDetailScreen({ route, navigation }: any) {
-  const { planId } = route.params;
+  const { planId } = route.params ?? {};
   const plan = getPlanById(planId);
   const { user } = useAuth();
+
+  if (__DEV__) {
+    console.log('[PlanDetailScreen] route.params =', JSON.stringify(route.params));
+    console.log('[PlanDetailScreen] resolved planId =', planId);
+    console.log('[PlanDetailScreen] branch =', plan ? 'PLAN FOUND: ' + plan.title : 'NOT FOUND — showing error UI');
+  }
 
   const [activePlan, setActivePlanState] = useState<ActivePlanState | null>(null);
   const [loading, setLoading] = useState(true);
