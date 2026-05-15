@@ -19,6 +19,15 @@ interface WorkoutSummary {
   exercise_count: number;
 }
 
+function toLocalDateKey(isoString: string): string {
+  const d = new Date(isoString);
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, '0'),
+    String(d.getDate()).padStart(2, '0'),
+  ].join('-');
+}
+
 export function CalendarScreen({ navigation }: any) {
   const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState('');
@@ -43,9 +52,15 @@ export function CalendarScreen({ navigation }: any) {
         .eq('user_id', user.id)
         .order('date', { ascending: false });
 
+      if (__DEV__)
+        console.log(
+          '[CalendarScreen] fetchWorkouts raw count:',
+          (workoutsData || []).length,
+        );
+
       const marked: any = {};
       (workoutsData || []).forEach((workout: any) => {
-        const dateKey = workout.date.split('T')[0];
+        const dateKey = toLocalDateKey(workout.date);
         marked[dateKey] = { marked: true, dotColor: '#2563eb' };
       });
 
@@ -64,25 +79,39 @@ export function CalendarScreen({ navigation }: any) {
     try {
       if (!user) return;
 
-      const startDate = new Date(day.dateString);
-      startDate.setHours(0, 0, 0, 0);
-      const endDate = new Date(day.dateString);
-      endDate.setHours(23, 59, 59, 999);
+      if (__DEV__)
+        console.log('[CalendarScreen] handleDayPress selectedDate:', day.dateString);
 
       const { data: workoutsData } = await supabase
         .from('workouts')
         .select('id, date, body_parts, workout_exercises(count)')
         .eq('user_id', user.id)
-        .gte('date', startDate.toISOString())
-        .lte('date', endDate.toISOString())
         .order('date', { ascending: false });
 
-      const workoutsWithCounts: WorkoutSummary[] = (workoutsData || []).map((w: any) => ({
-        id: w.id,
-        date: w.date,
-        body_parts: w.body_parts || [],
-        exercise_count: w.workout_exercises?.[0]?.count || 0,
-      }));
+      if (__DEV__)
+        console.log(
+          '[CalendarScreen] handleDayPress raw workouts:',
+          (workoutsData || []).map((w: any) => ({
+            id: w.id,
+            stored: w.date,
+            localKey: toLocalDateKey(w.date),
+          })),
+        );
+
+      const workoutsWithCounts: WorkoutSummary[] = (workoutsData || [])
+        .filter((w: any) => toLocalDateKey(w.date) === day.dateString)
+        .map((w: any) => ({
+          id: w.id,
+          date: w.date,
+          body_parts: w.body_parts || [],
+          exercise_count: w.workout_exercises?.[0]?.count || 0,
+        }));
+
+      if (__DEV__)
+        console.log(
+          '[CalendarScreen] handleDayPress filtered count:',
+          workoutsWithCounts.length,
+        );
 
       setWorkoutsForDate(workoutsWithCounts);
     } catch (err) {
