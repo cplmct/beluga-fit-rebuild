@@ -306,6 +306,16 @@ export function HomeScreen({ navigation }: any) {
     }
   };
 
+  const handleStartTodaysWorkout = () => {
+    if (activePlan) {
+      if (__DEV__) console.log('[HomeScreen] Start → PlanDetail, planId:', activePlan.planId);
+      navigation.navigate('Workout', { screen: 'PlanDetail', params: { planId: activePlan.planId } });
+    } else {
+      if (__DEV__) console.log('[HomeScreen] Start → StartWorkout (no active plan)');
+      navigation.navigate('Workout', { screen: 'StartWorkout' });
+    }
+  };
+
   const displayName = data.profileName || user?.email?.split('@')[0] || 'Athlete';
   const activePlanData = activePlan ? getPlanById(activePlan.planId) : null;
   const activePlanCat = activePlanData ? PLAN_CATEGORIES[activePlanData.category] : null;
@@ -385,7 +395,7 @@ export function HomeScreen({ navigation }: any) {
         ) : (
           <TouchableOpacity
             style={styles.todayStartCard}
-            onPress={() => navigation.navigate('Workout', { screen: 'StartWorkout' })}
+            onPress={handleStartTodaysWorkout}
             activeOpacity={0.88}
           >
             <View style={styles.todayStartLeft}>
