@@ -1,7 +1,20 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
-export function StartWorkoutScreen({ navigation }: any) {
+export function StartWorkoutScreen({ navigation, route }: any) {
+  // Relay from HomeScreen: when an active plan exists, Home navigates here
+  // with a pendingPlanId param instead of going directly to PlanDetail.
+  // This works around React Navigation v6's behaviour of ignoring nested
+  // screen params for tabs that already have stack state.
+  useEffect(() => {
+    const pendingPlanId = route.params?.pendingPlanId;
+    if (pendingPlanId) {
+      if (__DEV__) console.log('[StartWorkoutScreen] Relay → PlanDetail, planId:', pendingPlanId);
+      navigation.setParams({ pendingPlanId: undefined });
+      navigation.navigate('PlanDetail', { planId: pendingPlanId });
+    }
+  }, [route.params?.pendingPlanId]);
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Start a Workout</Text>
