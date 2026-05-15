@@ -13,7 +13,9 @@ import {
   getPlanById,
   PLAN_CATEGORIES,
   PlanDay,
+  PlanExercise,
 } from '../data/workoutPlans';
+import { ExerciseSelection } from '../data/exercises';
 import {
   getActivePlan,
   setActivePlan,
@@ -87,12 +89,6 @@ export function PlanDetailScreen({ route, navigation }: any) {
   const { planId } = route.params ?? {};
   const plan = getPlanById(planId);
   const { user } = useAuth();
-
-  if (__DEV__) {
-    console.log('[PlanDetailScreen] route.params =', JSON.stringify(route.params));
-    console.log('[PlanDetailScreen] resolved planId =', planId);
-    console.log('[PlanDetailScreen] branch =', plan ? 'PLAN FOUND: ' + plan.title : 'NOT FOUND — showing error UI');
-  }
 
   const [activePlan, setActivePlanState] = useState<ActivePlanState | null>(null);
   const [loading, setLoading] = useState(true);
@@ -207,16 +203,6 @@ export function PlanDetailScreen({ route, navigation }: any) {
 
   return (
     <View style={styles.container}>
-      {__DEV__ && (
-        <View style={{ backgroundColor: '#dc2626', padding: 12, alignItems: 'center' }}>
-          <Text style={{ color: '#fff', fontWeight: '800', fontSize: 16 }}>
-            ✅ PLAN DETAIL SCREEN
-          </Text>
-          <Text style={{ color: '#fca5a5', fontSize: 13, marginTop: 2 }}>
-            planId: {planId}  |  active: {String(isThisPlanActive)}
-          </Text>
-        </View>
-      )}
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -309,12 +295,42 @@ export function PlanDetailScreen({ route, navigation }: any) {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.workoutButton}
-              onPress={() =>
-                navigation.navigate('StartWorkout')
-              }
+              onPress={() => {
+                if (!activePlan || !plan) return;
+                const daysSinceStart = Math.max(
+                  0,
+                  Math.floor(
+                    (Date.now() - new Date(activePlan.startDate).getTime()) /
+                      (1000 * 60 * 60 * 24),
+                  ),
+                );
+                const dayIndex = daysSinceStart % plan.days.length;
+                const planDay = plan.days[dayIndex];
+                const exercises: ExerciseSelection[] = planDay.exercises.map(
+                  (ex: PlanExercise) => ({
+                    name: ex.name,
+                    bodyPart: ex.bodyPart as ExerciseSelection['bodyPart'],
+                    category: 'Strength' as const,
+                    equipment: ex.equipment,
+                    sets: ex.sets,
+                    reps: parseInt(ex.reps) || 1,
+                    weight: '',
+                    selected: true,
+                  }),
+                );
+                const bodyParts = [
+                  ...new Set(planDay.exercises.map((ex: PlanExercise) => ex.bodyPart)),
+                ];
+                if (__DEV__)
+                  console.log(
+                    '[PlanDetailScreen] Start Today\'s Workout →',
+                    { planId, dayIndex, exerciseCount: exercises.length },
+                  );
+                navigation.navigate('WorkoutChecklist', { exercises, bodyParts });
+              }}
               activeOpacity={0.85}
             >
-              <Text style={styles.workoutButtonText}>Start a Workout</Text>
+              <Text style={styles.workoutButtonText}>Start Today's Workout</Text>
             </TouchableOpacity>
           </View>
         ) : (
