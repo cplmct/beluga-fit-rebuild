@@ -308,8 +308,15 @@ export function HomeScreen({ navigation }: any) {
 
   const handleStartTodaysWorkout = () => {
     if (activePlan) {
-      if (__DEV__) console.log('[HomeScreen] Start → PlanDetail, planId:', activePlan.planId);
-      navigation.navigate('Workout', { screen: 'PlanDetail', params: { planId: activePlan.planId } });
+      // React Navigation v6 ignores nested `screen` params when the target tab
+      // already has stack state (documented behaviour). Relay through StartWorkout —
+      // the stack's initial screen — so the params update is always applied,
+      // then StartWorkoutScreen forwards immediately to PlanDetail.
+      if (__DEV__) console.log('[HomeScreen] Start → relay via StartWorkout, pendingPlanId:', activePlan.planId);
+      navigation.navigate('Workout', {
+        screen: 'StartWorkout',
+        params: { pendingPlanId: activePlan.planId },
+      });
     } else {
       if (__DEV__) console.log('[HomeScreen] Start → StartWorkout (no active plan)');
       navigation.navigate('Workout', { screen: 'StartWorkout' });
