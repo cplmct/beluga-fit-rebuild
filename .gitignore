@@ -33,3 +33,5 @@ android/local.properties
 # iOS
 ios/Pods/
 ios/build/
+
+android/
