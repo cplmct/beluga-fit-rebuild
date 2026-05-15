@@ -207,6 +207,16 @@ export function PlanDetailScreen({ route, navigation }: any) {
 
   return (
     <View style={styles.container}>
+      {__DEV__ && (
+        <View style={{ backgroundColor: '#dc2626', padding: 12, alignItems: 'center' }}>
+          <Text style={{ color: '#fff', fontWeight: '800', fontSize: 16 }}>
+            ✅ PLAN DETAIL SCREEN
+          </Text>
+          <Text style={{ color: '#fca5a5', fontSize: 13, marginTop: 2 }}>
+            planId: {planId}  |  active: {String(isThisPlanActive)}
+          </Text>
+        </View>
+      )}
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
