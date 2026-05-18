@@ -233,19 +233,25 @@ export const MESSAGE_COUNTS = {
 // notification for INACTIVITY_DAYS days later at INACTIVITY_HOUR local time.
 // Any previously scheduled inactivity reminder is cancelled first.
 export async function scheduleInactivityReminder(userId: string): Promise<void> {
-  if (!Device.isDevice) return;
+  if (!Device.isDevice) {
+    if (__DEV__) console.log('[Notif] scheduleInactivityReminder — skipped (not a physical device)');
+    return;
+  }
 
   try {
     const permStatus = await getPermissionStatus();
     if (__DEV__) console.log('[Notif] scheduleInactivityReminder — permission:', permStatus);
-    if (permStatus !== 'granted') return;
+    if (permStatus !== 'granted') {
+      if (__DEV__) console.log('[Notif] scheduleInactivityReminder — skipped (permission not granted)');
+      return;
+    }
 
-    // Cancel any previously scheduled inactivity reminder
+    // Cancel any previously scheduled inactivity reminder before doing anything else
     const existingId = await AsyncStorage.getItem(INACTIVITY_ID_KEY).catch(() => null);
     if (existingId) {
       await Notifications.cancelScheduledNotificationAsync(existingId).catch(() => {});
       await AsyncStorage.removeItem(INACTIVITY_ID_KEY).catch(() => {});
-      if (__DEV__) console.log('[Notif] inactivity reminder cancelled (id:', existingId, ')');
+      if (__DEV__) console.log('[Notif] inactivity reminder cancelled/replaced (old id:', existingId, ')');
     }
 
     // Find the most recent completed workout
@@ -260,22 +266,28 @@ export async function scheduleInactivityReminder(userId: string): Promise<void> 
     if (__DEV__)
       console.log('[Notif] last completed workout date:', data?.date ?? 'none');
 
-    // Trigger = last workout date (or now if none) + INACTIVITY_DAYS at INACTIVITY_HOUR local
-    const base = data?.date ? new Date(data.date) : new Date();
-    const triggerDate = new Date(base);
+    // Safeguard: do not schedule if there are no completed workouts yet
+    if (!data?.date) {
+      if (__DEV__) console.log('[Notif] scheduleInactivityReminder — skipped (no completed workouts)');
+      return;
+    }
+
+    // Ensure the Android channel exists before scheduling
+    await ensureAndroidChannel();
+
+    // Trigger = last workout date + INACTIVITY_DAYS at INACTIVITY_HOUR local
+    const triggerDate = new Date(data.date);
     triggerDate.setDate(triggerDate.getDate() + INACTIVITY_DAYS);
     triggerDate.setHours(INACTIVITY_HOUR, 0, 0, 0);
 
     if (triggerDate <= new Date()) {
       if (__DEV__)
-        console.log('[Notif] inactivity trigger is in the past — skipping');
+        console.log('[Notif] scheduleInactivityReminder — skipped (trigger date is in the past:', triggerDate.toLocaleString(), ')');
       return;
     }
 
     if (__DEV__)
       console.log('[Notif] scheduling inactivity reminder for:', triggerDate.toLocaleString());
-
-    await ensureAndroidChannel();
 
     const id = await Notifications.scheduleNotificationAsync({
       content: {
