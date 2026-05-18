@@ -2,10 +2,16 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '../lib/supabase';
 
 // ── Storage keys ────────────────────────────────────────────
 const PREFS_KEY = 'beluga_notif_prefs';
 const SCHEDULED_ID_KEY = 'beluga_notif_id';
+const INACTIVITY_ID_KEY = 'beluga_inactivity_notif_id';
+
+// ── Inactivity reminder config ───────────────────────────────
+const INACTIVITY_DAYS = 2;
+const INACTIVITY_HOUR = 19; // 7:00 PM local
 
 // ── Types ────────────────────────────────────────────────────
 export type ReminderType = 'checkin' | 'move' | 'motivation' | 'random';
@@ -221,3 +227,73 @@ export const MESSAGE_COUNTS = {
   motivation: MESSAGES_MOTIVATION.length,
   total:      MESSAGES_CHECKIN.length + MESSAGES_MOVE.length + MESSAGES_MOTIVATION.length,
 };
+
+// ── Inactivity reminder ───────────────────────────────────────
+// Finds the user's most recent completed workout and schedules a local
+// notification for INACTIVITY_DAYS days later at INACTIVITY_HOUR local time.
+// Any previously scheduled inactivity reminder is cancelled first.
+export async function scheduleInactivityReminder(userId: string): Promise<void> {
+  if (!Device.isDevice) return;
+
+  try {
+    const permStatus = await getPermissionStatus();
+    if (__DEV__) console.log('[Notif] scheduleInactivityReminder — permission:', permStatus);
+    if (permStatus !== 'granted') return;
+
+    // Cancel any previously scheduled inactivity reminder
+    const existingId = await AsyncStorage.getItem(INACTIVITY_ID_KEY).catch(() => null);
+    if (existingId) {
+      await Notifications.cancelScheduledNotificationAsync(existingId).catch(() => {});
+      await AsyncStorage.removeItem(INACTIVITY_ID_KEY).catch(() => {});
+      if (__DEV__) console.log('[Notif] inactivity reminder cancelled (id:', existingId, ')');
+    }
+
+    // Find the most recent completed workout
+    const { data } = await supabase
+      .from('workouts')
+      .select('date')
+      .eq('user_id', userId)
+      .order('date', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (__DEV__)
+      console.log('[Notif] last completed workout date:', data?.date ?? 'none');
+
+    // Trigger = last workout date (or now if none) + INACTIVITY_DAYS at INACTIVITY_HOUR local
+    const base = data?.date ? new Date(data.date) : new Date();
+    const triggerDate = new Date(base);
+    triggerDate.setDate(triggerDate.getDate() + INACTIVITY_DAYS);
+    triggerDate.setHours(INACTIVITY_HOUR, 0, 0, 0);
+
+    if (triggerDate <= new Date()) {
+      if (__DEV__)
+        console.log('[Notif] inactivity trigger is in the past — skipping');
+      return;
+    }
+
+    if (__DEV__)
+      console.log('[Notif] scheduling inactivity reminder for:', triggerDate.toLocaleString());
+
+    await ensureAndroidChannel();
+
+    const id = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Time to get back at it',
+        body: "It's been a couple of days — open Beluga Fit and keep your progress going.",
+        sound: 'default',
+        ...(Platform.OS === 'android' ? { channelId: 'beluga-reminders' } : {}),
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: triggerDate,
+      },
+    });
+
+    await AsyncStorage.setItem(INACTIVITY_ID_KEY, id).catch(() => {});
+    if (__DEV__)
+      console.log('[Notif] inactivity reminder scheduled (id:', id, ') for', triggerDate.toLocaleString());
+  } catch (e) {
+    if (__DEV__) console.warn('[Notif] scheduleInactivityReminder failed:', e);
+  }
+}

@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
@@ -8,11 +8,22 @@ import { AuthStackNavigator } from './src/components/AuthStackNavigator';
 import { BottomTabNavigator } from './src/components/BottomTabNavigator';
 import { OnboardingScreen } from './src/components/OnboardingScreen';
 import { ResetPasswordScreen } from './src/components/ResetPasswordScreen';
+import { scheduleInactivityReminder, setupNotificationHandler } from './src/utils/notifications';
 
 function AppContent() {
   const { user, loading, needsOnboarding, completeOnboarding, isPasswordRecovery } = useAuth();
   const navigationRef = useNavigationContainerRef();
   const pendingTabRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    setupNotificationHandler();
+  }, []);
+
+  useEffect(() => {
+    if (user?.id) {
+      scheduleInactivityReminder(user.id);
+    }
+  }, [user?.id]);
 
   // ── Loading ───────────────────────────────────────────────────────────────
   if (loading) {
