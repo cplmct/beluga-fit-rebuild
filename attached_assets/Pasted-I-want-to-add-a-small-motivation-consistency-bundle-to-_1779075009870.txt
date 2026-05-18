@@ -1,0 +1,106 @@
+I want to add a small motivation/consistency bundle to the app using the existing completed-workout data model (the same workouts table already used by History and Calendar). Please inspect the current codebase and implement this in the smallest clean way.
+
+Show exact diffs only.
+
+Goals:
+1. Add an “Inactivity reminders” toggle to NotificationSettingsScreen using the existing preferences/settings pattern.
+2. Add a weekly workout goal feature.
+3. Add a streak / consistency badge.
+4. Add a Home card showing:
+   - last workout date/time
+   - current week workout count
+   - weekly goal progress
+   - current streak/consistency value
+
+Important constraints:
+- Reuse the existing completed-workout records as the source of truth.
+- Do NOT invent a second tracking system.
+- Keep schema changes minimal; avoid DB changes unless absolutely necessary.
+- Prefer deriving values from existing workouts data first.
+- Keep the UX encouraging, not punitive.
+
+Part 1 — Inactivity reminder toggle
+1. Inspect the existing notifications preferences model and NotificationSettingsScreen.
+2. Add a new boolean preference:
+   - inactivityEnabled: true by default
+3. Add a toggle row in NotificationSettingsScreen:
+   - Label: “Inactivity reminders”
+   - Help text: “Remind me if I haven’t trained in 2 days”
+4. Update scheduleInactivityReminder so it exits early when inactivityEnabled is false.
+5. If the user turns inactivity reminders OFF:
+   - cancel any pending inactivity reminder
+6. If the user turns inactivity reminders ON:
+   - evaluate and schedule one immediately if appropriate
+7. Add concise __DEV__ logs only where helpful:
+   - pref loaded
+   - scheduling skipped because toggle is off
+   - existing inactivity reminder cancelled
+   - inactivity reminder scheduled
+
+Part 2 — Weekly goal
+1. Inspect whether a user settings/profile/preferences store already exists.
+2. If there is an existing lightweight place for user preferences, store the weekly goal there.
+3. If not, use the smallest clean local preference approach already used elsewhere in the app.
+4. Default weekly workout goal to 3.
+5. Add a simple UI to set the weekly goal (keep it small and practical):
+   - either in NotificationSettingsScreen if there is already a general settings pattern nearby, or
+   - preferably in a more suitable settings/home preference area if one already exists
+6. Keep the UI simple:
+   - preset options like 2 / 3 / 4 / 5 workouts per week are fine
+7. Derive current week progress from completed workouts in the current local week.
+
+Part 3 — Streak / consistency badge
+Implement a forgiving streak model based on weekly consistency, not harsh daily streaks:
+1. Define streak as:
+   - number of consecutive weeks where the user met their weekly workout goal
+2. Derive it entirely from existing completed workouts
+3. Use local week boundaries consistently
+4. Add a small streak badge/card in Home:
+   - examples:
+     - “3-week streak”
+     - “On track this week”
+5. If the user has not yet met this week’s goal but still has time left in the current week, avoid discouraging wording.
+6. Keep milestone logic simple for now:
+   - optional labels for 1, 3, 5, 10+ weeks are enough if easy
+
+Part 4 — Home card
+Add a new Home card that clearly summarizes momentum:
+1. Show:
+   - Last workout: formatted date/time or “No workouts yet”
+   - This week: X / Goal
+   - Weekly progress indicator (text or simple progress bar)
+   - Current streak / consistency badge
+2. If no workouts exist yet:
+   - show an encouraging empty state
+   - example: “Complete your first workout to start your streak”
+3. If the user is behind goal this week:
+   - use motivating wording, not guilt
+   - example: “1 more workout to hit your weekly goal”
+4. Reuse existing styling patterns/components where possible.
+
+Part 5 — Data and date logic
+1. Reuse the same local date normalization approach that fixed Calendar.
+2. Be consistent about:
+   - local day keys
+   - local week boundaries
+3. Make sure Home values, streak logic, History, and Calendar all agree on what counts as the same local date/week.
+
+Part 6 — Code quality
+1. Add small helper utilities if needed for:
+   - local date key
+   - start/end of local week
+   - weekly count aggregation
+   - streak calculation
+2. Put helpers in the cleanest shared place if they are reused by multiple screens.
+3. Add concise __DEV__ logs only where they help verify correctness.
+4. Do not leave noisy debug banners or temporary UI.
+
+Before editing:
+- Inspect the current preference/settings architecture
+- Inspect HomeScreen and NotificationSettingsScreen
+- Inspect any existing date utility logic
+- Inspect how completed workouts are currently queried
+
+Then implement the smallest clean version of this feature bundle.
+
+Show exact diffs only.
