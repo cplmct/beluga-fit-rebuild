@@ -259,7 +259,6 @@ export async function scheduleInactivityReminder(userId: string): Promise<void> 
     }
 
     const permStatus = await getPermissionStatus();
-    if (__DEV__) console.log('[Notif] scheduleInactivityReminder — permission:', permStatus);
     if (permStatus !== 'granted') {
       if (__DEV__) console.log('[Notif] scheduleInactivityReminder — skipped (permission not granted)');
       return;
@@ -276,9 +275,6 @@ export async function scheduleInactivityReminder(userId: string): Promise<void> 
       .order('date', { ascending: false })
       .limit(1)
       .maybeSingle();
-
-    if (__DEV__)
-      console.log('[Notif] last completed workout date:', data?.date ?? 'none');
 
     // Safeguard: do not schedule if there are no completed workouts yet
     if (!data?.date) {
@@ -299,9 +295,6 @@ export async function scheduleInactivityReminder(userId: string): Promise<void> 
         console.log('[Notif] scheduleInactivityReminder — skipped (trigger date is in the past:', triggerDate.toLocaleString(), ')');
       return;
     }
-
-    if (__DEV__)
-      console.log('[Notif] scheduling inactivity reminder for:', triggerDate.toLocaleString());
 
     const id = await Notifications.scheduleNotificationAsync({
       content: {
