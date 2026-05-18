@@ -12,6 +12,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { useUnits } from '../contexts/UnitsContext';
 import { supabase } from '../lib/supabase';
 import { getPrefs, formatTime, NotifPrefs, DEFAULT_PREFS } from '../utils/notifications';
+import {
+  getWeeklyGoal,
+  saveWeeklyGoal,
+  WEEKLY_GOAL_OPTIONS,
+  DEFAULT_WEEKLY_GOAL,
+} from '../utils/goalPrefs';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 
@@ -90,11 +96,13 @@ export function SettingsScreen() {
   const [profileName, setProfileName] = useState('');
   const [profileLoading, setProfileLoading] = useState(true);
   const [notifPrefs, setNotifPrefs] = useState<NotifPrefs>({ ...DEFAULT_PREFS });
+  const [weeklyGoal, setWeeklyGoal] = useState<number>(DEFAULT_WEEKLY_GOAL);
 
   useFocusEffect(
     useCallback(() => {
       loadProfile();
       getPrefs().then(setNotifPrefs);
+      getWeeklyGoal().then(setWeeklyGoal);
     }, [])
   );
 
@@ -190,6 +198,30 @@ export function SettingsScreen() {
                 lbs
               </Text>
             </TouchableOpacity>
+          </View>
+        </View>
+        <RowDivider />
+        <View style={styles.navRow}>
+          <View style={styles.navRowLeft}>
+            <Text style={styles.navRowLabel}>Weekly Goal</Text>
+            <Text style={styles.navRowSub}>Workouts per week</Text>
+          </View>
+          <View style={styles.unitToggleRow}>
+            {WEEKLY_GOAL_OPTIONS.map((n) => (
+              <TouchableOpacity
+                key={n}
+                style={[styles.unitOption, weeklyGoal === n && styles.unitOptionActive]}
+                onPress={async () => {
+                  setWeeklyGoal(n);
+                  await saveWeeklyGoal(n);
+                }}
+                activeOpacity={0.75}
+              >
+                <Text style={[styles.unitOptionText, weeklyGoal === n && styles.unitOptionTextActive]}>
+                  {n}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
       </View>

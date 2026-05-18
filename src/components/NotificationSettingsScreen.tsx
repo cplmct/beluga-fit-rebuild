@@ -21,6 +21,8 @@ import {
   hasLocalPrefs,
   scheduleDaily,
   cancelAll,
+  cancelInactivityReminder,
+  scheduleInactivityReminder,
   requestPermission,
   getPermissionStatus,
   formatTime,
@@ -156,10 +158,11 @@ export function NotificationSettingsScreen() {
 
         if (data !== null) {
           const cloudPrefs: NotifPrefs = {
-            enabled: data.notif_enabled ?? DEFAULT_PREFS.enabled,
-            hour:    data.notif_hour    ?? DEFAULT_PREFS.hour,
-            minute:  data.notif_minute  ?? DEFAULT_PREFS.minute,
-            type:    (data.notif_type as ReminderType) ?? DEFAULT_PREFS.type,
+            enabled:           data.notif_enabled ?? DEFAULT_PREFS.enabled,
+            hour:              data.notif_hour    ?? DEFAULT_PREFS.hour,
+            minute:            data.notif_minute  ?? DEFAULT_PREFS.minute,
+            type:              (data.notif_type as ReminderType) ?? DEFAULT_PREFS.type,
+            inactivityEnabled: DEFAULT_PREFS.inactivityEnabled,
           };
           // Cache locally so subsequent opens are instant
           await savePrefs(cloudPrefs);
@@ -240,6 +243,17 @@ export function NotificationSettingsScreen() {
     else persistPrefs(updated);
   };
 
+  const handleInactivityToggle = async (val: boolean) => {
+    const updated = { ...prefs, inactivityEnabled: val };
+    setPrefs(updated);
+    await savePrefs(updated);
+    if (val) {
+      if (user?.id) await scheduleInactivityReminder(user.id);
+    } else {
+      await cancelInactivityReminder();
+    }
+  };
+
   const openDeviceSettings = () => {
     if (Platform.OS === 'ios') {
       Linking.openURL('app-settings:');
@@ -313,6 +327,26 @@ export function NotificationSettingsScreen() {
               disabled={saving || permStatus === 'unavailable'}
             />
           )}
+        </View>
+      </View>
+
+      {/* ── Inactivity reminders ── */}
+      <SectionLabel title="Inactivity Reminders" />
+      <View style={styles.card}>
+        <View style={styles.toggleRow}>
+          <View style={styles.toggleLeft}>
+            <Text style={styles.toggleLabel}>Inactivity reminders</Text>
+            <Text style={styles.toggleSub}>
+              Remind me if I haven't trained in 2 days
+            </Text>
+          </View>
+          <Switch
+            value={prefs.inactivityEnabled ?? true}
+            onValueChange={handleInactivityToggle}
+            trackColor={{ false: '#e2e8f0', true: '#2563eb' }}
+            thumbColor={(prefs.inactivityEnabled ?? true) ? '#ffffff' : '#f1f5f9'}
+            disabled={permStatus === 'unavailable'}
+          />
         </View>
       </View>
 

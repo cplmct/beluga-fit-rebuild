@@ -21,6 +21,7 @@ export interface NotifPrefs {
   hour: number;
   minute: number;
   type: ReminderType;
+  inactivityEnabled: boolean;
 }
 
 export const DEFAULT_PREFS: NotifPrefs = {
@@ -28,6 +29,7 @@ export const DEFAULT_PREFS: NotifPrefs = {
   hour: 8,
   minute: 0,
   type: 'checkin',
+  inactivityEnabled: true,
 };
 
 // ── Message pools ────────────────────────────────────────────
@@ -229,9 +231,20 @@ export const MESSAGE_COUNTS = {
 };
 
 // ── Inactivity reminder ───────────────────────────────────────
+export async function cancelInactivityReminder(): Promise<void> {
+  try {
+    const existingId = await AsyncStorage.getItem(INACTIVITY_ID_KEY).catch(() => null);
+    if (existingId) {
+      await Notifications.cancelScheduledNotificationAsync(existingId).catch(() => {});
+      await AsyncStorage.removeItem(INACTIVITY_ID_KEY).catch(() => {});
+      if (__DEV__) console.log('[Notif] inactivity reminder cancelled (id:', existingId, ')');
+    }
+  } catch {}
+}
+
 // Finds the user's most recent completed workout and schedules a local
 // notification for INACTIVITY_DAYS days later at INACTIVITY_HOUR local time.
-// Any previously scheduled inactivity reminder is cancelled first.
+// Respects the inactivityEnabled pref. Cancels any previous reminder first.
 export async function scheduleInactivityReminder(userId: string): Promise<void> {
   if (!Device.isDevice) {
     if (__DEV__) console.log('[Notif] scheduleInactivityReminder — skipped (not a physical device)');
@@ -239,6 +252,12 @@ export async function scheduleInactivityReminder(userId: string): Promise<void> 
   }
 
   try {
+    const prefs = await getPrefs();
+    if (!prefs.inactivityEnabled) {
+      if (__DEV__) console.log('[Notif] scheduleInactivityReminder — skipped (toggle is off)');
+      return;
+    }
+
     const permStatus = await getPermissionStatus();
     if (__DEV__) console.log('[Notif] scheduleInactivityReminder — permission:', permStatus);
     if (permStatus !== 'granted') {
@@ -246,13 +265,8 @@ export async function scheduleInactivityReminder(userId: string): Promise<void> 
       return;
     }
 
-    // Cancel any previously scheduled inactivity reminder before doing anything else
-    const existingId = await AsyncStorage.getItem(INACTIVITY_ID_KEY).catch(() => null);
-    if (existingId) {
-      await Notifications.cancelScheduledNotificationAsync(existingId).catch(() => {});
-      await AsyncStorage.removeItem(INACTIVITY_ID_KEY).catch(() => {});
-      if (__DEV__) console.log('[Notif] inactivity reminder cancelled/replaced (old id:', existingId, ')');
-    }
+    // Cancel any previously scheduled inactivity reminder before scheduling a new one
+    await cancelInactivityReminder();
 
     // Find the most recent completed workout
     const { data } = await supabase
