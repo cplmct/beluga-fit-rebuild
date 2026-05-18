@@ -1,0 +1,56 @@
+I want to implement the first half of a motivation/consistency bundle in the app.
+
+Please inspect the current codebase and make the smallest clean implementation for these two features only:
+
+1. Inactivity reminder toggle
+2. Weekly workout goal
+
+Show exact diffs only.
+
+Constraints:
+- Reuse the existing completed-workout data model (same workouts table used by History and Calendar).
+- Reuse the existing notification preferences/settings pattern.
+- Do NOT invent a second tracking system.
+- Avoid schema changes unless absolutely necessary.
+- Be consistent with the same local date/week logic used in Calendar.
+
+Part 1 — Inactivity reminder toggle
+1. Inspect the current notifications preferences model and NotificationSettingsScreen.
+2. Add a new boolean preference:
+   - inactivityEnabled: true by default
+3. Add a toggle row in NotificationSettingsScreen:
+   - Label: “Inactivity reminders”
+   - Help text: “Remind me if I haven’t trained in 2 days”
+4. Update scheduleInactivityReminder so it exits early when inactivityEnabled is false.
+5. If the user turns inactivity reminders OFF:
+   - cancel any pending inactivity reminder
+6. If the user turns inactivity reminders ON:
+   - immediately evaluate and schedule one if appropriate
+7. Add concise __DEV__ logs only where useful:
+   - prefs loaded
+   - scheduling skipped because toggle is off
+   - inactivity reminder cancelled
+   - inactivity reminder scheduled
+
+Part 2 — Weekly workout goal
+1. Inspect whether a user settings/profile/preferences store already exists.
+2. Store the weekly goal in the smallest clean existing preference mechanism.
+3. Default weekly workout goal to 3.
+4. Add a simple UI for changing the weekly goal:
+   - preset options like 2 / 3 / 4 / 5 workouts per week are fine
+   - use the cleanest existing settings UI pattern
+5. Derive current week progress entirely from completed workouts in the current local week.
+6. Add any needed helper utilities for local week boundaries/counting in the cleanest shared place.
+7. Keep this pass focused:
+   - do NOT add streak UI yet
+   - do NOT add Home summary card yet
+
+Before editing:
+- inspect NotificationSettingsScreen
+- inspect current notifications prefs/load/save flow
+- inspect any existing date utility logic
+- inspect how completed workouts are queried
+
+Then implement the smallest clean version.
+
+Show exact diffs only.
