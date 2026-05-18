@@ -13,6 +13,7 @@ import { supabase } from '../lib/supabase';
 import { safeQuery } from '../lib/safeSupabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useUnits } from '../contexts/UnitsContext';
+import { scheduleInactivityReminder } from '../utils/notifications';
 
 interface LastTimeData {
   sets: number;
@@ -184,6 +185,8 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
       });
 
       await safeQuery(supabase.from('workout_exercises').insert(workoutExercises));
+
+      scheduleInactivityReminder(user.id);
 
       const prCount = workoutExercises.filter((ex: { is_pr: boolean }) => ex.is_pr).length;
       const durationText = formatDuration(durationSeconds);
