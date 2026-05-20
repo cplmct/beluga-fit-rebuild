@@ -146,6 +146,10 @@ export function NotificationSettingsScreen() {
       hasLocalPrefs(),
     ]);
     setPermStatus(perm);
+    if (__DEV__) {
+      console.log('[NotifSettings] permStatus:', perm);
+      console.log('[NotifSettings] inactivity toggle: always enabled (pref is local; scheduling guards on Device.isDevice + permission)');
+    }
 
     if (!hadLocal && user) {
       // No local prefs yet — check Supabase to restore from another device
@@ -337,7 +341,9 @@ export function NotificationSettingsScreen() {
           <View style={styles.toggleLeft}>
             <Text style={styles.toggleLabel}>Inactivity reminders</Text>
             <Text style={styles.toggleSub}>
-              Remind me if I haven't trained in 2 days
+              {permStatus === 'unavailable'
+                ? 'Preference saved — scheduling requires a physical device'
+                : "Remind me if I haven't trained in 2 days"}
             </Text>
           </View>
           <Switch
@@ -345,7 +351,6 @@ export function NotificationSettingsScreen() {
             onValueChange={handleInactivityToggle}
             trackColor={{ false: '#e2e8f0', true: '#2563eb' }}
             thumbColor={(prefs.inactivityEnabled ?? true) ? '#ffffff' : '#f1f5f9'}
-            disabled={permStatus === 'unavailable'}
           />
         </View>
       </View>
