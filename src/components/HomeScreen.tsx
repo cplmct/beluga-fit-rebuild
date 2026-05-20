@@ -13,6 +13,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useUnits } from '../contexts/UnitsContext';
 import { getActivePlan, ActivePlanState, getWeekNumber } from '../utils/activePlan';
 import { getPlanById, PLAN_CATEGORIES } from '../data/workoutPlans';
+import { getWeeklyGoal, DEFAULT_WEEKLY_GOAL, getLocalWeekStart, countWorkoutsThisWeek } from '../utils/goalPrefs';
 
 interface TodayWorkout {
   bodyParts: string[];
@@ -23,8 +24,10 @@ interface DashboardData {
   profileName: string;
   todayWorkout: TodayWorkout | null;
   weeklyCount: number;
+  weeklyGoal: number;
   streak: number;
   last7Days: boolean[];
+  lastWorkoutDate: string | null;
   latestWeight: { value: number; date: string } | null;
 }
 
@@ -45,20 +48,40 @@ function todayStr(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
 
-function computeStreak(dates: string[]): number {
-  if (dates.length === 0) return 0;
-  const unique = [...new Set(dates.map(toLocalDateStr))].sort().reverse();
+/**
+ * Weekly streak: counts consecutive Mon–Sun weeks where the user met weeklyGoal.
+ * The current (in-progress) week is counted only if it already meets the goal,
+ * so a partially-completed week never breaks an existing streak.
+ */
+function computeWeeklyStreak(workouts: { date: string }[], weeklyGoal: number): number {
+  if (workouts.length === 0) return 0;
+
+  // Tally workouts per week (keyed by local week-start timestamp)
+  const weekCounts = new Map<number, number>();
+  for (const w of workouts) {
+    const ws = getLocalWeekStart(new Date(w.date)).getTime();
+    weekCounts.set(ws, (weekCounts.get(ws) ?? 0) + 1);
+  }
+
+  const weekMs = 7 * 24 * 60 * 60 * 1000;
+  const thisWeekTs = getLocalWeekStart().getTime();
+
+  // Walk backwards from last week, counting consecutive weeks that met the goal
   let streak = 0;
-  const cursor = new Date(todayStr());
-  for (const d of unique) {
-    const curStr = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${String(cursor.getDate()).padStart(2, '0')}`;
-    if (d === curStr) {
+  let checkTs = thisWeekTs - weekMs;
+  while (true) {
+    const count = weekCounts.get(checkTs) ?? 0;
+    if (count >= weeklyGoal) {
       streak++;
-      cursor.setDate(cursor.getDate() - 1);
-    } else if (d < curStr) {
+      checkTs -= weekMs;
+    } else {
       break;
     }
   }
+
+  // Forgiving: add current week only if it already met the goal
+  if ((weekCounts.get(thisWeekTs) ?? 0) >= weeklyGoal) streak++;
+
   return streak;
 }
 
@@ -73,15 +96,29 @@ function computeLast7Days(workoutDates: string[]): boolean[] {
   });
 }
 
-function getStreakMessage(streak: number): string {
-  if (streak === 0) return 'Log a workout to start your streak';
-  if (streak === 1) return 'Great start — keep it going';
-  if (streak < 5) return 'Building momentum';
-  if (streak < 7) return 'Almost a week strong';
-  if (streak < 14) return 'One week streak — stay consistent';
-  if (streak < 21) return 'Two weeks strong';
-  if (streak < 30) return 'Three weeks of consistency';
-  return 'Elite consistency — keep it up';
+function getStreakMessage(streak: number, weeklyCount: number, weeklyGoal: number): string {
+  const remaining = Math.max(0, weeklyGoal - weeklyCount);
+  if (weeklyCount === 0) {
+    return streak > 0 ? 'Keep your streak alive this week' : 'Log a workout to start your streak';
+  }
+  if (weeklyCount >= weeklyGoal) {
+    if (streak >= 2) return `${streak}-week streak — keep it up`;
+    return 'Goal reached this week — great work';
+  }
+  if (remaining === 1) return '1 workout left to hit your goal';
+  return `${remaining} workouts left this week`;
+}
+
+function formatLastWorkout(isoString: string | null): string {
+  if (!isoString) return 'No workouts yet';
+  const d = new Date(isoString);
+  const now = new Date();
+  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const workoutMidnight = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diffDays = Math.round((todayMidnight.getTime() - workoutMidnight.getTime()) / 86400000);
+  if (diffDays === 0) return 'Last workout: today';
+  if (diffDays === 1) return 'Last workout: yesterday';
+  return `Last workout: ${diffDays} days ago`;
 }
 
 function getLast7DayLabels(): string[] {
@@ -97,39 +134,57 @@ function getLast7DayLabels(): string[] {
 function StreakCard({
   streak,
   weeklyCount,
+  weeklyGoal,
   last7Days,
+  lastWorkoutDate,
 }: {
   streak: number;
   weeklyCount: number;
+  weeklyGoal: number;
   last7Days: boolean[];
+  lastWorkoutDate: string | null;
 }) {
   const dayLabels = getLast7DayLabels();
-  const message = getStreakMessage(streak);
-  const hasStreak = streak > 0;
+  const message = getStreakMessage(streak, weeklyCount, weeklyGoal);
+  const hasActivity = weeklyCount > 0 || streak > 0;
+  const progress = Math.min(weeklyCount / weeklyGoal, 1);
 
   return (
     <View style={streakStyles.card}>
       <View style={streakStyles.topRow}>
         <View style={streakStyles.streakBlock}>
-          <Text style={streakStyles.streakNumber}>{streak}</Text>
-          <View>
-            <Text style={streakStyles.streakUnit}>
-              {streak === 1 ? 'day' : 'days'}
-            </Text>
-            <Text style={streakStyles.streakUnitSub}>streak</Text>
-          </View>
+          {streak > 0 ? (
+            <>
+              <Text style={streakStyles.streakNumber}>{streak}</Text>
+              <View>
+                <Text style={streakStyles.streakUnit}>
+                  {streak === 1 ? 'week' : 'weeks'}
+                </Text>
+                <Text style={streakStyles.streakUnitSub}>streak</Text>
+              </View>
+            </>
+          ) : (
+            <View style={{ paddingBottom: 4 }}>
+              <Text style={streakStyles.streakUnit}>No streak</Text>
+              <Text style={streakStyles.streakUnitSub}>yet</Text>
+            </View>
+          )}
         </View>
         <View style={streakStyles.weeklyBlock}>
-          <Text style={streakStyles.weeklyNumber}>{weeklyCount}</Text>
-          <Text style={streakStyles.weeklyLabel}>
-            {weeklyCount === 1 ? 'workout' : 'workouts'}{'\n'}this week
-          </Text>
+          <Text style={streakStyles.weeklyNumber}>{weeklyCount} / {weeklyGoal}</Text>
+          <Text style={streakStyles.weeklyLabel}>this week</Text>
         </View>
       </View>
 
-      <Text style={[streakStyles.message, !hasStreak && streakStyles.messageMuted]}>
+      <View style={streakStyles.progressTrack}>
+        <View style={[streakStyles.progressFill, { width: `${progress * 100}%` as any }]} />
+      </View>
+
+      <Text style={[streakStyles.message, !hasActivity && streakStyles.messageMuted]}>
         {message}
       </Text>
+
+      <Text style={streakStyles.lastWorkout}>{formatLastWorkout(lastWorkoutDate)}</Text>
 
       <View style={streakStyles.dotsRow}>
         {last7Days.map((active, i) => (
@@ -207,8 +262,10 @@ export function HomeScreen({ navigation }: any) {
     profileName: '',
     todayWorkout: null,
     weeklyCount: 0,
+    weeklyGoal: DEFAULT_WEEKLY_GOAL,
     streak: 0,
     last7Days: Array(7).fill(false),
+    lastWorkoutDate: null,
     latestWeight: null,
   });
   const [activePlan, setActivePlanState] = useState<ActivePlanState | null>(null);
@@ -231,16 +288,16 @@ export function HomeScreen({ navigation }: any) {
     const gen = ++loadGenRef.current;
     setLoading(true);
     try {
-      const sixtyDaysAgo = new Date();
-      sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+      const ninetyDaysAgo = new Date();
+      ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
-      const [profileRes, workoutsRes, weightRes, ap] = await Promise.all([
+      const [profileRes, workoutsRes, weightRes, ap, goalResult] = await Promise.all([
         supabase.from('profiles').select('name').eq('id', user!.id).maybeSingle(),
         supabase
           .from('workouts')
           .select('id, date, body_parts')
           .eq('user_id', user!.id)
-          .gte('date', sixtyDaysAgo.toISOString())
+          .gte('date', ninetyDaysAgo.toISOString())
           .order('date', { ascending: false }),
         supabase
           .from('body_measurements')
@@ -251,6 +308,7 @@ export function HomeScreen({ navigation }: any) {
           .limit(1)
           .maybeSingle(),
         getActivePlan(user!.id),
+        getWeeklyGoal(),
       ]);
 
       // Discard results if the screen blurred or a newer load started
@@ -279,20 +337,19 @@ export function HomeScreen({ navigation }: any) {
         };
       }
 
-      const now = new Date();
-      const dow = now.getDay();
-      const monday = new Date(now);
-      monday.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1));
-      monday.setHours(0, 0, 0, 0);
-
       const workoutDates = workouts.map((w) => w.date);
+      const weeklyCount = countWorkoutsThisWeek(workouts);
+      const weeklyStreak = computeWeeklyStreak(workouts, goalResult);
+      if (__DEV__) console.log('[Home] weeklyCount:', weeklyCount, '| goal:', goalResult, '| streak:', weeklyStreak);
 
       setData({
         profileName: profileRes.data?.name || '',
         todayWorkout,
-        weeklyCount: workouts.filter((w) => new Date(w.date) >= monday).length,
-        streak: computeStreak(workoutDates),
+        weeklyCount,
+        weeklyGoal: goalResult,
+        streak: weeklyStreak,
         last7Days: computeLast7Days(workoutDates),
+        lastWorkoutDate: workouts.length > 0 ? workouts[0].date : null,
         latestWeight: weightRes.data
           ? { value: weightRes.data.weight, date: weightRes.data.created_at }
           : null,
@@ -427,7 +484,9 @@ export function HomeScreen({ navigation }: any) {
         <StreakCard
           streak={data.streak}
           weeklyCount={data.weeklyCount}
+          weeklyGoal={data.weeklyGoal}
           last7Days={data.last7Days}
+          lastWorkoutDate={data.lastWorkoutDate}
         />
       </View>
 
@@ -627,6 +686,24 @@ const streakStyles = StyleSheet.create({
   },
   messageMuted: {
     color: '#94a3b8',
+  },
+  progressTrack: {
+    height: 5,
+    backgroundColor: '#f1f5f9',
+    borderRadius: 3,
+    marginBottom: 14,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: 5,
+    backgroundColor: '#2563eb',
+    borderRadius: 3,
+  },
+  lastWorkout: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#94a3b8',
+    marginBottom: 16,
   },
   dotsRow: {
     flexDirection: 'row',
