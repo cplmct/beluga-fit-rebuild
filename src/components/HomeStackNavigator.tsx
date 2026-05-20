@@ -8,9 +8,9 @@ const Stack = createNativeStackNavigator();
 
 const sharedHeaderOptions = {
   statusBarTranslucent: true,
-  statusBarColor: 'transparent' as const,
+  statusBarColor: '#cc0000' as const,
   statusBarStyle: 'light' as const,
-  headerStyle: { backgroundColor: '#2563eb' },
+  headerStyle: { backgroundColor: '#cc0000' },
   headerTintColor: '#fff',
   headerTitleStyle: { fontWeight: '600' as const },
 };
