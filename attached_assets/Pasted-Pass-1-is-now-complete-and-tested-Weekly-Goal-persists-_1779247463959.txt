@@ -1,0 +1,61 @@
+Pass 1 is now complete and tested:
+- Weekly Goal persists correctly
+- Inactivity reminder preference can be toggled off/on
+- Existing workout/history/calendar flows still work
+
+Now implement Pass 2 only:
+
+1. Streak / consistency badge
+2. Home summary card showing last workout + current week count + weekly goal progress
+
+Please inspect the current codebase and implement the smallest clean version using the existing completed-workout data model and the weekly-goal infrastructure added in Pass 1.
+
+Show exact diffs only.
+
+Constraints:
+- Reuse completed workouts as the single source of truth.
+- Reuse the same local date/week logic used by Calendar and weekly goal calculations.
+- Keep the UX encouraging, not punitive.
+- Do NOT add a new tracking system.
+
+Part 1 — Streak / consistency badge
+1. Implement a forgiving weekly streak model:
+   - streak = number of consecutive weeks where the user met their weekly workout goal
+2. Derive this entirely from completed workouts plus the stored weekly goal.
+3. Use consistent local week boundaries.
+4. Add a small streak / consistency UI element in a clearly visible summary area.
+5. Use supportive wording:
+   - “3-week streak”
+   - “On track this week”
+   - “1 workout left to hit your goal”
+6. If the user has no workouts yet, show a friendly empty state instead of a discouraging zero.
+
+Part 2 — Home summary card
+1. Add a Home card showing:
+   - last workout date/time or “No workouts yet”
+   - this week’s workout count
+   - weekly goal progress (e.g. 2 / 3)
+   - current streak / consistency value
+2. Reuse existing styling/components where possible.
+3. Add a simple progress indicator if it fits the current Home UI cleanly.
+4. If the user is behind goal this week, use motivating wording instead of guilt.
+5. If no workouts exist, show an encouraging empty state.
+
+Part 3 — Shared logic
+1. If needed, add shared helper utilities for:
+   - last workout lookup
+   - weekly count aggregation
+   - weekly streak calculation
+2. Put helpers in the cleanest shared location if reused.
+3. Add concise __DEV__ logs only if needed to verify weekly counts/streak logic.
+4. Do not leave noisy debug UI.
+
+Before editing:
+- inspect HomeScreen
+- inspect the weekly goal implementation added in Pass 1
+- inspect any existing date utility helpers
+- inspect how workouts are queried today
+
+Then implement the smallest clean version.
+
+Show exact diffs only.

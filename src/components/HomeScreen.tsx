@@ -340,7 +340,6 @@ export function HomeScreen({ navigation }: any) {
       const workoutDates = workouts.map((w) => w.date);
       const weeklyCount = countWorkoutsThisWeek(workouts);
       const weeklyStreak = computeWeeklyStreak(workouts, goalResult);
-      if (__DEV__) console.log('[Home] weeklyCount:', weeklyCount, '| goal:', goalResult, '| streak:', weeklyStreak);
 
       setData({
         profileName: profileRes.data?.name || '',
