@@ -16,6 +16,7 @@ export function WorkoutStackNavigator() {
   return (
     <Stack.Navigator
       screenOptions={{
+        statusBarTranslucent: true,
         headerStyle: { backgroundColor: '#2563eb' },
         headerTintColor: '#fff',
         headerTitleStyle: { fontWeight: 'bold' },

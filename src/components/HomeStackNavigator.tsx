@@ -7,6 +7,7 @@ import { StatsScreen } from './StatsScreen';
 const Stack = createNativeStackNavigator();
 
 const sharedHeaderOptions = {
+  statusBarTranslucent: true,
   headerStyle: { backgroundColor: '#2563eb' },
   headerTintColor: '#fff',
   headerTitleStyle: { fontWeight: '600' as const },

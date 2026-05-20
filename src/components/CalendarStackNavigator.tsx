@@ -9,6 +9,7 @@ export function CalendarStackNavigator() {
   return (
     <Stack.Navigator
       screenOptions={{
+        statusBarTranslucent: true,
         headerStyle: {
           backgroundColor: '#2563eb',
         },
