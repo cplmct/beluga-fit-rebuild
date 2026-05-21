@@ -1,6 +1,5 @@
 import React, { useRef, useEffect } from 'react';
 import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
-import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
@@ -67,7 +66,6 @@ function AppContent() {
         }
       }}
     >
-      <StatusBar style="auto" />
       {user ? <BottomTabNavigator /> : <AuthStackNavigator />}
     </NavigationContainer>
   );
