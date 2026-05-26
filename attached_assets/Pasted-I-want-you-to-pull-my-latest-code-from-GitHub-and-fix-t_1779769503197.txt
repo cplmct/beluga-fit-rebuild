@@ -1,0 +1,69 @@
+I want you to pull my latest code from GitHub and fix the Supabase password reset flow for my Expo React Native app (Beluga Fit).
+
+Repository:
+- GitHub repo URL: YOUR_GITHUB_URL_HERE
+- Default branch: main
+
+First:
+1. Open a fresh Replit project (or use the existing one for this app).
+2. Pull the latest code from the GitHub repo and check out the main branch.
+3. Run npm install (or npm ci if appropriate) so dependencies are up to date.
+
+Bug to fix:
+- The forgot password email sends successfully from Supabase.
+- When I tap the reset password link from the email on Android, it opens a web URL like:
+  https://belugafit.tranbtc.com/confirmation#...type=recovery
+  instead of opening the Expo app (Beluga Fit) via deep link and taking me to the in-app reset password screen.
+
+Important context:
+- This is an Expo React Native app.
+- Custom scheme: belugafit
+- app.json already has "scheme": "belugafit"
+- ForgotPasswordScreen calls resetPassword(trimmed) from AuthContext.
+- AuthStackNavigator currently includes Login, Register, ForgotPassword.
+- I have a ResetPasswordScreen (or similar) that should handle the user actually entering the new password in the app.
+
+Tasks:
+1. Locate the implementation of resetPassword in AuthContext (or wherever auth helpers live).
+2. Update the Supabase password reset call so that it uses a deep link redirect, something like:
+   supabase.auth.resetPasswordForEmail(email, {
+     redirectTo: "belugafit://reset-password"
+   })
+3. Confirm that Supabase Auth URL configuration (in the dashboard) is compatible with this, and assume that belugafit:// is added as an allowed Redirect URL. If you need to note any dashboard changes, just tell me what to update.
+4. Implement or fix the native mobile deep-link handling for the password recovery flow:
+   - When the recovery link is opened, the app should receive the URL (with type=recovery, access_token, refresh_token, etc.).
+   - The app should exchange this URL with Supabase if necessary and establish an authenticated password recovery session.
+   - Then navigate the user into ResetPasswordScreen where they can set a new password.
+5. Make sure ResetPasswordScreen is properly wired in navigation:
+   - Either as a screen in AuthStackNavigator (e.g. name="ResetPassword") or in whatever navigator makes sense.
+   - The deep-link handler should navigate to that screen when a recovery deep link is detected.
+6. Ensure updatePassword (or equivalent) correctly calls Supabase to change the password once the user submits the new password, using the recovery session established from the deep link.
+7. Do NOT break existing login, registration, or standard auth state handling.
+8. Do NOT remove or break the current Supabase email template using {{ .ConfirmationURL }}; only adjust our use of redirectTo and deep-link handling if needed.
+
+Files to inspect and modify as needed:
+- contexts/AuthContext.tsx (or AuthProvider/Auth.ts)
+- App.tsx (or main entry including NavigationContainer and linking config)
+- Any Expo/React Navigation deep-linking configuration
+- AuthStackNavigator.tsx
+- ResetPasswordScreen.tsx
+- supabase client initialization file
+
+Deliverables:
+1. Pull code from GitHub and confirm you are on the main branch with the latest commit.
+2. Implement the full working password recovery deep-link flow described above.
+3. Tell me exactly which files you changed and briefly describe each change.
+4. Show me the final implementation of:
+   - resetPassword
+   - any deep-link handling code for Supabase recovery
+   - navigation changes related to ResetPasswordScreen
+5. Provide instructions for testing:
+   - How to trigger forgot password,
+   - How to test the email link on Android so that it opens the app via belugafit://reset-password,
+   - How to verify the password is actually updated.
+
+Goal:
+After your changes, when I tap the Supabase password reset email link on my Android device:
+- The Beluga Fit app opens via the belugafit:// deep link.
+- I’m taken into the in-app reset password flow.
+- I can set a new password successfully, and login works with the new password.
