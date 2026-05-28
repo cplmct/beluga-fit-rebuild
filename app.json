@@ -16,7 +16,7 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.belugafit.app",
+      "bundleIdentifier": "com.tranbtc.belugafitworkout",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
@@ -51,10 +51,12 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.belugafit.app",
+      "package": "com.tranbtc.belugafitworkout",
+      "permissions": ["INTERNET"],
       "intentFilters": [
         {
           "action": "VIEW",
+          "autoVerify": true,
           "data": [
             {
               "scheme": "belugafit"
@@ -65,6 +67,7 @@
       ]
     },
     "plugins": [
+      "expo-dev-client",
       [
         "expo-splash-screen",
         {
