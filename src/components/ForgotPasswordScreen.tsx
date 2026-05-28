@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Alert,
   View,
   Text,
   TextInput,
@@ -11,6 +12,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 export function ForgotPasswordScreen({ navigation }: any) {
   const { resetPassword } = useAuth();
@@ -20,31 +22,35 @@ export function ForgotPasswordScreen({ navigation }: any) {
   const [error, setError] = useState('');
   const [sent, setSent] = useState(false);
 
-  const handleSend = async () => {
-    const trimmed = email.trim();
-    if (!trimmed) {
-      setError('Please enter your email address.');
-      return;
-    }
-    if (!trimmed.includes('@')) {
-      setError('Please enter a valid email address.');
-      return;
-    }
+const handleSend = async () => {
+  const trimmed = email.trim();
+  if (!trimmed) {
+    setError('Please enter your email address.');
+    return;
+  }
+  if (!trimmed.includes('@')) {
+    setError('Please enter a valid email address.');
+    return;
+  }
 
-    setLoading(true);
-    setError('');
+  Alert.alert(
+    'Supabase Debug',
+    `ENV URL: ${process.env.EXPO_PUBLIC_SUPABASE_URL ?? 'missing'}\nREST URL: ${supabase.restUrl}`
+  );
 
-    const { error: resetError } = await resetPassword(trimmed);
+  setLoading(true);
+  setError('');
 
-    setLoading(false);
+  const { error: resetError } = await resetPassword(trimmed);
 
-    if (resetError) {
-      setError(resetError.message || 'Something went wrong. Please try again.');
-    } else {
-      setSent(true);
-    }
-  };
+  setLoading(false);
 
+  if (resetError) {
+    setError(resetError.message || 'Something went wrong. Please try again.');
+  } else {
+    setSent(true);
+  }
+};
   return (
     <KeyboardAvoidingView
       style={styles.root}
@@ -91,6 +97,9 @@ export function ForgotPasswordScreen({ navigation }: any) {
                 Enter the email address on your account and we'll send you a link to reset your password.
               </Text>
 
+			  <Text style={{ fontSize: 10, color: '#94a3b8', marginBottom: 12 }}>
+				Supabase URL: {supabase.restUrl}
+			  </Text>
               {error ? (
                 <View style={styles.errorBox}>
                   <Text style={styles.errorText}>{error}</Text>
