@@ -146,6 +146,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 // ── Provider ──────────────────────────────────────────────────────────────────
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  console.log('[Auth] AuthProvider rendered')
   const [session, setSession]                       = useState<Session | null>(null)
   const [user, setUser]                             = useState<User | null>(null)
   const [loading, setLoading]                       = useState(true)
@@ -166,32 +167,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // (app opened via tapping the link) and warm starts (app already open).
 
   useEffect(() => {
-    let mounted = true
+    console.log('[Auth] deep link effect mounted')
+	let mounted = true
 
     const applyRecoveryUrl = async (url: string | null): Promise<void> => {
-      if (!url) return
-      const tokens = parseRecoveryUrl(url)
-      if (!tokens) return
+  console.log('[Auth] applyRecoveryUrl input:', url)
+  if (!url) return
 
-      if (__DEV__) console.log('[Auth] Recovery deep link received')
+  const tokens = parseRecoveryUrl(url)
+  console.log('[Auth] parsed tokens:', tokens ? tokens : 'missing')
+  if (!tokens) return
 
-      const { error } = await supabase.auth.setSession({
-        access_token:  tokens.accessToken,
-        refresh_token: tokens.refreshToken,
-      })
+  console.log('[Auth] Recovery deep link received')
 
-      if (error && __DEV__) {
-        console.error('[Auth] setSession error:', error.message)
-      }
-      // On success, onAuthStateChange fires PASSWORD_RECOVERY, which sets
-      // isPasswordRecovery = true. Nothing else to do here.
-    }
+  const { error } = await supabase.auth.setSession({
+    access_token: tokens.accessToken,
+    refresh_token: tokens.refreshToken,
+  })
 
-    Linking.getInitialURL()
-      .then((url) => { if (mounted) applyRecoveryUrl(url) })
-      .catch((err) => { if (__DEV__) console.warn('[Auth] getInitialURL error:', err) })
+  if (error && __DEV__) {
+    console.error('[Auth] setSession error:', error.message)
+  }
+}
 
-    const linkSub = Linking.addEventListener('url', ({ url }) => { applyRecoveryUrl(url) })
+Linking.getInitialURL()
+  .then((url) => {
+    console.log('[Auth] getInitialURL returned:', url)
+    if (mounted) applyRecoveryUrl(url)
+  })
+  .catch((err) => {
+    if (__DEV__) console.warn('[Auth] getInitialURL error:', err)
+  })
+
+const linkSub = Linking.addEventListener('url', ({ url }) => {
+  console.log('[Auth] Linking url event:', url)
+  applyRecoveryUrl(url)
+})
 
     return () => {
       mounted = false
@@ -211,7 +222,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { data: { session }, error } = await supabase.auth.getSession()
 
         if (error) {
-          if (__DEV__) console.error('[Auth] getSession error:', error.message)
+          console.error('[Auth] getSession error:', error.message)
           // Continue — user is simply unauthenticated.
           return
         }
