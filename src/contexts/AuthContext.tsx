@@ -173,8 +173,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const tokens = parseRecoveryUrl(url)
       if (!tokens) return
 
-      if (__DEV__) console.log('[Auth] Recovery deep link received')
-
       const { error } = await supabase.auth.setSession({
         access_token:  tokens.accessToken,
         refresh_token: tokens.refreshToken,
@@ -245,8 +243,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // async result is applied — earlier in-flight results are discarded.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        if (__DEV__) console.log('[Auth] event:', event)
-
         // ── Synchronous updates (always safe, last write wins) ──────────────
         setSession(session)
         setUser(session?.user ?? null)

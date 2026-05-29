@@ -1,0 +1,91 @@
+I need you to act as a careful release-cleanup engineer for my Expo / React Native app “Beluga Fit”.
+
+IMPORTANT CONTEXT:
+- GitHub is the source I want you to sync from first.
+- Do NOT rewrite architecture.
+- Do NOT remove working password reset deep-link logic.
+- The app-side native recovery plumbing was verified working in a development build:
+  - AuthProvider mounts
+  - Linking event fires
+  - parseRecoveryUrl works
+  - supabase.auth.setSession is called
+  - fake-token test failed only because the JWTs were fake
+- We are now cleaning up temporary debugging only, then committing and pushing the cleanup back to GitHub for production build prep.
+
+YOUR TASKS, IN ORDER:
+
+1. Sync safely from GitHub
+- Check current git branch and git status.
+- Run git pull on the correct branch before making any changes.
+- If there are conflicts or uncommitted changes, STOP and summarize clearly before proceeding.
+
+2. Audit the password reset / auth debugging changes
+Search the codebase for temporary debugging related to:
+- [Auth] AuthProvider rendered
+- [Auth] deep link effect mounted
+- [Auth] getInitialURL returned
+- [Auth] applyRecoveryUrl input
+- [Auth] parsed tokens
+- [Auth] Recovery deep link received
+- [Auth] Linking url event
+- [Auth] setSession error
+- any temporary Alert.alert debug popup showing Supabase URLs
+- any temporary on-screen debug text like supabase.restUrl
+- any temporary expo-constants import added only for debugging
+
+3. Clean only temporary debugging
+Remove temporary debug-only code, but KEEP all real functionality:
+KEEP:
+- parseRecoveryUrl()
+- Linking.getInitialURL()
+- Linking.addEventListener('url', ...)
+- supabase.auth.setSession(...)
+- PASSWORD_RECOVERY handling
+- resetPassword redirectTo using belugafit://reset-password
+- all real auth/onboarding/account logic
+
+REMOVE only temporary debugging such as:
+- temporary console.log / console.warn / console.error lines added solely for investigation
+- temporary Alert.alert debug popups
+- temporary debug text rendered in UI
+- unused imports created only for debugging, including expo-constants if no longer needed
+
+Be conservative:
+- if a log is part of legitimate production error handling, keep it
+- if unsure, comment in your summary before deleting
+
+4. Verify cleanup quality
+After cleanup:
+- run a search again to confirm the temporary debug strings are gone
+- check for unused imports introduced or left behind
+- ensure TypeScript still looks clean
+- ensure AuthContext and forgot-password-related screens still compile logically
+- do NOT change unrelated app behavior
+
+5. Git review
+Show me:
+- git status
+- a concise summary of exactly which files changed
+- a concise explanation of what was removed and what was intentionally kept
+
+6. Commit and push
+If the repo is clean and the changes are limited to safe cleanup:
+- git add the changed files
+- commit with this message exactly:
+  chore: remove password reset debugging and prep for production build
+- push to the same GitHub branch
+
+7. Final report
+At the end, give me:
+- branch name
+- files changed
+- commit hash
+- whether push succeeded
+- any risks or follow-up items before running EAS production build
+
+VERY IMPORTANT RULES:
+- Do not remove the real password reset deep-link implementation.
+- Do not change Supabase URLs, redirect URLs, or auth flow behavior unless absolutely required for cleanup.
+- Do not make broad refactors.
+- Do not touch unrelated screens or business logic.
+- If you hit uncertainty, stop and explain rather than guessing.
