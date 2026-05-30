@@ -7,7 +7,7 @@ import { UnitsProvider } from './src/contexts/UnitsContext';
 import { AuthStackNavigator } from './src/components/AuthStackNavigator';
 import { BottomTabNavigator } from './src/components/BottomTabNavigator';
 import { OnboardingScreen } from './src/components/OnboardingScreen';
-import { ResetPasswordScreen } from './src/components/ResetPasswordScreen';
+import { ChangePasswordScreen } from './src/components/ChangePasswordScreen';
 import { scheduleInactivityReminder, setupNotificationHandler } from './src/utils/notifications';
 
 function AppContent() {
@@ -38,7 +38,7 @@ function AppContent() {
   // Shown when the user opens the app via the reset-password deep link.
   // Rendered outside NavigationContainer — no navigation needed for this screen.
   if (isPasswordRecovery) {
-    return <ResetPasswordScreen />;
+    return <ChangePasswordScreen />;
   }
 
   // ── Onboarding ────────────────────────────────────────────────────────────
