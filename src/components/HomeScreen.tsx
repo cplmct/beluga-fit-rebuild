@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -256,7 +256,13 @@ function HomeSkeleton() {
 }
 
 export function HomeScreen({ navigation }: any) {
-  const { user } = useAuth();
+  const { user, isPasswordRecovery } = useAuth();
+
+  useEffect(() => {
+    if (isPasswordRecovery) {
+      navigation.navigate('ChangePassword');
+    }
+  }, [isPasswordRecovery]);
   const { weightUnit } = useUnits();
   const [data, setData] = useState<DashboardData>({
     profileName: '',

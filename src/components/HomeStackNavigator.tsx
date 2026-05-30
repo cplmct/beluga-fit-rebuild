@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { HomeScreen } from './HomeScreen';
 import { BodyTrackerScreen } from './BodyTrackerScreen';
 import { StatsScreen } from './StatsScreen';
+import { ChangePasswordScreen } from './ChangePasswordScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -38,6 +39,11 @@ export function HomeStackNavigator() {
         name="Stats"
         component={StatsScreen}
         options={{ title: 'Progress & Stats', ...lightHeaderOptions }}
+      />
+      <Stack.Screen
+        name="ChangePassword"
+        component={ChangePasswordScreen}
+        options={{ headerShown: false }}
       />
     </Stack.Navigator>
   );

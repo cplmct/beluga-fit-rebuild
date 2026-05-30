@@ -2,12 +2,6 @@
 .env
 .env.*
 
-# Credentials
-credentials.json
-credentials/
-*.jks
-*.keystore
-
 # Expo
 .expo/
 .expo-shared/
