@@ -77,6 +77,14 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
       return;
     }
 
+    // If the user arrived here via the Home resume banner, restore silently —
+    // they already confirmed intent by tapping Resume there.
+    if (route.params?.autoResume) {
+      setCompletedExercises(new Set(saved.completedExercises));
+      startTimeRef.current = saved.startTime;
+      return;
+    }
+
     // Session is valid and matches — offer to resume.
     const completed = saved.completedExercises.length;
     const total = saved.exerciseNames.length;
@@ -110,6 +118,8 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
       exerciseNames: exercises.map((ex: ExerciseSelection) => ex.name),
       completedExercises: Array.from(completedExercises),
       startTime: startTimeRef.current,
+      exercises,
+      bodyParts,
     });
   }, [completedExercises]);
 
@@ -121,6 +131,8 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
           exerciseNames: exercises.map((ex: ExerciseSelection) => ex.name),
           completedExercises: Array.from(completedExercises),
           startTime: startTimeRef.current,
+          exercises,
+          bodyParts,
         });
       }
     };

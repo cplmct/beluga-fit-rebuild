@@ -14,6 +14,11 @@ import { useUnits } from '../contexts/UnitsContext';
 import { getActivePlan, ActivePlanState, getWeekNumber } from '../utils/activePlan';
 import { getPlanById, PLAN_CATEGORIES } from '../data/workoutPlans';
 import { getWeeklyGoal, DEFAULT_WEEKLY_GOAL, getLocalWeekStart, countWorkoutsThisWeek } from '../utils/goalPrefs';
+import {
+  loadWorkoutSession,
+  clearWorkoutSession,
+  WorkoutSessionPayload,
+} from '../utils/workoutSession';
 
 interface TodayWorkout {
   bodyParts: string[];
@@ -277,6 +282,7 @@ export function HomeScreen({ navigation }: any) {
   const [activePlan, setActivePlanState] = useState<ActivePlanState | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [resumeSession, setResumeSession] = useState<WorkoutSessionPayload | null>(null);
 
   // Incremented each time a load is initiated or the screen loses focus.
   // Async state updates check this before committing — stale in-flight
@@ -286,9 +292,16 @@ export function HomeScreen({ navigation }: any) {
   useFocusEffect(
     useCallback(() => {
       if (user) loadDashboard();
+      // Refresh the unfinished-workout banner whenever the screen is focused.
+      loadWorkoutSession().then(setResumeSession);
       return () => { loadGenRef.current++; };
     }, [user])
   );
+
+  const handleDiscardSession = async () => {
+    await clearWorkoutSession();
+    setResumeSession(null);
+  };
 
   const loadDashboard = async () => {
     const gen = ++loadGenRef.current;
@@ -436,6 +449,43 @@ export function HomeScreen({ navigation }: any) {
           {displayName}
         </Text>
       </View>
+
+      {/* ── Unfinished workout banner ── */}
+      {resumeSession && resumeSession.exercises?.length > 0 && (
+        <View style={styles.resumeBanner}>
+          <View style={styles.resumeBannerLeft}>
+            <Text style={styles.resumeBannerTitle}>Unfinished workout</Text>
+            <Text style={styles.resumeBannerSub}>
+              {resumeSession.completedExercises.length}/{resumeSession.exerciseNames.length} exercises done
+            </Text>
+          </View>
+          <View style={styles.resumeBannerActions}>
+            <TouchableOpacity
+              style={styles.resumeDiscardBtn}
+              onPress={handleDiscardSession}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.resumeDiscardText}>Discard</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.resumeBtn}
+              onPress={() =>
+                navigation.navigate('Workout', {
+                  screen: 'WorkoutChecklist',
+                  params: {
+                    exercises: resumeSession.exercises,
+                    bodyParts: resumeSession.bodyParts,
+                    autoResume: true,
+                  },
+                })
+              }
+              activeOpacity={0.85}
+            >
+              <Text style={styles.resumeBtnText}>Resume</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
 
       {/* ── Today ── */}
       <View style={styles.section}>
@@ -931,4 +981,44 @@ const styles = StyleSheet.create({
   bodyArrow: { fontSize: 22, color: '#cbd5e1' },
   bodyEmptyTitle: { fontSize: 15, fontWeight: '600', color: '#0f172a', marginBottom: 4 },
   bodyEmptySub: { fontSize: 12, color: '#94a3b8', maxWidth: 220, lineHeight: 17 },
+
+  // ── Unfinished workout resume banner ──
+  resumeBanner: {
+    backgroundColor: '#fffbeb',
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#fcd34d',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginHorizontal: 20,
+    marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  resumeBannerLeft: { flex: 1, marginRight: 12 },
+  resumeBannerTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#92400e',
+    marginBottom: 2,
+  },
+  resumeBannerSub: { fontSize: 12, color: '#b45309' },
+  resumeBannerActions: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  resumeDiscardBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#fcd34d',
+    backgroundColor: '#fef3c7',
+  },
+  resumeDiscardText: { fontSize: 13, fontWeight: '600', color: '#92400e' },
+  resumeBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 8,
+    backgroundColor: '#f59e0b',
+  },
+  resumeBtnText: { fontSize: 13, fontWeight: '700', color: '#fff' },
 });
