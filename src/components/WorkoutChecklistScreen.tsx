@@ -7,6 +7,8 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  AppState,
+  AppStateStatus,
 } from 'react-native';
 import { ExerciseSelection } from '../data/exercises';
 import { supabase } from '../lib/supabase';
@@ -15,6 +17,13 @@ import { useAuth } from '../contexts/AuthContext';
 import { useUnits } from '../contexts/UnitsContext';
 import { scheduleInactivityReminder } from '../utils/notifications';
 import { haptic } from '../utils/haptics';
+import {
+  saveWorkoutSession,
+  loadWorkoutSession,
+  clearWorkoutSession,
+} from '../utils/workoutSession';
+import { useSaveStatus } from '../hooks/useSaveStatus';
+import { SaveStatusBadge } from './SaveStatusBadge';
 
 interface LastTimeData {
   sets: number;
@@ -43,9 +52,81 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
 
   const startTimeRef = useRef(Date.now());
 
+  // Save-confidence indicator — tracks the state of the most recent write.
+  const saveStatus = useSaveStatus();
+
+  // ── On mount: fetch last-time data + check for a rescued session ────────────
   useEffect(() => {
     fetchLastTimeData();
+    checkForSavedSession();
   }, []);
+
+  const checkForSavedSession = async () => {
+    const saved = await loadWorkoutSession();
+    if (!saved) return;
+
+    // Match the saved session against the exercises currently in route.params.
+    // If names differ it means the user started a different workout — discard silently.
+    const currentNames = exercises.map((ex: ExerciseSelection) => ex.name);
+    const namesMatch =
+      saved.exerciseNames.length === currentNames.length &&
+      saved.exerciseNames.every((n: string, i: number) => n === currentNames[i]);
+
+    if (!namesMatch) {
+      await clearWorkoutSession();
+      return;
+    }
+
+    // Session is valid and matches — offer to resume.
+    const completed = saved.completedExercises.length;
+    const total = saved.exerciseNames.length;
+    Alert.alert(
+      'Resume workout?',
+      `You have an unfinished workout (${completed}/${total} sets checked off). Pick up where you left off?`,
+      [
+        {
+          text: 'Start Fresh',
+          style: 'destructive',
+          onPress: () => clearWorkoutSession(),
+        },
+        {
+          text: 'Resume',
+          onPress: () => {
+            // Restore checked-off sets and original start time.
+            setCompletedExercises(new Set(saved.completedExercises));
+            startTimeRef.current = saved.startTime;
+          },
+        },
+      ],
+      { cancelable: false }
+    );
+  };
+
+  // ── Save session whenever checked-off sets change ───────────────────────────
+  useEffect(() => {
+    // Skip the initial empty state — no point persisting a blank session.
+    if (completedExercises.size === 0) return;
+    saveWorkoutSession({
+      exerciseNames: exercises.map((ex: ExerciseSelection) => ex.name),
+      completedExercises: Array.from(completedExercises),
+      startTime: startTimeRef.current,
+    });
+  }, [completedExercises]);
+
+  // ── Save session when app moves to background (belt + suspenders) ───────────
+  useEffect(() => {
+    const handleAppStateChange = (nextState: AppStateStatus) => {
+      if (nextState === 'background' || nextState === 'inactive') {
+        saveWorkoutSession({
+          exerciseNames: exercises.map((ex: ExerciseSelection) => ex.name),
+          completedExercises: Array.from(completedExercises),
+          startTime: startTimeRef.current,
+        });
+      }
+    };
+    const sub = AppState.addEventListener('change', handleAppStateChange);
+    return () => sub.remove();
+  }, [completedExercises, exercises]);
 
   const fetchLastTimeData = async () => {
     if (!user) {
@@ -119,6 +200,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
     }
 
     setIsSaving(true);
+    saveStatus.setSaving();
     const durationSeconds = Math.floor((Date.now() - startTimeRef.current) / 1000);
 
     try {
@@ -197,6 +279,8 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
       if (prCount > 0) lines.push(`${prCount} personal record${prCount > 1 ? 's' : ''} set!`);
 
       haptic.success(); // reward the user for completing a workout
+      saveStatus.setSuccess();
+      await clearWorkoutSession(); // workout is done — remove the rescue checkpoint
       Alert.alert('Workout Saved!', `Great job!\n\n${lines.join('\n')}`, [
         {
           text: 'OK',
@@ -205,6 +289,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
       ]);
     } catch (error: any) {
       haptic.error(); // signal that the save failed
+      saveStatus.setError(error);
       Alert.alert('Error', error.message || 'Failed to save workout.');
     } finally {
       setIsSaving(false);
@@ -315,6 +400,9 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
           })}
         </View>
       </ScrollView>
+
+      {/* Save confidence indicator — visible only while saving or if an error occurred */}
+      <SaveStatusBadge status={saveStatus.status} />
 
       <View style={styles.footer}>
         <TouchableOpacity
