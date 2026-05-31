@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext, useRef } from 'react'
-import { Linking } from 'react-native'
+import { Linking, Alert } from 'react-native'
 import { Session, User, AuthError } from '@supabase/supabase-js'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '../lib/supabase'
@@ -169,9 +169,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let mounted = true
 
     const applyRecoveryUrl = async (url: string | null): Promise<void> => {
+      // [DIAG] — TEMPORARY
+      console.log('[Diag] applyRecoveryUrl url=', url ?? 'null')
+      Alert.alert('[Diag] Recovery URL received', url ? url.substring(0, 120) : '(null — no URL)')
+
       if (!url) return
+
       const tokens = parseRecoveryUrl(url)
-      if (!tokens) return
+      // [DIAG] — TEMPORARY
+      console.log('[Diag] parseRecoveryUrl=', tokens ? 'TOKENS_FOUND' : 'null')
+      if (!tokens) {
+        Alert.alert('[Diag] Recovery URL parse failed', 'parseRecoveryUrl returned null.\nURL: ' + url.substring(0, 120))
+        return
+      }
 
       const { error } = await supabase.auth.setSession({
         access_token:  tokens.accessToken,
@@ -179,9 +189,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
 
       if (error) {
+        // [DIAG] — TEMPORARY
+        console.error('[Diag] setSession error:', error.message)
+        Alert.alert('[Diag] Recovery session error', error.message)
         if (__DEV__) console.error('[Auth] setSession error:', error.message)
         return
       }
+
+      // [DIAG] — TEMPORARY
+      console.log('[Diag] setSession success → setIsPasswordRecovery(true)')
+      Alert.alert('[Diag] Recovery session established', 'setSession() succeeded. Setting isPasswordRecovery=true now.')
 
       // setSession() with a recovery token emits SIGNED_IN (not PASSWORD_RECOVERY)
       // when detectSessionInUrl is false. We therefore set the flag directly here,
@@ -192,10 +209,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     Linking.getInitialURL()
-      .then((url) => { if (mounted) applyRecoveryUrl(url) })
+      .then((url) => {
+        // [DIAG] — TEMPORARY
+        console.log('[Diag] getInitialURL resolved=', url ?? 'null')
+        if (mounted) applyRecoveryUrl(url)
+      })
       .catch((err) => { if (__DEV__) console.warn('[Auth] getInitialURL error:', err) })
 
-    const linkSub = Linking.addEventListener('url', ({ url }) => { applyRecoveryUrl(url) })
+    const linkSub = Linking.addEventListener('url', ({ url }) => {
+      // [DIAG] — TEMPORARY
+      console.log('[Diag] addEventListener url=', url)
+      applyRecoveryUrl(url)
+    })
 
     return () => {
       mounted = false
