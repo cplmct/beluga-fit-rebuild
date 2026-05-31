@@ -11,6 +11,7 @@ import {
   Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { haptic } from '../utils/haptics';
 import { LineChart } from 'react-native-chart-kit';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -112,6 +113,7 @@ export function BodyTrackerScreen() {
       leftThigh || rightThigh || leftCalf || rightCalf || neck;
 
     if (!hasAny) {
+      haptic.error(); // reinforce that the form is empty
       setSaveError('Enter at least one measurement before saving.');
       return;
     }
@@ -142,9 +144,11 @@ export function BodyTrackerScreen() {
       setHips(''); setLeftArm(''); setRightArm(''); setLeftThigh('');
       setRightThigh(''); setLeftCalf(''); setRightCalf(''); setNeck('');
 
+      haptic.success(); // confirm the measurement was saved
       Alert.alert('Saved', 'Your measurements have been recorded.');
       fetchMeasurements();
     } catch (err: any) {
+      haptic.error(); // signal that the save failed
       setSaveError("Couldn't save your measurements. Please try again.");
     } finally {
       setSaving(false);

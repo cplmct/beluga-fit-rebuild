@@ -14,6 +14,7 @@ import { safeQuery } from '../lib/safeSupabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useUnits } from '../contexts/UnitsContext';
 import { scheduleInactivityReminder } from '../utils/notifications';
+import { haptic } from '../utils/haptics';
 
 interface LastTimeData {
   sets: number;
@@ -103,6 +104,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
       newCompleted.delete(index);
     } else {
       newCompleted.add(index);
+      haptic.light(); // subtle confirmation when a set is checked off
     }
     setCompletedExercises(newCompleted);
   };
@@ -111,6 +113,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
     if (isSaving || !user) return;
 
     if (exercises.length === 0) {
+      haptic.error(); // reinforce validation failure
       Alert.alert('No exercises', 'Please select at least one exercise before finishing.');
       return;
     }
@@ -193,6 +196,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
       const lines = [`Duration: ${durationText}`];
       if (prCount > 0) lines.push(`${prCount} personal record${prCount > 1 ? 's' : ''} set!`);
 
+      haptic.success(); // reward the user for completing a workout
       Alert.alert('Workout Saved!', `Great job!\n\n${lines.join('\n')}`, [
         {
           text: 'OK',
@@ -200,6 +204,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
         },
       ]);
     } catch (error: any) {
+      haptic.error(); // signal that the save failed
       Alert.alert('Error', error.message || 'Failed to save workout.');
     } finally {
       setIsSaving(false);

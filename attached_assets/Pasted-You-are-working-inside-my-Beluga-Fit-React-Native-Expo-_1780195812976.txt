@@ -1,0 +1,184 @@
+You are working inside my Beluga Fit React Native / Expo app repository.
+
+Goal:
+Implement 3 UX/polish phases in a careful, production-safe way WITHOUT redesigning the current UI layout, screen geometry, auth architecture, or build/signing configuration.
+
+Critical constraints:
+1. Do NOT modify or remove anything related to Android signing, local credentials, .gitignore secret rules, credentials.json, keystore paths, app signing, or EAS build configuration unless I explicitly ask.
+2. Do NOT revert eas.json production app-bundle settings.
+3. Do NOT remove existing password recovery, auth, onboarding, or navigation logic unless absolutely necessary.
+4. Prefer additive/refactor-safe changes over rewrites.
+5. Before coding each phase, first inspect the current relevant files and summarize:
+   - observed facts
+   - inferred intent
+   - exact files you plan to modify
+6. After each phase, stop and provide:
+   - files changed
+   - what was added
+   - why it was added
+   - risks / follow-up checks
+7. Commit and push ONLY after the phase is working cleanly.
+8. Keep all changes TypeScript-safe and aligned with existing code style.
+9. If there is uncertainty about a file or architecture path, inspect first — do not guess.
+10. Avoid broad formatting-only changes.
+
+Project intent:
+Beluga Fit should feel more premium and resilient without forcing a redesign.
+Current architecture already uses React Context, AsyncStorage, Supabase auth, guarded async flows, and local fallback behavior. Extend the existing architecture — do not create a duplicate state system.
+
+Implementation phases:
+
+========================
+PHASE 1 — Haptics + Smart Empty States
+========================
+
+Objective:
+Add low-risk polish with minimal UI disruption.
+
+A. Haptics
+- Install and use expo-haptics if not already installed.
+- Create a small reusable utility wrapper instead of calling Expo haptics everywhere directly.
+- Add subtle haptic feedback only to high-value interactions such as:
+  - completing a set
+  - saving a workout
+  - checking off an important action
+  - success confirmation
+  - validation or submission errors
+- Do NOT overuse haptics for every tap.
+- Respect platform safety and fail gracefully if haptics are unavailable.
+
+Deliverables for haptics:
+- one shared utility or helper module
+- targeted integration points only
+- clean comments for where/why haptics are used
+
+B. Smart empty states
+- Find key empty-state screens/lists in the app, especially around:
+  - workouts / routines
+  - calendar / planned activity
+  - history
+  - metrics or progress areas
+- Replace dead-end empty states or blank lists with contextual, motivating copy and a single primary next action.
+- Do NOT redesign screen layout. Reuse existing containers/styles where possible.
+- Keep tone encouraging, concise, and fitness-oriented, not cheesy.
+- Empty states should answer: “What should the user do next?”
+
+Deliverables for Phase 1:
+- summary of all screens updated
+- reusable empty-state component only if it genuinely reduces duplication
+- no navigation rewrites unless required for CTA buttons
+
+Verification for Phase 1:
+- Identify each interaction where haptics were added
+- Identify each empty-state screen improved
+- Confirm no auth/build/signing files were touched
+
+Then stop and wait for my approval before Phase 2.
+
+========================
+PHASE 2 — Workout Session Rescue
+========================
+
+Objective:
+Protect in-progress workouts from accidental app interruption, backgrounding, or process death.
+
+Requirements:
+- Use AppState from react-native and existing AsyncStorage patterns.
+- Rescue ONLY active workout/session state, not every screen in the app.
+- Persist a narrowly defined session payload such as:
+  - active workout/session id
+  - selected workout/routine
+  - current exercise index
+  - set progress / reps / weight draft if available
+  - timer-related state if already present in architecture
+  - last-saved timestamp
+- Save at meaningful checkpoints, not excessively on every render.
+- Restore only when the saved session is still valid/recent and clearly incomplete.
+- Avoid restoring stale or already-finished sessions.
+- If the app already has a workout/session context or screen state module, integrate there instead of creating a second competing source of truth.
+- If a gentle restore prompt is better than automatic restore, prefer the safer UX based on existing screen architecture.
+
+Deliverables for Phase 2:
+- clear rescue storage schema
+- cleanup rules for completed/cancelled sessions
+- guarded restore logic
+- minimal UI interruption
+
+Verification for Phase 2:
+- describe exact resume scenarios supported:
+  1. app backgrounded and reopened
+  2. app killed and reopened
+  3. interrupted mid-workout
+- explain stale-session prevention logic
+- list exact files touched
+
+Then stop and wait for my approval before Phase 3.
+
+========================
+PHASE 3 — Sync / Save Confidence Indicator
+========================
+
+Objective:
+Give users confidence that their data is being saved and synced, without introducing noisy or misleading UI.
+
+Important:
+Do NOT just expose raw Supabase websocket state if it creates misleading signals.
+Prefer a user-trust model based on save state, for example:
+- Saving…
+- Saved
+- Offline
+- Retry pending
+- Sync issue
+
+Requirements:
+- Inspect current data write flows first.
+- Determine the safest central location for save-status tracking.
+- If the app already has shared mutation helpers or contexts, integrate there.
+- Add a very minimal indicator only:
+  - micro text
+  - subtle dot
+  - thin status line
+- Do NOT redesign headers or major layouts.
+- Keep behavior stable and understandable.
+- Make sure the indicator reflects actual mutation/save confidence, not just socket connected/disconnected.
+
+Deliverables for Phase 3:
+- save/sync state model
+- lightweight UI indicator
+- graceful offline/retry state handling if practical within current architecture
+
+Verification for Phase 3:
+- explain the difference between connection state and save-confidence state
+- list exactly which user actions trigger status changes
+- confirm the indicator does not create false reassurance
+
+========================
+WORKFLOW RULES
+========================
+
+For EACH phase:
+1. First inspect relevant files.
+2. Report:
+   - observed facts
+   - inferred intent
+   - implementation plan
+3. Then code.
+4. Then run/check for TypeScript or import issues.
+5. Then summarize results clearly.
+6. Then stop for approval.
+
+Additional rules:
+- Do not make broad architectural rewrites.
+- Do not touch unrelated screens.
+- Do not change build credentials, .gitignore secret blocks, or signing config.
+- Preserve current app behavior unless improving the targeted feature.
+- If you create a new component/module, keep naming consistent with the existing repo.
+- Watch for Linux/Windows filename case issues before import changes.
+- If you add dependencies, explain exactly why.
+
+Start with PHASE 1 only.
+First inspect the current codebase and tell me:
+1. which files are relevant for haptics
+2. which files are relevant for empty states
+3. your exact minimal-change plan
+Then implement Phase 1.
