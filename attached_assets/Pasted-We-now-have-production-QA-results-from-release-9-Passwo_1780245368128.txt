@@ -1,0 +1,49 @@
+We now have production QA results from release 9.
+
+Password reset is FIXED and can be removed from active testing.
+
+New observed issues:
+
+1. Workout flow is broken
+- I started today's workout
+- I checked off 2 of the 5 exercises
+- The app showed "Success workout" and marked the workout complete
+- I could not go back into that workout session to continue it
+- Because of this, I also cannot properly test smart empty states or workout rescue
+
+2. Body measurements are only partially correct
+- In Log Measurement, saving with all empty fields correctly shows:
+  "Enter at least one measurement before saving"
+- Adding 2 measurements saves correctly and they appear in measurement history
+- But on Home screen it still says "No measurement logged"
+
+Your task:
+Do a narrow diagnosis first, then implement fixes only for these two issues:
+
+A. WorkoutChecklistScreen completion/resume bug
+- Inspect the full completion logic, toggleComplete flow, success/save trigger, and any auto-finish condition
+- Verify whether completion is being checked against stale state, wrong counts, or wrong derived values
+- Verify whether the workout session rescue state is being cleared too early
+- Fix so a workout only completes when all intended exercises are completed and the user explicitly finishes
+- Fix so a partially completed workout remains resumable or at minimum does not falsely complete
+
+B. Home screen measurement summary bug
+- Inspect how HomeScreen decides whether measurements exist
+- Compare the source used by HomeScreen versus BodyTrackerScreen history
+- Fix so Home reflects saved measurement history correctly
+
+Constraints:
+- Do not touch password reset flow
+- Do not touch build config, auth config, package IDs, signing, eas.json, or unrelated screens
+- Keep changes narrowly scoped
+- Push all fixes to GitHub
+
+After making the fix:
+1. Summarize exact files changed
+2. Explain exact root cause for the false workout completion
+3. Explain exact root cause for the Home screen measurement mismatch
+4. Give me a precise retest checklist for:
+   - partial workout
+   - completed workout
+   - resumed workout
+   - home measurement summary
