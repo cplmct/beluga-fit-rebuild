@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -60,6 +61,22 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
     fetchLastTimeData();
     checkForSavedSession();
   }, []);
+
+  // ── On every focus: sync in-memory state with AsyncStorage ──────────────────
+  // If the session was cleared externally (e.g. Home screen "Discard" button)
+  // while this screen was still mounted in the Workout tab stack, reset the
+  // local completedExercises Set so the user always sees a clean slate.
+  // If a session still exists we leave the in-progress state untouched.
+  useFocusEffect(
+    useCallback(() => {
+      loadWorkoutSession().then(saved => {
+        if (!saved) {
+          setCompletedExercises(new Set());
+          startTimeRef.current = Date.now();
+        }
+      });
+    }, [])
+  );
 
   const checkForSavedSession = async () => {
     const saved = await loadWorkoutSession();
