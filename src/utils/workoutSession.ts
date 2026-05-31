@@ -45,6 +45,13 @@ export async function loadWorkoutSession(): Promise<WorkoutSessionPayload | null
       await AsyncStorage.removeItem(KEY);
       return null;
     }
+    // Sessions saved by builds before the exercises field was added lack the
+    // data needed to navigate from the Home banner. Discard them automatically
+    // so they don't linger invisibly after an app upgrade.
+    if (!data.exercises || data.exercises.length === 0) {
+      await AsyncStorage.removeItem(KEY);
+      return null;
+    }
     return data;
   } catch (_) {
     return null;
