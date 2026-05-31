@@ -169,14 +169,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let mounted = true
 
     const applyRecoveryUrl = async (url: string | null): Promise<void> => {
+      console.log('[Diag] applyRecoveryUrl called, url=', url ? url.substring(0, 80) : 'null')
       if (!url) return
       const tokens = parseRecoveryUrl(url)
+      console.log('[Diag] parseRecoveryUrl result=', tokens ? 'TOKENS_FOUND' : 'null (not a recovery url or missing type=recovery)')
       if (!tokens) return
 
+      console.log('[Diag] calling supabase.auth.setSession...')
       const { error } = await supabase.auth.setSession({
         access_token:  tokens.accessToken,
         refresh_token: tokens.refreshToken,
       })
+      console.log('[Diag] setSession complete, error=', error ? error.message : 'none')
 
       if (error && __DEV__) {
         console.error('[Auth] setSession error:', error.message)
@@ -186,7 +190,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     Linking.getInitialURL()
-      .then((url) => { if (mounted) applyRecoveryUrl(url) })
+      .then((url) => {
+        console.log('[Diag] getInitialURL resolved, url=', url ? url.substring(0, 80) : 'null')
+        if (mounted) applyRecoveryUrl(url)
+      })
       .catch((err) => { if (__DEV__) console.warn('[Auth] getInitialURL error:', err) })
 
     const linkSub = Linking.addEventListener('url', ({ url }) => { applyRecoveryUrl(url) })
@@ -243,11 +250,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // async result is applied — earlier in-flight results are discarded.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('[Diag] onAuthStateChange event=', event, '| user=', session?.user?.email ?? 'null')
         // ── Synchronous updates (always safe, last write wins) ──────────────
         setSession(session)
         setUser(session?.user ?? null)
 
         if (event === 'PASSWORD_RECOVERY') {
+          console.log('[Diag] PASSWORD_RECOVERY detected → setting isPasswordRecovery=true')
           setIsPasswordRecovery(true)
           return
         }
