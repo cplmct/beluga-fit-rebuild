@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ExerciseSelection } from '../data/exercises';
 
 const KEY = '@beluga_active_workout_v1';
 
@@ -14,6 +15,10 @@ export interface WorkoutSessionPayload {
   startTime: number;
   /** Date.now() at the time of last save — used for staleness detection. */
   savedAt: number;
+  /** Full exercise objects — needed to navigate directly to WorkoutChecklistScreen. */
+  exercises: ExerciseSelection[];
+  /** Body parts for the workout — passed as route.params to WorkoutChecklistScreen. */
+  bodyParts: string[];
 }
 
 /** Persist the current workout state. Silently swallows errors. */
