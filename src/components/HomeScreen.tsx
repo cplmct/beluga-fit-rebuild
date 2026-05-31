@@ -28,7 +28,7 @@ interface DashboardData {
   streak: number;
   last7Days: boolean[];
   lastWorkoutDate: string | null;
-  latestWeight: { value: number; date: string } | null;
+  latestWeight: { value: number | null; date: string } | null;
 }
 
 function getGreeting(): string {
@@ -309,7 +309,6 @@ export function HomeScreen({ navigation }: any) {
           .from('body_measurements')
           .select('weight, created_at')
           .eq('user_id', user!.id)
-          .not('weight', 'is', null)
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle(),
@@ -595,10 +594,14 @@ export function HomeScreen({ navigation }: any) {
           {data.latestWeight ? (
             <View style={styles.bodyCardInner}>
               <View>
-                <Text style={styles.bodyWeight}>
-                  {data.latestWeight.value}{' '}
-                  <Text style={styles.bodyWeightUnit}>{weightUnit}</Text>
-                </Text>
+                {data.latestWeight.value !== null ? (
+                  <Text style={styles.bodyWeight}>
+                    {data.latestWeight.value}{' '}
+                    <Text style={styles.bodyWeightUnit}>{weightUnit}</Text>
+                  </Text>
+                ) : (
+                  <Text style={styles.bodyWeight}>Measurements logged</Text>
+                )}
                 <Text style={styles.bodyWeightDate}>
                   Last logged{' '}
                   {new Date(data.latestWeight.date).toLocaleDateString('en-US', {

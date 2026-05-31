@@ -190,15 +190,9 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
     setCompletedExercises(newCompleted);
   };
 
-  const handleFinishWorkout = async () => {
-    if (isSaving || !user) return;
-
-    if (exercises.length === 0) {
-      haptic.error(); // reinforce validation failure
-      Alert.alert('No exercises', 'Please select at least one exercise before finishing.');
-      return;
-    }
-
+  // Core save logic — called after any confirmation guards pass.
+  const doSaveWorkout = async () => {
+    if (!user) return;
     setIsSaving(true);
     saveStatus.setSaving();
     const durationSeconds = Math.floor((Date.now() - startTimeRef.current) / 1000);
@@ -298,6 +292,31 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
 
   const completedCount = completedExercises.size;
   const totalCount = exercises.length;
+
+  // Guard wrapper — confirms before saving a partial workout.
+  const handleFinishWorkout = () => {
+    if (isSaving || !user) return;
+
+    if (exercises.length === 0) {
+      haptic.error();
+      Alert.alert('No exercises', 'Please select at least one exercise before finishing.');
+      return;
+    }
+
+    if (completedCount < totalCount) {
+      Alert.alert(
+        'Finish early?',
+        `You've checked off ${completedCount} of ${totalCount} exercises. Save this workout anyway?`,
+        [
+          { text: 'Keep going', style: 'cancel' },
+          { text: 'Save anyway', style: 'default', onPress: () => { void doSaveWorkout(); } },
+        ]
+      );
+      return;
+    }
+
+    void doSaveWorkout();
+  };
 
   const formatWeightDisplay = (weight: string | number | null): string | null => {
     if (weight === null || weight === '') return null;
