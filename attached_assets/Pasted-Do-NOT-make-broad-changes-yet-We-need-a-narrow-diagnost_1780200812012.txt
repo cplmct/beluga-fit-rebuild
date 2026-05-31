@@ -1,0 +1,51 @@
+Do NOT make broad changes yet.
+
+We need a narrow diagnostic pass on the password recovery flow.
+
+Observed runtime behavior:
+- Tapping the reset-password email link opens the app
+- The user is immediately logged in
+- The app does NOT show the change-password screen
+- This is still happening in version 7
+
+Known facts from AuthContext.tsx:
+- recovery links are parsed from belugafit://reset-password
+- parseRecoveryUrl() extracts access_token + refresh_token
+- supabase.auth.setSession(...) is called from the deep link handler
+- onAuthStateChange sets isPasswordRecovery = true when event === 'PASSWORD_RECOVERY'
+
+Your task:
+1. Inspect the current password recovery path end-to-end, including:
+   - App.tsx
+   - AuthContext.tsx
+   - HomeStackNavigator
+   - HomeScreen
+   - ChangePasswordScreen
+   - any other screen/router branch that uses isPasswordRecovery
+2. Report observed facts only:
+   - where isPasswordRecovery is read
+   - where ChangePasswordScreen is mounted
+   - what branch should force the recovery UI
+   - any race condition or logic path that could immediately land the user in the authenticated home screen
+3. Add TEMPORARY diagnostic logs only:
+   - log every auth event name in onAuthStateChange
+   - log when parseRecoveryUrl succeeds
+   - log when setSession succeeds/fails
+   - log when isPasswordRecovery changes
+   - log every component branch that decides between authenticated app and ChangePasswordScreen
+4. Do NOT touch build config, credentials, .gitignore, eas.json, package IDs, or unrelated UX features.
+5. Do NOT redesign anything.
+6. After adding logs, summarize:
+   - exact files changed
+   - exact hypotheses being tested
+   - exact steps I should run on device to capture the result
+
+Goal:
+Prove whether the failure is:
+A. PASSWORD_RECOVERY event never firing
+B. isPasswordRecovery not propagating
+C. recovery UI branch being overridden by authenticated navigation
+D. some other specific race condition
+
+Stop after the diagnostic instrumentation and summary.
+Do not implement a permanent fix until the diagnostic result is clear.
