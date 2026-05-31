@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { haptic } from '../utils/haptics';
+import { useSaveStatus } from '../hooks/useSaveStatus';
+import { SaveStatusBadge } from './SaveStatusBadge';
 import { LineChart } from 'react-native-chart-kit';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -79,6 +81,9 @@ export function BodyTrackerScreen() {
   const [loadError, setLoadError] = useState('');
   const [saveError, setSaveError] = useState('');
 
+  // Save-confidence indicator — tracks the state of the most recent write.
+  const saveStatus = useSaveStatus();
+
   useFocusEffect(
     useCallback(() => {
       fetchMeasurements();
@@ -120,6 +125,7 @@ export function BodyTrackerScreen() {
 
     setSaveError('');
     setSaving(true);
+    saveStatus.setSaving();
 
     try {
       const { error } = await supabase.from('body_measurements').insert({
@@ -145,10 +151,12 @@ export function BodyTrackerScreen() {
       setRightThigh(''); setLeftCalf(''); setRightCalf(''); setNeck('');
 
       haptic.success(); // confirm the measurement was saved
+      saveStatus.setSuccess();
       Alert.alert('Saved', 'Your measurements have been recorded.');
       fetchMeasurements();
     } catch (err: any) {
       haptic.error(); // signal that the save failed
+      saveStatus.setError(err);
       setSaveError("Couldn't save your measurements. Please try again.");
     } finally {
       setSaving(false);
@@ -340,6 +348,9 @@ export function BodyTrackerScreen() {
             <Text style={styles.saveButtonText}>Save Measurements</Text>
           )}
         </TouchableOpacity>
+
+        {/* Save confidence indicator — visible only during/after a save attempt */}
+        <SaveStatusBadge status={saveStatus.status} />
       </View>
 
       {/* ── History ── */}

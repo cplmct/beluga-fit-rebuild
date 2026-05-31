@@ -22,6 +22,8 @@ import {
   loadWorkoutSession,
   clearWorkoutSession,
 } from '../utils/workoutSession';
+import { useSaveStatus } from '../hooks/useSaveStatus';
+import { SaveStatusBadge } from './SaveStatusBadge';
 
 interface LastTimeData {
   sets: number;
@@ -49,6 +51,9 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
   const [lastTimeLoading, setLastTimeLoading] = useState(true);
 
   const startTimeRef = useRef(Date.now());
+
+  // Save-confidence indicator — tracks the state of the most recent write.
+  const saveStatus = useSaveStatus();
 
   // ── On mount: fetch last-time data + check for a rescued session ────────────
   useEffect(() => {
@@ -195,6 +200,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
     }
 
     setIsSaving(true);
+    saveStatus.setSaving();
     const durationSeconds = Math.floor((Date.now() - startTimeRef.current) / 1000);
 
     try {
@@ -273,6 +279,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
       if (prCount > 0) lines.push(`${prCount} personal record${prCount > 1 ? 's' : ''} set!`);
 
       haptic.success(); // reward the user for completing a workout
+      saveStatus.setSuccess();
       await clearWorkoutSession(); // workout is done — remove the rescue checkpoint
       Alert.alert('Workout Saved!', `Great job!\n\n${lines.join('\n')}`, [
         {
@@ -282,6 +289,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
       ]);
     } catch (error: any) {
       haptic.error(); // signal that the save failed
+      saveStatus.setError(error);
       Alert.alert('Error', error.message || 'Failed to save workout.');
     } finally {
       setIsSaving(false);
@@ -392,6 +400,9 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
           })}
         </View>
       </ScrollView>
+
+      {/* Save confidence indicator — visible only while saving or if an error occurred */}
+      <SaveStatusBadge status={saveStatus.status} />
 
       <View style={styles.footer}>
         <TouchableOpacity
