@@ -259,9 +259,7 @@ export function HomeScreen({ navigation }: any) {
   const { user, isPasswordRecovery } = useAuth();
 
   useEffect(() => {
-    console.log('[Diag] HomeScreen: isPasswordRecovery effect fired, value=', isPasswordRecovery)
     if (isPasswordRecovery) {
-      console.log('[Diag] HomeScreen → navigating to ChangePassword')
       navigation.navigate('ChangePassword');
     }
   }, [isPasswordRecovery]);

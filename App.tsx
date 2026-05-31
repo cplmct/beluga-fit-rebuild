@@ -25,8 +25,6 @@ function AppContent() {
     }
   }, [user?.id]);
 
-  console.log('[Diag] AppContent render: loading=', loading, '| isPasswordRecovery=', isPasswordRecovery, '| user=', user?.email ?? 'null')
-
   // ── Loading ───────────────────────────────────────────────────────────────
   if (loading) {
     return (
@@ -40,10 +38,8 @@ function AppContent() {
   // Shown when the user opens the app via the reset-password deep link.
   // Rendered outside NavigationContainer — no navigation needed for this screen.
   if (isPasswordRecovery) {
-    console.log('[Diag] AppContent → taking ChangePasswordScreen branch')
     return <ChangePasswordScreen />;
   }
-  console.log('[Diag] AppContent → isPasswordRecovery is false, continuing to nav')
 
   // ── Onboarding ────────────────────────────────────────────────────────────
   if (user && needsOnboarding) {
