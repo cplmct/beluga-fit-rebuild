@@ -1,4 +1,10 @@
-# env
+# Android signing / local credentials
+credentials.json
+credentials/
+*.jks
+*.keystore
+
+# Optional: other local secret env/config files
 .env
 .env.*
 
