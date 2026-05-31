@@ -128,8 +128,19 @@ export function ExercisesScreen({ route, navigation }: any) {
 
         {filteredExercises.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No exercises found</Text>
-            <Text style={styles.emptySubtext}>Try adjusting your filters</Text>
+            <Text style={styles.emptyText}>No exercises match your filters</Text>
+            <Text style={styles.emptySubtext}>
+              {searchQuery.trim()
+                ? `No results for "${searchQuery.trim()}"${selectedCategory !== 'All' ? ` in ${selectedCategory}` : ''}.`
+                : `No ${selectedCategory} exercises for the selected muscle groups.`}
+            </Text>
+            <TouchableOpacity
+              style={styles.emptyButton}
+              onPress={() => { setSearchQuery(''); setSelectedCategory('All'); }}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.emptyButtonText}>Clear Filters</Text>
+            </TouchableOpacity>
           </View>
         ) : (
           selectedBodyParts.map((bodyPart: BodyPart) => {
@@ -323,6 +334,21 @@ const styles = StyleSheet.create({
   emptySubtext: {
     fontSize: 14,
     color: '#6b7280',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 20,
+  },
+  emptyButton: {
+    backgroundColor: '#2563eb',
+    borderRadius: 10,
+    paddingVertical: 11,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  emptyButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
   bodyPartSection: {
     marginBottom: 24,
