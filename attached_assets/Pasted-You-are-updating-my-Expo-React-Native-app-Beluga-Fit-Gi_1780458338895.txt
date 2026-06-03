@@ -1,0 +1,68 @@
+You are updating my Expo React Native app, Beluga Fit.
+
+## Git context
+- Current working branch: feature/splash-rework
+- Do not work as if main is the target branch
+- Keep all changes limited to splash screen and startup experience polish
+- Keep the diff small, focused, and reviewable
+- Do not make unrelated refactors or redesigns
+- Do not modify business logic, auth flows, data models, navigation structure, or unrelated screens unless absolutely required for startup handoff
+- If a larger redesign seems necessary, describe it separately instead of implementing it
+
+## Task
+Improve the launch experience of my app by polishing the native splash screen and the transition from native splash into the app.
+
+## First, inspect before changing
+Before making edits:
+1. Inspect the current splash configuration and startup flow
+2. Identify which files currently control:
+   - Expo splash configuration
+   - splash image asset
+   - app startup / auth boot logic
+   - any loading screen shown after launch
+3. Briefly state your plan before applying changes
+
+## Goals
+1. Make the splash screen feel more premium, full-screen, and visually balanced on modern Android devices
+2. Use the existing Beluga Fit brand and current product direction: structured fitness, clean, modern, practical, no AI coach feel
+3. Ensure the splash image scales properly across devices and does not feel too small, awkwardly cropped, or surrounded by too much empty space
+4. Improve the Expo splash configuration in app.json / app config using the most appropriate settings for image sizing, background color, and resize behavior
+5. If the asset itself is the issue, either improve the asset usage or recommend a better canvas/layout approach for the splash image
+6. Add a polished in-app loading handoff after the native splash hides so startup feels smooth instead of abrupt
+7. If auth state, profile state, or session boot requires loading time, show a minimal branded loading screen that visually matches the splash
+8. Keep the solution lightweight and production-safe
+9. Preserve all existing app functionality and routing
+10. Keep the implementation maintainable
+
+## Design direction
+- Beluga Fit brand
+- clean fitness aesthetic
+- premium but minimal
+- dark or neutral background is okay if it fits the current app
+- centered logo or mark with balanced spacing
+- subtle polished loading state
+- no gimmicky animation
+- no AI branding
+- no coach imagery
+- should feel like a real fitness product, not a generic template
+
+## Technical requirements
+- Expo app
+- keep native splash compatible with Android production builds
+- use expo-splash-screen correctly if needed
+- avoid race conditions on app start
+- do not break auth/session boot flow
+- do not add heavy animation libraries
+- do not add risky dependencies unless absolutely necessary
+
+## Output requirements
+After making changes, summarize:
+1. Which files were changed
+2. Why each file was changed
+3. What splash config values were updated
+4. Whether the splash asset dimensions/layout should be improved further
+5. What I should test on a real Android device
+6. Any limitations of testing splash behavior in Expo Go or dev mode
+
+## Important note
+Optimize for a launch-ready result, not a broad redesign.

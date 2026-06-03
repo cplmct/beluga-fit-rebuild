@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as SplashScreen from 'expo-splash-screen';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { UnitsProvider } from './src/contexts/UnitsContext';
 import { AuthStackNavigator } from './src/components/AuthStackNavigator';
@@ -9,6 +9,10 @@ import { BottomTabNavigator } from './src/components/BottomTabNavigator';
 import { OnboardingScreen } from './src/components/OnboardingScreen';
 import { ChangePasswordScreen } from './src/components/ChangePasswordScreen';
 import { scheduleInactivityReminder, setupNotificationHandler } from './src/utils/notifications';
+
+// Keep the native splash visible until auth state is resolved.
+// This eliminates the ActivityIndicator flash on startup.
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function AppContent() {
   const { user, loading, needsOnboarding, completeOnboarding, isPasswordRecovery } = useAuth();
@@ -25,13 +29,17 @@ function AppContent() {
     }
   }, [user?.id]);
 
-  // ── Loading ───────────────────────────────────────────────────────────────
+  // ── Hide native splash once auth resolves ────────────────────────────────
+  // While loading is true the native splash is still covering the screen,
+  // so returning null here produces no visible flash.
+  useEffect(() => {
+    if (!loading) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [loading]);
+
   if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3b82f6" />
-      </View>
-    );
+    return null;
   }
 
   // ── Password recovery ─────────────────────────────────────────────────────
@@ -83,11 +91,3 @@ export default function App() {
   );
 }
 
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-  },
-});

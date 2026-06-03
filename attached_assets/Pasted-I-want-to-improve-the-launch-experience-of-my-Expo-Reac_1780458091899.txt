@@ -1,0 +1,40 @@
+I want to improve the launch experience of my Expo React Native app, Beluga Fit.
+
+Please redesign and polish the startup / splash screen experience without changing the core app navigation or adding unnecessary complexity.
+
+Goals:
+1. Make the splash screen feel more premium, full-screen, and visually balanced on modern Android devices.
+2. Use the existing Beluga Fit branding and current app direction: structured fitness, clean, modern, practical, no AI coach feel.
+3. Ensure the splash image scales properly across devices and does not feel too small, cropped awkwardly, or stuck in the middle with too much empty space.
+4. Review and improve the Expo splash configuration in app.json / app config so the native splash uses the best possible settings for image sizing, background color, and resize behavior.
+5. If needed, adjust the splash asset itself or recommend a better canvas/layout for the image so it works more like a proper branded launch image.
+6. Add a polished in-app loading handoff after native splash hides, so the transition into the app feels smooth instead of abrupt.
+7. If the app needs to load auth state, profile data, or initial session state, show a minimal branded loading screen that matches the splash design.
+8. Keep it lightweight and production-safe. Do not add heavy animation libraries or anything risky for launch.
+9. Preserve existing app functionality and routing.
+10. Explain exactly what files were changed and why.
+
+Design direction:
+- Beluga Fit brand
+- clean fitness aesthetic
+- dark or neutral premium feel is okay if it matches current design
+- centered logo/mark with balanced spacing
+- subtle polished loading state
+- no gimmicky animation
+- no AI branding
+- no coach imagery
+- should feel like a real fitness product, not a template
+
+Technical requirements:
+- Expo app
+- keep native splash compatible with Android production build
+- use expo-splash-screen correctly if needed
+- avoid race conditions on app start
+- do not break auth/session boot flow
+- keep code maintainable
+
+Please make the changes directly and then summarize:
+- splash config changes
+- asset sizing recommendations
+- loading-screen changes
+- anything I should test on a real Android device
