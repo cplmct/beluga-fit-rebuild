@@ -10,13 +10,13 @@
     "description": "Track your fitness journey with Beluga Fit - a structured workout tracker with pre-built training plans, custom workouts, body measurements, and detailed progress monitoring.",
     "splash": {
       "image": "./assets/splash.png",
-      "resizeMode": "cover",
+      "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.belugafit.app",
+      "bundleIdentifier": "com.tranbtc.belugafitworkout",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
@@ -51,7 +51,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.belugafit.app",
+      "package": "com.tranbtc.belugafitworkout",
       "permissions": ["INTERNET"],
       "intentFilters": [
         {
@@ -73,8 +73,8 @@
         {
           "backgroundColor": "#ffffff",
           "image": "./assets/splash.png",
-          "resizeMode": "cover",
-          "imageWidth": 280
+          "resizeMode": "contain",
+          "imageWidth": 300
         }
       ],
       [
