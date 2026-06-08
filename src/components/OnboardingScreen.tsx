@@ -85,7 +85,7 @@ export function OnboardingScreen({ onComplete, fromSettings = false }: Props) {
     onComplete(false);
   }, [onComplete]);
 
-  const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
+  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: Array<{ index?: number }> }) => {
     if (viewableItems.length > 0) {
       setActiveIndex(viewableItems[0].index ?? 0);
     }
