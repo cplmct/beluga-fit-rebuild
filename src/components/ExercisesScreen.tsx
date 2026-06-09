@@ -1,9 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
 import { EXERCISES, BodyPart, ExerciseSelection, Category, CATEGORIES } from '../data/exercises';
+import { useUnits } from '../contexts/UnitsContext';
 
 export function ExercisesScreen({ route, navigation }: any) {
   const { selectedBodyParts } = route.params;
+  const { weightUnit } = useUnits();
 
   const initialExercises = useMemo(() => {
     const exercises: ExerciseSelection[] = [];
@@ -220,7 +222,7 @@ export function ExercisesScreen({ route, navigation }: any) {
                       </View>
 
                       <View style={styles.weightRow}>
-                        <Text style={styles.weightLabel}>Weight (lbs)</Text>
+                        <Text style={styles.weightLabel}>Weight ({weightUnit})</Text>
                         <TextInput
                           style={styles.weightInput}
                           value={exercise.weight}
