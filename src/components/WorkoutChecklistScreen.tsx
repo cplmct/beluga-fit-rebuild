@@ -332,10 +332,18 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
 
       scheduleInactivityReminder(user.id);
 
-      const prCount = workoutExercises.filter((ex: { is_pr: boolean }) => ex.is_pr).length;
+      // Only count PRs for exercises the user actually checked off.
+      // Deduplicate names in case the same exercise appears more than once.
+      const prExercises = workoutExercises.filter((ex) => ex.is_pr && ex.completed);
+      const prNames = [...new Set(prExercises.map((ex) => ex.exercise_name))];
       const durationText = formatDuration(durationSeconds);
       const lines = [`Duration: ${durationText}`];
-      if (prCount > 0) lines.push(`${prCount} personal record${prCount > 1 ? 's' : ''} set!`);
+      if (prNames.length > 0) {
+        lines.push(
+          `${prNames.length} personal record${prNames.length > 1 ? 's' : ''}:\n` +
+          prNames.map((n) => `• ${n}`).join('\n')
+        );
+      }
 
       haptic.success(); // reward the user for completing a workout
       saveStatus.setSuccess();
