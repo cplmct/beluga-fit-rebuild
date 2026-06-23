@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Constants from 'expo-constants';
@@ -284,7 +285,16 @@ export function SettingsScreen() {
       {/* ── Sign Out ── */}
       <TouchableOpacity
         style={styles.signOutButton}
-        onPress={signOut}
+        onPress={() =>
+          Alert.alert(
+            'Sign Out',
+            'Are you sure you want to sign out?',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Sign Out', style: 'destructive', onPress: signOut },
+            ]
+          )
+        }
         activeOpacity={0.8}
       >
         <Text style={styles.signOutText}>Sign Out</Text>

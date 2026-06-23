@@ -10,7 +10,7 @@
     "description": "Track your fitness journey with Beluga Fit - a structured workout tracker with pre-built training plans, custom workouts, body measurements, and detailed progress monitoring.",
     "splash": {
       "image": "./assets/splash.png",
-      "resizeMode": "cover",
+      "resizeMode": "contain",
       "backgroundColor": "#091722"
     },
     "assetBundlePatterns": ["**/*"],
@@ -73,8 +73,8 @@
         {
           "backgroundColor": "#091722",
           "image": "./assets/splash.png",
-          "resizeMode": "cover",
-          "imageWidth": 200
+          "resizeMode": "contain",
+          "imageWidth": 600
         }
       ],
       [

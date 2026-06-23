@@ -17,6 +17,7 @@ interface StatsData {
     totalMinutes: number;
     prCount: number;
   };
+  weeklyCount: number;
   allTime: {
     totalWorkouts: number;
     totalMinutes: number;
@@ -25,6 +26,7 @@ interface StatsData {
     totalPrs: number;
   };
   topBodyParts: Array<{ name: string; count: number }>;
+  topPrs: Array<{ name: string; weight: number }>;
   bodyWeight: {
     latest: number | null;
     previous: number | null;
@@ -175,20 +177,49 @@ export function StatsScreen({ navigation }: any) {
           .limit(10),
       ]);
 
+      // Surface query errors instead of silently falling through to empty state
+      if (workoutsRes.error) throw workoutsRes.error;
+
       const allWorkouts = workoutsRes.data || [];
       const allWorkoutIds = allWorkouts.map((w) => w.id);
 
       const thisMonthWorkouts = allWorkouts.filter((w) => w.date >= startOfMonth);
       const thisMonthIds = new Set(thisMonthWorkouts.map((w) => w.id));
 
+      // Last 7 calendar days
+      const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+      const weeklyCount = allWorkouts.filter((w) => w.date >= sevenDaysAgo).length;
+
       let prExercises: Array<{ workout_id: string; is_pr: boolean }> = [];
+      let topPrs: Array<{ name: string; weight: number }> = [];
+
       if (allWorkoutIds.length > 0) {
-        const { data } = await supabase
-          .from('workout_exercises')
-          .select('workout_id, is_pr')
-          .in('workout_id', allWorkoutIds.slice(0, 500))
-          .eq('is_pr', true);
-        prExercises = data || [];
+        const [prRes, weightRes] = await Promise.all([
+          supabase
+            .from('workout_exercises')
+            .select('workout_id, is_pr')
+            .in('workout_id', allWorkoutIds.slice(0, 500))
+            .eq('is_pr', true),
+          supabase
+            .from('workout_exercises')
+            .select('exercise_name, weight')
+            .in('workout_id', allWorkoutIds.slice(0, 500))
+            .not('weight', 'is', null)
+            .gt('weight', 0),
+        ]);
+        prExercises = prRes.data || [];
+
+        // Compute top 5 personal bests by heaviest weight
+        const maxByExercise: Record<string, number> = {};
+        for (const row of weightRes.data || []) {
+          if ((row.weight ?? 0) > (maxByExercise[row.exercise_name] ?? 0)) {
+            maxByExercise[row.exercise_name] = row.weight;
+          }
+        }
+        topPrs = Object.entries(maxByExercise)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5)
+          .map(([name, weight]) => ({ name, weight }));
       }
 
       const allDates = allWorkouts.map((w) => w.date);
@@ -226,6 +257,7 @@ export function StatsScreen({ navigation }: any) {
           totalMinutes: Math.round(totalSecondsThisMonth / 60),
           prCount: thisMonthPrCount,
         },
+        weeklyCount,
         allTime: {
           totalWorkouts: allWorkouts.length,
           totalMinutes: Math.round(totalSecondsAll / 60),
@@ -234,6 +266,7 @@ export function StatsScreen({ navigation }: any) {
           totalPrs,
         },
         topBodyParts,
+        topPrs,
         bodyWeight: {
           latest: latestWeight?.weight ?? null,
           previous: previousWeight?.weight ?? null,
@@ -320,6 +353,7 @@ export function StatsScreen({ navigation }: any) {
         <View style={styles.card}>
           <View style={styles.statGrid}>
             <StatBox label="Workouts"    value={String(stats.thisMonth.workoutCount)} accent />
+            <StatBox label="Last 7 days" value={String(stats.weeklyCount)} />
             <StatBox label="Active time" value={formatMinutes(stats.thisMonth.totalMinutes)} />
             <StatBox label="PRs set"     value={String(stats.thisMonth.prCount)} />
           </View>
@@ -336,6 +370,28 @@ export function StatsScreen({ navigation }: any) {
             <StatBox label="Total PRs"       value={String(stats.allTime.totalPrs)} />
           </View>
         </View>
+
+        {/* ── Personal Bests ── */}
+        {stats.topPrs.length > 0 && (
+          <>
+            <SectionHeader title="PERSONAL BESTS" />
+            <View style={styles.card}>
+              {stats.topPrs.map((pr, i) => (
+                <View
+                  key={pr.name}
+                  style={[styles.breakdownRow, i > 0 && styles.breakdownRowBorder]}
+                >
+                  <Text style={[styles.breakdownLabel, { flex: 1, width: undefined }]} numberOfLines={1}>
+                    {pr.name}
+                  </Text>
+                  <Text style={styles.prWeight}>
+                    {pr.weight} <Text style={styles.prUnit}>{weightUnit}</Text>
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
 
         {/* ── Body Weight ── */}
         {stats.bodyWeight.latest !== null && (
@@ -619,5 +675,15 @@ const styles = StyleSheet.create({
     color: '#64748b',
     width: 28,
     textAlign: 'right',
+  },
+  prWeight: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#2563eb',
+  },
+  prUnit: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#64748b',
   },
 });

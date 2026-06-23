@@ -1,0 +1,77 @@
+IMPORTANT OPERATING RULES FOR THIS ENTIRE SESSION:
+1. Read every file FULLY before editing it. Never overwrite working code.
+2. After each slice, run: npx tsc --noEmit and report the error count. If errors > 0, fix them before moving to next slice.
+3. Do ONE slice at a time. Complete it fully, verify it, checkpoint, then move to the next.
+4. Never rewrite a file that already works correctly — only add/patch what is missing.
+5. If something is already implemented correctly, skip it and say so.
+
+---
+
+SLICE A — SPLASH ASSET V2 (do this first, it is pure asset work)
+The current assets/splash.png has 5 problems you already identified: wrong brand register (cartoon mascot), teal background conflicting with app.json backgroundColor #ffffff, excess canvas padding, two-line wordmark imbalance, portrait shape.
+Fix:
+- Generate a new splash.png: 1024x1024 px square, solid dark navy background (#091722), centered "BELUGA FIT" wordmark in clean sans-serif white, no mascot, no teal. This matches the dark 3D render aesthetic of the current app theme.
+- Update app.json: set splash.backgroundColor to #091722, splash.resizeMode to "contain".
+- Run: npx tsc --noEmit → must be 0 errors before checkpoint.
+- Checkpoint with message: "fix: splash asset v2 — dark navy square, updated app.json"
+
+---
+
+SLICE B — CONFIRM BUNDLE ID
+Verify app.json AND app.config.js both have:
+  ios.bundleIdentifier = "com.belugafit.app"
+  android.package = "com.belugafit.app"
+If either is wrong, fix it. Run tsc --noEmit → 0 errors. Checkpoint: "config: bundle ID com.belugafit.app confirmed both platforms"
+
+---
+
+SLICE C — STATS SCREEN (read StatsScreen.tsx fully first)
+Tester feedback: Stats screen shows placeholder/empty state even after workouts are logged. Charts are missing or not rendering real data.
+Expected behaviour:
+- Total workouts count (real, from Supabase)
+- Current streak (days in a row with at least 1 workout)
+- Weekly workout count (last 7 days)
+- Personal records section: heaviest weight lifted per exercise (top 5)
+- Screen must call useFocusEffect to re-fetch when navigated to
+- Loading spinner while fetching, error message if fetch fails
+- If truly zero workouts: show empty state with CTA "Log your first workout"
+Do NOT rebuild from scratch. Read what exists, patch only what is missing or broken. Run tsc --noEmit → 0 errors. Checkpoint: "feat: stats screen — real data, streak, PRs, focus refresh"
+
+---
+
+SLICE D — HOME SCREEN WEEKLY BADGE / STREAK WIDGET (read HomeScreen.tsx fully first)
+Tester feedback: Home screen streak card shows dots but they don't reflect actual workout days.
+Expected behaviour:
+- 7 dots representing Mon–Sun of current week
+- Filled dot = workout logged that day (query Supabase for current week's workout dates)
+- Streak number reflects consecutive days ending today
+- Updates on useFocusEffect
+Read what exists first. Patch only what is broken. Run tsc --noEmit → 0 errors. Checkpoint: "feat: home streak widget — real weekly dots from Supabase"
+
+---
+
+SLICE E — SETTINGS SCREEN POLISH (read SettingsScreen.tsx fully first)
+Tester feedback items:
+1. Privacy Policy row exists but opens a blank/broken WebView or does nothing
+   Fix: open https://belugafit.app/privacy (or a hosted URL if different) using Linking.openURL
+2. Units toggle (metric/imperial) — verify it persists via UnitsContext AND AsyncStorage. If not persisting across app restarts, fix the persistence.
+3. Logout button — add an Alert confirmation: "Are you sure you want to log out?" with Cancel / Log Out buttons before calling supabase.auth.signOut()
+4. App version — display the version from app.json/Constants.expoConfig.version in the Settings footer
+Read what exists. Patch only gaps. Run tsc --noEmit → 0 errors. Checkpoint: "feat: settings — privacy link, units persistence, logout confirm, version display"
+
+---
+
+SLICE F — FINAL VERIFICATION
+Run each of these in the Shell and report output:
+1. npx tsc --noEmit
+2. grep -r 'com.belugafit.app' app.json app.config.js
+3. grep -r 'bundleIdentifier\|android.package' app.json app.config.js
+4. ls -la assets/splash.png (check file size changed)
+5. node -e "const a=require('./app.json'); console.log('splash bg:', a.expo.splash.backgroundColor, 'bundle ios:', a.expo.ios.bundleIdentifier, 'bundle android:', a.expo.android.package)"
+
+Report the output of every command. If any check fails, fix it inline before the final checkpoint.
+Final checkpoint: "chore: release-hardening complete — all tester items addressed v2"
+
+---
+
+Start with SLICE A now.
