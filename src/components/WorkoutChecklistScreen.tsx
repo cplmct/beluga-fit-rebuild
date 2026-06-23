@@ -355,9 +355,8 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
   };
 
   const formatLastTime = (data: LastTimeData): string => {
-    const parts = [`${data.sets}×${data.reps}`];
-    if (data.weight) parts.push(`@ ${data.weight} ${weightUnit}`);
-    return parts.join(' ');
+    // Only show sets×reps — weight excluded because unit provenance cannot be proven
+    return `${data.sets}×${data.reps}`;
   };
 
   return (

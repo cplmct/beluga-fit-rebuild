@@ -1,8 +1,19 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { BODY_PARTS, BodyPart } from '../data/exercises';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-export function BodyPartsScreen({ navigation }: any) {
+type BodyPartsParamList = {
+  Exercises: { selectedBodyParts: BodyPart[] };
+};
+
+type BodyPartsScreenNavigationProp = NativeStackNavigationProp<BodyPartsParamList, 'Exercises'>;
+
+interface BodyPartsScreenProps {
+  navigation: BodyPartsScreenNavigationProp;
+}
+
+export function BodyPartsScreen({ navigation }: BodyPartsScreenProps) {
   const [selectedParts, setSelectedParts] = useState<Set<BodyPart>>(new Set());
 
   const toggleBodyPart = (part: BodyPart) => {

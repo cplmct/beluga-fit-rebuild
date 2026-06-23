@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { useFocusEffect } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -28,10 +29,21 @@ function toLocalDateKey(isoString: string): string {
   ].join('-');
 }
 
-export function CalendarScreen({ navigation }: any) {
+type CalendarStackParamList = {
+  CalendarMain: undefined;
+  WorkoutDetails: { workoutId: string };
+};
+
+type CalendarScreenNavigationProp = NativeStackNavigationProp<CalendarStackParamList, 'CalendarMain'>;
+
+interface CalendarScreenProps {
+  navigation: CalendarScreenNavigationProp;
+}
+
+export function CalendarScreen({ navigation }: CalendarScreenProps) {
   const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState('');
-  const [markedDates, setMarkedDates] = useState<any>({});
+  const [markedDates, setMarkedDates] = useState<Record<string, { marked?: boolean; dotColor?: string; selected?: boolean }>>({});
   const [workoutsForDate, setWorkoutsForDate] = useState<WorkoutSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [dayLoading, setDayLoading] = useState(false);
@@ -58,8 +70,8 @@ export function CalendarScreen({ navigation }: any) {
           (workoutsData || []).length,
         );
 
-      const marked: any = {};
-      (workoutsData || []).forEach((workout: any) => {
+      const marked: Record<string, { marked: boolean; dotColor: string }> = {};
+      (workoutsData || []).forEach((workout) => {
         const dateKey = toLocalDateKey(workout.date);
         marked[dateKey] = { marked: true, dotColor: '#2563eb' };
       });
@@ -72,7 +84,7 @@ export function CalendarScreen({ navigation }: any) {
     }
   };
 
-  const handleDayPress = async (day: any) => {
+  const handleDayPress = async (day: { dateString: string }) => {
     setSelectedDate(day.dateString);
     setDayLoading(true);
 
@@ -91,7 +103,7 @@ export function CalendarScreen({ navigation }: any) {
       if (__DEV__)
         console.log(
           '[CalendarScreen] handleDayPress raw workouts:',
-          (workoutsData || []).map((w: any) => ({
+          (workoutsData || []).map((w) => ({
             id: w.id,
             stored: w.date,
             localKey: toLocalDateKey(w.date),
@@ -99,8 +111,8 @@ export function CalendarScreen({ navigation }: any) {
         );
 
       const workoutsWithCounts: WorkoutSummary[] = (workoutsData || [])
-        .filter((w: any) => toLocalDateKey(w.date) === day.dateString)
-        .map((w: any) => ({
+        .filter((w) => toLocalDateKey(w.date) === day.dateString)
+        .map((w) => ({
           id: w.id,
           date: w.date,
           body_parts: w.body_parts || [],
