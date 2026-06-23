@@ -85,14 +85,17 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
     const saved = await loadWorkoutSession();
     if (!saved) return;
 
-    // Match the saved session against the exercises currently in route.params.
-    // If names differ it means the user started a different workout — discard silently.
-    const currentNames = exercises.map((ex: ExerciseSelection) => ex.name);
-    const namesMatch =
-      saved.exerciseNames.length === currentNames.length &&
-      saved.exerciseNames.every((n: string, i: number) => n === currentNames[i]);
+    // Match the saved session by body-part set + exercise count rather than
+    // exact exercise names. This allows a mid-session swap to survive a
+    // force-quit/relaunch cycle — the guard still rejects sessions from a
+    // genuinely different workout (different body parts or different count).
+    const savedKey =
+      [...saved.bodyParts].sort().join(',') + ':' + saved.exercises.length;
+    const currentKey =
+      [...route.params.bodyParts].sort().join(',') + ':' + route.params.exercises.length;
+    const sessionMatches = savedKey === currentKey;
 
-    if (!namesMatch) {
+    if (!sessionMatches) {
       await clearWorkoutSession();
       return;
     }
@@ -100,6 +103,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
     // If the user arrived here via the Home resume banner, restore silently —
     // they already confirmed intent by tapping Resume there.
     if (route.params?.autoResume) {
+      setExercises(saved.exercises);
       setCompletedExercises(new Set(saved.completedExercises));
       startTimeRef.current = saved.startTime;
       return;
@@ -120,7 +124,9 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
         {
           text: 'Resume',
           onPress: () => {
-            // Restore checked-off sets and original start time.
+            // Restore exercise list (captures any mid-session swaps),
+            // checked-off sets, and original start time.
+            setExercises(saved.exercises);
             setCompletedExercises(new Set(saved.completedExercises));
             startTimeRef.current = saved.startTime;
           },
