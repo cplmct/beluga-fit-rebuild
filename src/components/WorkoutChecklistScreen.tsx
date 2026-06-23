@@ -11,7 +11,8 @@ import {
   AppState,
   AppStateStatus,
 } from 'react-native';
-import { ExerciseSelection } from '../data/exercises';
+import { ExerciseSelection, Exercise, EXERCISES } from '../data/exercises';
+import { SwapExerciseModal } from './SwapExerciseModal';
 import { supabase } from '../lib/supabase';
 import { safeQuery } from '../lib/safeSupabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -42,10 +43,12 @@ function formatDuration(seconds: number): string {
 }
 
 export function WorkoutChecklistScreen({ route, navigation }: any) {
-  const { exercises, bodyParts } = route.params;
+  const { exercises: initialExercises, bodyParts } = route.params;
   const { user } = useAuth();
   const { weightUnit } = useUnits();
 
+  const [exercises, setExercises] = useState<ExerciseSelection[]>(initialExercises);
+  const [swapIndex, setSwapIndex] = useState<number | null>(null);
   const [completedExercises, setCompletedExercises] = useState<Set<number>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
   const [lastTimeMap, setLastTimeMap] = useState<Record<string, LastTimeData>>({});
@@ -127,10 +130,12 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
     );
   };
 
-  // ── Save session whenever checked-off sets change ───────────────────────────
+  // ── Save session whenever checked-off sets OR exercise list changes ─────────
+  // exercises is included so a swap never leaves a stale closure overwriting
+  // the just-saved updated list.
   useEffect(() => {
     // Skip the initial empty state — no point persisting a blank session.
-    if (completedExercises.size === 0) return;
+    if (completedExercises.size === 0 && exercises === initialExercises) return;
     saveWorkoutSession({
       exerciseNames: exercises.map((ex: ExerciseSelection) => ex.name),
       completedExercises: Array.from(completedExercises),
@@ -138,7 +143,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
       exercises,
       bodyParts,
     });
-  }, [completedExercises]);
+  }, [completedExercises, exercises]);
 
   // ── Save session when app moves to background (belt + suspenders) ───────────
   useEffect(() => {
@@ -217,6 +222,31 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
       haptic.light(); // subtle confirmation when a set is checked off
     }
     setCompletedExercises(newCompleted);
+  };
+
+  const handleSwapSelect = (replacement: Exercise) => {
+    if (swapIndex === null) return;
+    const updated = exercises.map((ex, i) =>
+      i !== swapIndex
+        ? ex
+        : {
+            ...ex,
+            name: replacement.name,
+            category: replacement.category,
+            equipment: replacement.equipment,
+            // bodyPart preserved (same group), sets/reps/weight preserved
+          }
+    );
+    setExercises(updated);
+    // The swapped slot must not be checked — it's a new exercise.
+    // (Swap button is only shown for uncompleted slots, but guard anyway.)
+    if (completedExercises.has(swapIndex)) {
+      const newCompleted = new Set(completedExercises);
+      newCompleted.delete(swapIndex);
+      setCompletedExercises(newCompleted);
+    }
+    setSwapIndex(null);
+    haptic.light();
   };
 
   // Core save logic — called after any confirmation guards pass.
@@ -442,11 +472,32 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
                     </View>
                   )}
                 </View>
+
+                {!completedExercises.has(index) && (
+                  <TouchableOpacity
+                    style={styles.swapButton}
+                    onPress={(e) => { e.stopPropagation(); setSwapIndex(index); }}
+                    activeOpacity={0.7}
+                    hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                  >
+                    <Text style={styles.swapButtonText}>⇄ Swap</Text>
+                  </TouchableOpacity>
+                )}
               </TouchableOpacity>
             );
           })}
         </View>
       </ScrollView>
+
+      <SwapExerciseModal
+        visible={swapIndex !== null}
+        bodyPart={
+          swapIndex !== null ? exercises[swapIndex].bodyPart : 'Chest'
+        }
+        excludeNames={exercises.map((ex) => ex.name)}
+        onSelect={handleSwapSelect}
+        onCancel={() => setSwapIndex(null)}
+      />
 
       {/* Save confidence indicator — visible only while saving or if an error occurred */}
       <SaveStatusBadge status={saveStatus.status} />
@@ -518,6 +569,21 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1.5,
     borderColor: '#e2e8f0',
+  },
+  swapButton: {
+    alignSelf: 'flex-start',
+    marginTop: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    backgroundColor: '#f8fafc',
+  },
+  swapButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748b',
   },
   exerciseCardCompleted: {
     borderColor: '#10b981',
