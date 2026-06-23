@@ -2,9 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
 import { EXERCISES, BodyPart, ExerciseSelection, Category, CATEGORIES } from '../data/exercises';
 import { useUnits } from '../contexts/UnitsContext';
-
 export function ExercisesScreen({ route, navigation }: any) {
-  const { selectedBodyParts } = route.params;
+  const { selectedBodyParts } = route.params as { selectedBodyParts: BodyPart[] };
   const { weightUnit } = useUnits();
 
   const initialExercises = useMemo(() => {

@@ -1,0 +1,47 @@
+Beluga Fit v1.1 — Implement All Tester Suggested Improvements
+
+This is a large task broken into prioritized slices. Work through them in order. For each slice: implement, verify, and report. Do NOT change working behavior. Do NOT add new dependencies unless necessary.
+
+=== PRIORITY 1: Progress/Stats Page (testers reported this is MISSING) ===
+Add a Stats/Progress screen accessible from the Home dashboard. This is the most frequently requested feature from testers.
+1. Create or augment src/components/StatsScreen.tsx
+2. Show: total workouts completed, total exercises logged, workout streak, most used workout plan
+3. Show body progress section (latest weight, comparison to starting weight if available)
+4. Show "this month" stats: workouts this month
+5. Use useFocusEffect to refresh data when screen is focused
+6. Data should come from Supabase (workouts table, body_measurements table)
+7. Add navigation from Home screen ("View Stats" or card on home dashboard)
+
+=== PRIORITY 2: Empty/Error States ===
+Add empty states for screens with no data:
+1. HomeScreen: empty state when no active plan
+2. HistoryScreen/CalendarScreen: empty state when no workouts logged
+3. StatsScreen: empty state when no stats available
+4. All empty states should match Beluga Fit design language with subtle CTA
+
+=== PRIORITY 3: Weekly Goal / Consistency Badge on Home ===
+1. Show streak/consistency badge on Home dashboard
+2. Show weekly goal progress on Home (e.g., "2 of 3 workouts this week")
+3. Home card: last workout date, current week count, weekly goal progress
+4. Use existing profiles.weekly_goal preference data
+
+=== PRIORITY 4: Settings Polish ===
+1. Add app version number at bottom of Settings
+2. Each setting row needs chevron or clear interactive indicator
+3. Proper section grouping: Account, Preferences, Support
+4. Add "View Onboarding / Getting Started" in Settings
+5. Sign Out visible but not inside a section group
+
+=== PRIORITY 5: Bundle ID ===
+Set BOTH android.package and ios.bundleIdentifier to com.belugafit.app for unified branding
+
+=== PRIORITY 6: TypeScript Cleanup ===
+Replace any types with proper interfaces in navigation parameters and viewableItems callbacks
+
+=== PRIORITY 7: Store Assets ===
+1. Configure BelugaFitFeatureGraphic.png (1024x500) in app.json for Android
+2. Ensure adaptive-icon512.png referenced correctly
+3. Verify splash uses the new dark 3D splash.png
+
+=== VERIFICATION ===
+After each slice: run npx tsc --noEmit (0 errors) and npx expo export --platform android (must succeed). Report final summary of all changes.

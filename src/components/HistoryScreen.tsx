@@ -108,7 +108,14 @@ export function HistoryScreen({ navigation }: any) {
 
       if (queryError) throw queryError;
 
-      const mapped: WorkoutSummary[] = (workoutsData || []).map((w: any) => ({
+      type RawWorkout = {
+        id: string;
+        date: string;
+        body_parts: string[] | null;
+        duration_seconds: number | null;
+        workout_exercises: { count: number }[];
+      };
+      const mapped: WorkoutSummary[] = (workoutsData as RawWorkout[] || []).map((w) => ({
         id: w.id,
         date: w.date,
         body_parts: w.body_parts || [],

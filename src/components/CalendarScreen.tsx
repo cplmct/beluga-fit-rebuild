@@ -187,6 +187,23 @@ export function CalendarScreen({ navigation }: CalendarScreenProps) {
 
   const renderDatePanel = () => {
     if (!selectedDate) {
+      if (!loading && Object.keys(markedDates).length === 0) {
+        return (
+          <View style={styles.dayEmptyWrap}>
+            <Text style={styles.dayEmptyTitle}>No workouts logged yet</Text>
+            <Text style={styles.dayEmptySub}>
+              Your training history will appear here once you start logging sessions.
+            </Text>
+            <TouchableOpacity
+              style={styles.logButton}
+              onPress={() => (navigation as any).navigate('Workout', { screen: 'StartWorkout' })}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.logButtonText}>Log a Workout</Text>
+            </TouchableOpacity>
+          </View>
+        );
+      }
       return (
         <View style={styles.promptWrap}>
           <View style={styles.promptLine} />
@@ -227,7 +244,7 @@ export function CalendarScreen({ navigation }: CalendarScreenProps) {
             </Text>
             <TouchableOpacity
               style={styles.logButton}
-              onPress={() => navigation.navigate('Workout', { screen: 'StartWorkout' })}
+              onPress={() => (navigation as any).navigate('Workout', { screen: 'StartWorkout' })}
               activeOpacity={0.85}
             >
               <Text style={styles.logButtonText}>Log a Workout</Text>
