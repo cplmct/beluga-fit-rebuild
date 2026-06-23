@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { ExerciseSelection, Exercise, EXERCISES } from '../data/exercises';
 import { SwapExerciseModal } from './SwapExerciseModal';
+import { EditExerciseModal } from './EditExerciseModal';
 import { supabase } from '../lib/supabase';
 import { safeQuery } from '../lib/safeSupabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -49,6 +50,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
 
   const [exercises, setExercises] = useState<ExerciseSelection[]>(initialExercises);
   const [swapIndex, setSwapIndex] = useState<number | null>(null);
+  const [editIndex, setEditIndex] = useState<number | null>(null);
   const [completedExercises, setCompletedExercises] = useState<Set<number>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
   const [lastTimeMap, setLastTimeMap] = useState<Record<string, LastTimeData>>({});
@@ -253,6 +255,15 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
     }
     setSwapIndex(null);
     haptic.light();
+  };
+
+  const handleEditSave = (sets: number, reps: number, weight: string) => {
+    if (editIndex === null) return;
+    const updated = exercises.map((ex, i) =>
+      i !== editIndex ? ex : { ...ex, sets, reps, weight }
+    );
+    setExercises(updated);
+    setEditIndex(null);
   };
 
   // Core save logic — called after any confirmation guards pass.
@@ -487,16 +498,27 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
                   )}
                 </View>
 
-                {!completedExercises.has(index) && (
+                <View style={styles.cardActions}>
                   <TouchableOpacity
-                    style={styles.swapButton}
-                    onPress={(e) => { e.stopPropagation(); setSwapIndex(index); }}
+                    style={styles.editButton}
+                    onPress={(e) => { e.stopPropagation(); setEditIndex(index); }}
                     activeOpacity={0.7}
                     hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                   >
-                    <Text style={styles.swapButtonText}>⇄ Swap</Text>
+                    <Text style={styles.editButtonText}>✎ Edit</Text>
                   </TouchableOpacity>
-                )}
+
+                  {!completedExercises.has(index) && (
+                    <TouchableOpacity
+                      style={styles.swapButton}
+                      onPress={(e) => { e.stopPropagation(); setSwapIndex(index); }}
+                      activeOpacity={0.7}
+                      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                    >
+                      <Text style={styles.swapButtonText}>⇄ Swap</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               </TouchableOpacity>
             );
           })}
@@ -511,6 +533,16 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
         excludeNames={exercises.map((ex) => ex.name)}
         onSelect={handleSwapSelect}
         onCancel={() => setSwapIndex(null)}
+      />
+
+      <EditExerciseModal
+        visible={editIndex !== null}
+        sets={editIndex !== null ? exercises[editIndex].sets : 3}
+        reps={editIndex !== null ? exercises[editIndex].reps : 10}
+        weight={editIndex !== null ? (exercises[editIndex].weight ?? '') : ''}
+        weightUnit={weightUnit}
+        onSave={handleEditSave}
+        onCancel={() => setEditIndex(null)}
       />
 
       {/* Save confidence indicator — visible only while saving or if an error occurred */}
@@ -584,9 +616,25 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#e2e8f0',
   },
-  swapButton: {
-    alignSelf: 'flex-start',
+  cardActions: {
+    flexDirection: 'row',
+    gap: 8,
     marginTop: 10,
+  },
+  editButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    backgroundColor: '#f8fafc',
+  },
+  editButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748b',
+  },
+  swapButton: {
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
