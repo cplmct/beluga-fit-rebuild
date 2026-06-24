@@ -38,6 +38,23 @@ For any non-trivial task, follow this sequence:
 
 If a request is broad, break it into smaller slices automatically and recommend the safest first slice.
 
+## Agent skills
+
+This project uses project-local skills under `.claude/skills/`.
+
+Preferred workflow:
+- spec-driven-development
+- incremental-implementation
+- code-review-and-quality
+
+Use when relevant:
+- beluga-fit-production-safety
+- security-and-hardening
+- test-driven-development
+
+For non-trivial tasks, load and follow the relevant skill before editing.
+If a skill conflicts with repository-specific rules in this file, this `CLAUDE.md` takes precedence.
+
 ## Git and workspace rules
 Never work directly on `main`.
 

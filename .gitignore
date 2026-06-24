@@ -41,3 +41,6 @@ ios/Pods/
 ios/build/
 
 android/
+
+# JetBrains IDE
+.idea/
