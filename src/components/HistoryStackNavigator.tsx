@@ -2,6 +2,7 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { HistoryScreen } from './HistoryScreen';
 import { WorkoutDetailsScreen } from './WorkoutDetailsScreen';
+import { PRHistoryScreen } from './PRHistoryScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -29,6 +30,11 @@ export function HistoryStackNavigator() {
         name="WorkoutDetails"
         component={WorkoutDetailsScreen}
         options={{ title: 'Workout Details' }}
+      />
+      <Stack.Screen
+        name="PRHistory"
+        component={PRHistoryScreen}
+        options={{ title: 'Personal Records' }}
       />
     </Stack.Navigator>
   );

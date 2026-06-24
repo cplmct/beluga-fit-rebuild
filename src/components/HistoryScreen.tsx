@@ -244,6 +244,16 @@ export function HistoryScreen({ navigation }: any) {
         renderItem={renderWorkoutItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
+        ListHeaderComponent={
+          <TouchableOpacity
+            style={styles.prBanner}
+            onPress={() => navigation.navigate('PRHistory')}
+            activeOpacity={0.82}
+          >
+            <Text style={styles.prBannerLabel}>🏆  Personal Records</Text>
+            <Text style={styles.prBannerChevron}>›</Text>
+          </TouchableOpacity>
+        }
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -380,6 +390,30 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     color: '#0f172a',
     fontSize: 15,
+    fontWeight: '600',
+  },
+
+  // ── Personal Records banner ──
+  prBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#fffbeb',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#fde68a',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 16,
+  },
+  prBannerLabel: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#92400e',
+  },
+  prBannerChevron: {
+    fontSize: 20,
+    color: '#b45309',
     fontWeight: '600',
   },
 });
