@@ -57,6 +57,11 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
   const [lastTimeLoading, setLastTimeLoading] = useState(true);
 
   const startTimeRef = useRef(Date.now());
+  // Latched to true the moment a workout is successfully saved.
+  // Prevents both save paths from re-writing AsyncStorage after the session
+  // has been cleared, which would cause the Home resume banner to reappear
+  // on the next app launch even though the workout finished correctly.
+  const workoutFinishedRef = useRef(false);
 
   // Save-confidence indicator — tracks the state of the most recent write.
   const saveStatus = useSaveStatus();
@@ -142,6 +147,8 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
   // exercises is included so a swap never leaves a stale closure overwriting
   // the just-saved updated list.
   useEffect(() => {
+    // Skip if the workout has already been saved and the session cleared.
+    if (workoutFinishedRef.current) return;
     // Skip the initial empty state — no point persisting a blank session.
     if (completedExercises.size === 0 && exercises === initialExercises) return;
     saveWorkoutSession({
@@ -157,6 +164,8 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
   useEffect(() => {
     const handleAppStateChange = (nextState: AppStateStatus) => {
       if (nextState === 'background' || nextState === 'inactive') {
+        // Do not re-save if the workout has already been finished and cleared.
+        if (workoutFinishedRef.current) return;
         saveWorkoutSession({
           exerciseNames: exercises.map((ex: ExerciseSelection) => ex.name),
           completedExercises: Array.from(completedExercises),
@@ -358,6 +367,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
 
       haptic.success(); // reward the user for completing a workout
       saveStatus.setSuccess();
+      workoutFinishedRef.current = true; // latch before clearing — stops both save paths from re-writing AsyncStorage
       await clearWorkoutSession(); // workout is done — remove the rescue checkpoint
       Alert.alert('Workout Saved!', `Great job!\n\n${lines.join('\n')}`, [
         {
