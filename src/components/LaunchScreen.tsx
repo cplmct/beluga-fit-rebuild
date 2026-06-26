@@ -43,7 +43,6 @@ const styles = StyleSheet.create({
     zIndex: 9999,
   },
   image: {
-    width: '100%',
-    height: '100%',
+    ...StyleSheet.absoluteFillObject,
   },
 });
