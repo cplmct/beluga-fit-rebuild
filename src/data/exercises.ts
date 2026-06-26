@@ -30,6 +30,7 @@ export const EXERCISES: Record<BodyPart, Exercise[]> = {
     { name: 'Push-ups', category: 'Strength', equipment: 'Bodyweight' },
     { name: 'Dips', category: 'Strength', equipment: 'Bodyweight' },
     { name: 'Pec Deck', category: 'Strength', equipment: 'Machine' },
+    { name: 'Kettlebell Floor Press', category: 'Strength', equipment: 'Kettlebell' },
   ],
   Back: [
     { name: 'Deadlift', category: 'Strength', equipment: 'Barbell' },
@@ -42,6 +43,8 @@ export const EXERCISES: Record<BodyPart, Exercise[]> = {
     { name: 'Seated Cable Row', category: 'Strength', equipment: 'Cable' },
     { name: 'Face Pulls', category: 'Strength', equipment: 'Cable' },
     { name: 'Hyperextensions', category: 'Strength', equipment: 'Bodyweight' },
+    { name: 'Kettlebell Row', category: 'Strength', equipment: 'Kettlebell' },
+    { name: 'Kettlebell Deadlift', category: 'Strength', equipment: 'Kettlebell' },
   ],
   Shoulders: [
     { name: 'Overhead Press', category: 'Strength', equipment: 'Barbell' },
@@ -54,6 +57,8 @@ export const EXERCISES: Record<BodyPart, Exercise[]> = {
     { name: 'Upright Row', category: 'Strength', equipment: 'Barbell' },
     { name: 'Shrugs', category: 'Strength', equipment: 'Dumbbell' },
     { name: 'Cable Lateral Raises', category: 'Strength', equipment: 'Cable' },
+    { name: 'Kettlebell Press', category: 'Strength', equipment: 'Kettlebell' },
+    { name: 'Kettlebell Halo', category: 'Strength', equipment: 'Kettlebell' },
   ],
   Arms: [
     { name: 'Barbell Curl', category: 'Strength', equipment: 'Barbell' },
@@ -66,6 +71,8 @@ export const EXERCISES: Record<BodyPart, Exercise[]> = {
     { name: 'Tricep Pushdown', category: 'Strength', equipment: 'Cable' },
     { name: 'Overhead Tricep Extension', category: 'Strength', equipment: 'Dumbbell' },
     { name: 'Skull Crushers', category: 'Strength', equipment: 'Barbell' },
+    { name: 'Kettlebell Curl', category: 'Strength', equipment: 'Kettlebell' },
+    { name: 'Kettlebell Tricep Extension', category: 'Strength', equipment: 'Kettlebell' },
   ],
   Legs: [
     { name: 'Squat', category: 'Strength', equipment: 'Barbell' },
@@ -78,6 +85,9 @@ export const EXERCISES: Record<BodyPart, Exercise[]> = {
     { name: 'Bulgarian Split Squat', category: 'Strength', equipment: 'Dumbbell' },
     { name: 'Calf Raises', category: 'Strength', equipment: 'Machine' },
     { name: 'Leg Abduction', category: 'Strength', equipment: 'Machine' },
+    { name: 'Kettlebell Goblet Squat', category: 'Strength', equipment: 'Kettlebell' },
+    { name: 'Kettlebell Swing', category: 'Strength', equipment: 'Kettlebell' },
+    { name: 'Kettlebell Romanian Deadlift', category: 'Strength', equipment: 'Kettlebell' },
   ],
   Core: [
     { name: 'Plank', category: 'Strength', equipment: 'Bodyweight' },
@@ -90,6 +100,8 @@ export const EXERCISES: Record<BodyPart, Exercise[]> = {
     { name: 'Ab Wheel', category: 'Strength', equipment: 'Equipment' },
     { name: 'Cable Crunches', category: 'Strength', equipment: 'Cable' },
     { name: 'Mountain Climbers', category: 'Cardio', equipment: 'Bodyweight' },
+    { name: 'Kettlebell Turkish Get-Up', category: 'Strength', equipment: 'Kettlebell' },
+    { name: 'Kettlebell Windmill', category: 'Strength', equipment: 'Kettlebell' },
   ],
 };
 
