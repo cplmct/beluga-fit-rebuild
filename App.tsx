@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
@@ -8,6 +8,7 @@ import { AuthStackNavigator } from './src/components/AuthStackNavigator';
 import { BottomTabNavigator } from './src/components/BottomTabNavigator';
 import { OnboardingScreen } from './src/components/OnboardingScreen';
 import { ChangePasswordScreen } from './src/components/ChangePasswordScreen';
+import { LaunchScreen } from './src/components/LaunchScreen';
 import { scheduleInactivityReminder, setupNotificationHandler } from './src/utils/notifications';
 
 // Keep the native splash visible until auth state is resolved.
@@ -19,6 +20,11 @@ function AppContent() {
   const navigationRef = useNavigationContainerRef();
   const pendingTabRef = useRef<string | null>(null);
 
+  // ── Launch screen state ───────────────────────────────────────────────────
+  const launchStartRef = useRef(Date.now());
+  const [launchMounted, setLaunchMounted] = useState(true);
+  const [launchShouldFade, setLaunchShouldFade] = useState(false);
+
   useEffect(() => {
     setupNotificationHandler();
   }, []);
@@ -29,57 +35,75 @@ function AppContent() {
     }
   }, [user?.id]);
 
-  // ── Hide native splash once auth resolves ────────────────────────────────
-  // While loading is true the native splash is still covering the screen,
-  // so returning null here produces no visible flash.
+  // ── Dismiss launch screen once auth resolves + 1500ms have elapsed ────────
   useEffect(() => {
     if (!loading) {
-      SplashScreen.hideAsync().catch(() => {});
+      const elapsed = Date.now() - launchStartRef.current;
+      const remaining = Math.max(0, 1500 - elapsed);
+      const timer = setTimeout(() => setLaunchShouldFade(true), remaining);
+      return () => clearTimeout(timer);
     }
   }, [loading]);
 
-  if (loading) {
-    return null;
-  }
+  // ── App content (preserves all existing routing logic) ────────────────────
+  const renderContent = () => {
+    if (loading) return null;
 
-  // ── Password recovery ─────────────────────────────────────────────────────
-  // Shown when the user opens the app via the reset-password deep link.
-  // Rendered outside NavigationContainer — no navigation needed for this screen.
-  if (isPasswordRecovery) {
-    return <ChangePasswordScreen />;
-  }
+    // ── Password recovery ──────────────────────────────────────────────────
+    if (isPasswordRecovery) {
+      return <ChangePasswordScreen />;
+    }
 
-  // ── Onboarding ────────────────────────────────────────────────────────────
-  if (user && needsOnboarding) {
+    // ── Onboarding ─────────────────────────────────────────────────────────
+    if (user && needsOnboarding) {
+      return (
+        <OnboardingScreen
+          onComplete={async (goToPlans) => {
+            if (goToPlans) {
+              pendingTabRef.current = 'Workout';
+            }
+            await completeOnboarding();
+          }}
+        />
+      );
+    }
+
+    // ── Main app ───────────────────────────────────────────────────────────
     return (
-      <OnboardingScreen
-        onComplete={async (goToPlans) => {
-          if (goToPlans) {
-            pendingTabRef.current = 'Workout';
+      <NavigationContainer
+        ref={navigationRef}
+        onReady={() => {
+          if (pendingTabRef.current) {
+            navigationRef.navigate(pendingTabRef.current as never);
+            pendingTabRef.current = null;
           }
-          await completeOnboarding();
         }}
-      />
+      >
+        {user ? <BottomTabNavigator /> : <AuthStackNavigator />}
+      </NavigationContainer>
     );
-  }
+  };
 
-  // ── Main app ──────────────────────────────────────────────────────────────
   return (
-    <NavigationContainer
-      ref={navigationRef}
-      onReady={() => {
-        if (pendingTabRef.current) {
-          navigationRef.navigate(pendingTabRef.current as never);
-          pendingTabRef.current = null;
-        }
-      }}
-    >
-      {user ? <BottomTabNavigator /> : <AuthStackNavigator />}
-    </NavigationContainer>
+    <>
+      {renderContent()}
+      {launchMounted && (
+        <LaunchScreen
+          shouldFade={launchShouldFade}
+          onDismissed={() => setLaunchMounted(false)}
+        />
+      )}
+    </>
   );
 }
 
 export default function App() {
+  // Hide the native splash immediately when JS loads — the in-app LaunchScreen
+  // takes over from this point. Both share #091722 so the cut is invisible.
+  useEffect(() => {
+    SplashScreen.hideAsync().catch(() => {});
+  }, []);
+
   return (
     <SafeAreaProvider>
       <AuthProvider>
