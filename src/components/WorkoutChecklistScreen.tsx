@@ -14,6 +14,8 @@ import {
 import { ExerciseSelection, Exercise, EXERCISES } from '../data/exercises';
 import { SwapExerciseModal } from './SwapExerciseModal';
 import { EditExerciseModal } from './EditExerciseModal';
+import { ExerciseFormModal } from './ExerciseFormModal';
+import { EXERCISE_GUIDANCE } from '../data/exerciseGuidance';
 import { supabase } from '../lib/supabase';
 import { safeQuery } from '../lib/safeSupabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -51,6 +53,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
   const [exercises, setExercises] = useState<ExerciseSelection[]>(initialExercises);
   const [swapIndex, setSwapIndex] = useState<number | null>(null);
   const [editIndex, setEditIndex] = useState<number | null>(null);
+  const [formIndex, setFormIndex] = useState<number | null>(null);
   const [completedExercises, setCompletedExercises] = useState<Set<number>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
   const [lastTimeMap, setLastTimeMap] = useState<Record<string, LastTimeData>>({});
@@ -518,6 +521,17 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
                     <Text style={styles.editButtonText}>✎ Edit</Text>
                   </TouchableOpacity>
 
+                  {!!EXERCISE_GUIDANCE[exercise.name] && (
+                    <TouchableOpacity
+                      style={styles.formButton}
+                      onPress={(e) => { e.stopPropagation(); setFormIndex(index); }}
+                      activeOpacity={0.7}
+                      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                    >
+                      <Text style={styles.formButtonText}>Form</Text>
+                    </TouchableOpacity>
+                  )}
+
                   {!completedExercises.has(index) && (
                     <TouchableOpacity
                       style={styles.swapButton}
@@ -553,6 +567,13 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
         weightUnit={weightUnit}
         onSave={handleEditSave}
         onCancel={() => setEditIndex(null)}
+      />
+
+      <ExerciseFormModal
+        visible={formIndex !== null}
+        exerciseName={formIndex !== null ? exercises[formIndex].name : ''}
+        bodyPart={formIndex !== null ? exercises[formIndex].bodyPart : ''}
+        onClose={() => setFormIndex(null)}
       />
 
       {/* Save confidence indicator — visible only while saving or if an error occurred */}
@@ -656,6 +677,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: '#64748b',
+  },
+  formButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+    backgroundColor: '#eff6ff',
+  },
+  formButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#2563eb',
   },
   exerciseCardCompleted: {
     borderColor: '#10b981',
