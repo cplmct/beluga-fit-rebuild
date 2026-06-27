@@ -2,6 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
 import { EXERCISES, BodyPart, ExerciseSelection, Category, CATEGORIES } from '../data/exercises';
 import { useUnits } from '../contexts/UnitsContext';
+import { ExerciseFormModal } from './ExerciseFormModal';
+import { EXERCISE_GUIDANCE } from '../data/exerciseGuidance';
 export function ExercisesScreen({ route, navigation }: any) {
   const { selectedBodyParts } = route.params as { selectedBodyParts: BodyPart[] };
   const { weightUnit } = useUnits();
@@ -28,6 +30,7 @@ export function ExercisesScreen({ route, navigation }: any) {
   const [exercises, setExercises] = useState<ExerciseSelection[]>(initialExercises);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category>('All');
+  const [formExercise, setFormExercise] = useState<{ name: string; bodyPart: string } | null>(null);
 
   const toggleExercise = (index: number) => {
     const updated = [...exercises];
@@ -176,6 +179,17 @@ export function ExercisesScreen({ route, navigation }: any) {
                       </Text>
                       <Text style={styles.exerciseEquipment}>{exercise.equipment}</Text>
                     </View>
+
+                    {!!EXERCISE_GUIDANCE[exercise.name] && (
+                      <TouchableOpacity
+                        style={styles.formButton}
+                        onPress={(e) => { e.stopPropagation(); setFormExercise({ name: exercise.name, bodyPart }); }}
+                        activeOpacity={0.7}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Text style={styles.formButtonText}>Form</Text>
+                      </TouchableOpacity>
+                    )}
                   </TouchableOpacity>
 
                   {exercise.selected && (
@@ -240,6 +254,13 @@ export function ExercisesScreen({ route, navigation }: any) {
           })
         )}
       </ScrollView>
+
+      <ExerciseFormModal
+        visible={formExercise !== null}
+        exerciseName={formExercise?.name ?? ''}
+        bodyPart={formExercise?.bodyPart ?? ''}
+        onClose={() => setFormExercise(null)}
+      />
 
       <View style={styles.footer}>
         <TouchableOpacity
@@ -405,6 +426,19 @@ const styles = StyleSheet.create({
   exerciseEquipment: {
     fontSize: 12,
     color: '#9ca3af',
+  },
+  formButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+    backgroundColor: '#eff6ff',
+  },
+  formButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#2563eb',
   },
   exerciseControls: {
     paddingHorizontal: 16,
