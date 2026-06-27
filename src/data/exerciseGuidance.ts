@@ -1,7 +1,9 @@
+import { ImageSourcePropType } from 'react-native';
+
 export interface GuidanceFrame {
   label: 'Start' | 'Mid' | 'Finish';
   caption: string;
-  imageUri?: string;
+  imageSource?: ImageSourcePropType;
 }
 
 export interface ExerciseGuidance {
@@ -14,14 +16,17 @@ export const EXERCISE_GUIDANCE: Record<string, ExerciseGuidance> = {
     frames: [
       {
         label: 'Start',
+        imageSource: require('../../assets/guidance/bench-press-start.jpg'),
         caption: 'Lie flat, grip slightly wider than shoulders, bar over lower chest, shoulder blades retracted.',
       },
       {
         label: 'Mid',
+        imageSource: require('../../assets/guidance/bench-press-mid.jpg'),
         caption: 'Lower the bar with control, elbows tracking at 45–75° from your torso.',
       },
       {
         label: 'Finish',
+        imageSource: require('../../assets/guidance/bench-press-finish.jpg'),
         caption: 'Press to full extension without locking elbows hard, maintaining your natural arch.',
       },
     ],
@@ -58,14 +63,17 @@ export const EXERCISE_GUIDANCE: Record<string, ExerciseGuidance> = {
     frames: [
       {
         label: 'Start',
+        imageSource: require('../../assets/guidance/deadlift-start.jpg'),
         caption: 'Feet hip-width apart, bar over mid-foot, grip just outside your legs, hips hinged back, back flat.',
       },
       {
         label: 'Mid',
+        imageSource: require('../../assets/guidance/deadlift-mid.jpg'),
         caption: 'Drive through your heels, keeping the bar close to your body as it passes the knees.',
       },
       {
         label: 'Finish',
+        imageSource: require('../../assets/guidance/deadlift-finish.jpg'),
         caption: 'Stand tall with hips fully extended — do not hyperextend your lower back at the top.',
       },
     ],
@@ -169,14 +177,17 @@ export const EXERCISE_GUIDANCE: Record<string, ExerciseGuidance> = {
     frames: [
       {
         label: 'Start',
+        imageSource: require('../../assets/guidance/squat-start.jpg'),
         caption: 'Bar on your upper traps, feet shoulder-width apart with toes slightly out, core braced.',
       },
       {
         label: 'Mid',
+        imageSource: require('../../assets/guidance/squat-mid.jpg'),
         caption: 'Sit down and back, knees tracking over your toes, chest staying up throughout.',
       },
       {
         label: 'Finish',
+        imageSource: require('../../assets/guidance/squat-finish.jpg'),
         caption: 'Drive through your heels to stand, fully extending your hips and knees at the top.',
       },
     ],

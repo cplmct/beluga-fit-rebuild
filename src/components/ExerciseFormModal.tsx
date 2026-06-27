@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  Image,
 } from 'react-native';
 import { EXERCISE_GUIDANCE } from '../data/exerciseGuidance';
 
@@ -69,6 +70,13 @@ export function ExerciseFormModal({
                       { backgroundColor: colors.bg, borderColor: colors.border },
                     ]}
                   >
+                    {frame.imageSource && (
+                      <Image
+                        source={frame.imageSource}
+                        style={styles.frameImage}
+                        resizeMode="cover"
+                      />
+                    )}
                     <View style={[styles.frameLabelPill, { backgroundColor: colors.border }]}>
                       <Text style={[styles.frameLabelText, { color: colors.text }]}>
                         {frame.label.toUpperCase()}
@@ -179,6 +187,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     padding: 14,
+  },
+  frameImage: {
+    width: '100%',
+    height: 190,
+    borderRadius: 8,
+    marginBottom: 10,
+    backgroundColor: '#f1f5f9',
   },
   frameLabelPill: {
     alignSelf: 'flex-start',
