@@ -167,13 +167,13 @@ export function ProfileScreen() {
   const loadProfile = async () => {
     if (!user) return;
     try {
-      const [profileRes, workoutRes] = await Promise.all([
+      const [profileRes, sessionRes] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', user.id).maybeSingle(),
         supabase
-          .from('workouts')
-          .select('date')
+          .from('workout_sessions')
+          .select('started_at')
           .eq('user_id', user.id)
-          .order('date', { ascending: false })
+          .order('started_at', { ascending: false })
           .limit(1)
           .maybeSingle(),
       ]);
@@ -188,7 +188,7 @@ export function ProfileScreen() {
         });
       }
 
-      setLastWorkoutDate(workoutRes.data?.date ?? null);
+      setLastWorkoutDate(sessionRes.data?.started_at ?? null);
     } catch (err: any) {
       setError('Failed to load profile.');
     } finally {
