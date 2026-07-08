@@ -58,11 +58,11 @@ export function getLocalWeekEnd(date: Date = new Date()): Date {
  * Given an array of objects with a UTC ISO `date` field, returns the count
  * whose local date falls within the current local Mon–Sun week.
  */
-export function countWorkoutsThisWeek(workouts: { date: string }[]): number {
+export function countWorkoutsThisWeek(sessions: { date: string }[]): number {
   const start = getLocalWeekStart();
   const end = getLocalWeekEnd();
-  return workouts.filter((w) => {
-    const d = new Date(w.date);
+  return sessions.filter((s) => {
+    const d = new Date(s.date);
     return d >= start && d <= end;
   }).length;
 }
