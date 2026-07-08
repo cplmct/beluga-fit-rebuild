@@ -15,7 +15,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 interface WorkoutSummary {
   id: string;
-  date: string;
+  started_at: string;
   body_parts: string[];
   exercise_count: number;
 }
@@ -58,21 +58,22 @@ export function CalendarScreen({ navigation }: CalendarScreenProps) {
     try {
       if (!user) return;
 
-      const { data: workoutsData } = await supabase
-        .from('workouts')
-        .select('id, date, body_parts, workout_exercises(count)')
+      const { data: sessionsData } = await supabase
+        .from('workout_sessions')
+        .select('id, started_at')
         .eq('user_id', user.id)
-        .order('date', { ascending: false });
+        .eq('status', 'completed')
+        .order('started_at', { ascending: false });
 
       if (__DEV__)
         console.log(
           '[CalendarScreen] fetchWorkouts raw count:',
-          (workoutsData || []).length,
+          (sessionsData || []).length,
         );
 
       const marked: Record<string, { marked: boolean; dotColor: string }> = {};
-      (workoutsData || []).forEach((workout) => {
-        const dateKey = toLocalDateKey(workout.date);
+      (sessionsData || []).forEach((session) => {
+        const dateKey = toLocalDateKey(session.started_at);
         marked[dateKey] = { marked: true, dotColor: '#2563eb' };
       });
 
@@ -94,30 +95,51 @@ export function CalendarScreen({ navigation }: CalendarScreenProps) {
       if (__DEV__)
         console.log('[CalendarScreen] handleDayPress selectedDate:', day.dateString);
 
-      const { data: workoutsData } = await supabase
-        .from('workouts')
-        .select('id, date, body_parts, workout_exercises(count)')
+      const { data: sessionsData } = await supabase
+        .from('workout_sessions')
+        .select('id, started_at, session_exercises(count)')
         .eq('user_id', user.id)
-        .order('date', { ascending: false });
+        .eq('status', 'completed')
+        .order('started_at', { ascending: false });
 
       if (__DEV__)
         console.log(
-          '[CalendarScreen] handleDayPress raw workouts:',
-          (workoutsData || []).map((w) => ({
-            id: w.id,
-            stored: w.date,
-            localKey: toLocalDateKey(w.date),
+          '[CalendarScreen] handleDayPress raw sessions:',
+          (sessionsData || []).map((s) => ({
+            id: s.id,
+            stored: s.started_at,
+            localKey: toLocalDateKey(s.started_at),
           })),
         );
 
-      const workoutsWithCounts: WorkoutSummary[] = (workoutsData || [])
-        .filter((w) => toLocalDateKey(w.date) === day.dateString)
-        .map((w) => ({
-          id: w.id,
-          date: w.date,
-          body_parts: w.body_parts || [],
-          exercise_count: w.workout_exercises?.[0]?.count || 0,
-        }));
+      const filtered = (sessionsData || []).filter(
+        (s) => toLocalDateKey(s.started_at) === day.dateString
+      );
+
+      const sessionIds = filtered.map((s) => s.id);
+      const muscleGroupsBySession: Record<string, string[]> = {};
+      if (sessionIds.length > 0) {
+        const { data: muscleGroupRows } = await supabase
+          .from('session_muscle_groups')
+          .select('session_id, muscle_groups(name)')
+          .in('session_id', sessionIds);
+
+        for (const row of muscleGroupRows || []) {
+          const name = (row.muscle_groups as any)?.name;
+          if (!name) continue;
+          if (!muscleGroupsBySession[row.session_id]) {
+            muscleGroupsBySession[row.session_id] = [];
+          }
+          muscleGroupsBySession[row.session_id].push(name);
+        }
+      }
+
+      const workoutsWithCounts: WorkoutSummary[] = filtered.map((s) => ({
+        id: s.id,
+        started_at: s.started_at,
+        body_parts: muscleGroupsBySession[s.id] || [],
+        exercise_count: s.session_exercises?.[0]?.count || 0,
+      }));
 
       if (__DEV__)
         console.log(
@@ -156,7 +178,7 @@ export function CalendarScreen({ navigation }: CalendarScreenProps) {
       activeOpacity={0.82}
     >
       <View style={styles.workoutHeader}>
-        <Text style={styles.workoutTime}>{formatTime(item.date)}</Text>
+        <Text style={styles.workoutTime}>{formatTime(item.started_at)}</Text>
         <Text style={styles.exerciseCount}>
           {item.exercise_count}{' '}
           {item.exercise_count === 1 ? 'exercise' : 'exercises'}
