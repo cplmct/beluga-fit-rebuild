@@ -13,7 +13,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 interface WorkoutSummary {
   id: string;
-  date: string;
+  started_at: string;
   body_parts: string[];
   exercise_count: number;
   duration_seconds: number | null;
@@ -100,27 +100,48 @@ export function HistoryScreen({ navigation }: any) {
       }
       setError('');
 
-      const { data: workoutsData, error: queryError } = await supabase
-        .from('workouts')
-        .select('id, date, body_parts, duration_seconds, workout_exercises(count)')
+      const { data: sessionsData, error: queryError } = await supabase
+        .from('workout_sessions')
+        .select('id, started_at, duration_seconds, session_exercises(count)')
         .eq('user_id', user.id)
-        .order('date', { ascending: false });
+        .eq('status', 'completed')
+        .order('started_at', { ascending: false });
 
       if (queryError) throw queryError;
 
-      type RawWorkout = {
+      const sessionIds = (sessionsData || []).map((s: any) => s.id);
+
+      const muscleGroupsBySession: Record<string, string[]> = {};
+      if (sessionIds.length > 0) {
+        const { data: muscleGroupRows, error: mgError } = await supabase
+          .from('session_muscle_groups')
+          .select('session_id, muscle_groups(name)')
+          .in('session_id', sessionIds);
+
+        if (mgError) throw mgError;
+
+        for (const row of muscleGroupRows || []) {
+          const name = (row.muscle_groups as any)?.name;
+          if (!name) continue;
+          if (!muscleGroupsBySession[row.session_id]) {
+            muscleGroupsBySession[row.session_id] = [];
+          }
+          muscleGroupsBySession[row.session_id].push(name);
+        }
+      }
+
+      type RawSession = {
         id: string;
-        date: string;
-        body_parts: string[] | null;
+        started_at: string;
         duration_seconds: number | null;
-        workout_exercises: { count: number }[];
+        session_exercises: { count: number }[];
       };
-      const mapped: WorkoutSummary[] = (workoutsData as RawWorkout[] || []).map((w) => ({
-        id: w.id,
-        date: w.date,
-        body_parts: w.body_parts || [],
-        duration_seconds: w.duration_seconds ?? null,
-        exercise_count: w.workout_exercises?.[0]?.count || 0,
+      const mapped: WorkoutSummary[] = (sessionsData as RawSession[] || []).map((s) => ({
+        id: s.id,
+        started_at: s.started_at,
+        body_parts: muscleGroupsBySession[s.id] || [],
+        duration_seconds: s.duration_seconds ?? null,
+        exercise_count: s.session_exercises?.[0]?.count || 0,
       }));
 
       setWorkouts(mapped);
@@ -158,7 +179,7 @@ export function HistoryScreen({ navigation }: any) {
         activeOpacity={0.82}
       >
         <View style={styles.cardHeader}>
-          <Text style={styles.cardDate}>{formatDate(item.date)}</Text>
+          <Text style={styles.cardDate}>{formatDate(item.started_at)}</Text>
           <View style={styles.cardMeta}>
             {durationLabel && (
               <Text style={styles.cardDuration}>{durationLabel}</Text>
