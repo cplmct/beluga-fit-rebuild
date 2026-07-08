@@ -269,15 +269,16 @@ export async function scheduleInactivityReminder(userId: string): Promise<void> 
 
     // Find the most recent completed workout
     const { data } = await supabase
-      .from('workouts')
-      .select('date')
+      .from('workout_sessions')
+      .select('started_at')
       .eq('user_id', userId)
-      .order('date', { ascending: false })
+      .eq('status', 'completed')
+      .order('started_at', { ascending: false })
       .limit(1)
       .maybeSingle();
 
     // Safeguard: do not schedule if there are no completed workouts yet
-    if (!data?.date) {
+    if (!data?.started_at) {
       if (__DEV__) console.log('[Notif] scheduleInactivityReminder — skipped (no completed workouts)');
       return;
     }
@@ -286,7 +287,7 @@ export async function scheduleInactivityReminder(userId: string): Promise<void> 
     await ensureAndroidChannel();
 
     // Trigger = last workout date + INACTIVITY_DAYS at INACTIVITY_HOUR local
-    const triggerDate = new Date(data.date);
+    const triggerDate = new Date(data.started_at);
     triggerDate.setDate(triggerDate.getDate() + INACTIVITY_DAYS);
     triggerDate.setHours(INACTIVITY_HOUR, 0, 0, 0);
 
