@@ -22,7 +22,7 @@ interface WorkoutExercise {
 
 interface Workout {
   id: string;
-  date: string;
+  started_at: string;
   body_parts: string[];
   duration_seconds: number | null;
   exercises: WorkoutExercise[];
@@ -110,29 +110,60 @@ export function WorkoutDetailsScreen({ route, navigation }: any) {
 
   const fetchWorkoutDetails = async () => {
     try {
-      const { data: workoutData, error: workoutError } = await supabase
-        .from('workouts')
+      const { data: sessionData, error: sessionError } = await supabase
+        .from('workout_sessions')
         .select('*')
         .eq('id', workoutId)
         .maybeSingle();
 
-      if (workoutError || !workoutData) {
+      if (sessionError || !sessionData) {
         setNotFound(true);
         return;
       }
 
-      const { data: exercisesData } = await supabase
-        .from('workout_exercises')
-        .select('*')
-        .eq('workout_id', workoutId)
-        .order('created_at', { ascending: true });
+      const { data: sessionExercisesData, error: exercisesError } = await supabase
+        .from('session_exercises')
+        .select(
+          'id, order_index, exercises(name, exercise_muscle_groups(muscle_groups(name))), session_sets(set_number, reps, weight_kg, is_completed, is_pr)'
+        )
+        .eq('session_id', workoutId)
+        .order('order_index', { ascending: true });
+
+      if (exercisesError) throw exercisesError;
+
+      const { data: muscleGroupRows } = await supabase
+        .from('session_muscle_groups')
+        .select('muscle_groups(name)')
+        .eq('session_id', workoutId);
+
+      const bodyParts = (muscleGroupRows || [])
+        .map((row: any) => row.muscle_groups?.name)
+        .filter((name: string | undefined): name is string => !!name);
+
+      const exercises: WorkoutExercise[] = (sessionExercisesData || []).map((se: any) => {
+        const sets: any[] = se.session_sets || [];
+        const sortedSets = [...sets].sort((a, b) => a.set_number - b.set_number);
+        const firstSet = sortedSets[0];
+        const bodyPart = se.exercises?.exercise_muscle_groups?.[0]?.muscle_groups?.name || '';
+
+        return {
+          id: se.id,
+          exercise_name: se.exercises?.name || 'Unknown exercise',
+          body_part: bodyPart,
+          sets: sortedSets.length,
+          reps: firstSet?.reps ?? 0,
+          weight: firstSet?.weight_kg ?? null,
+          completed: sortedSets.length > 0 && sortedSets.every((s) => s.is_completed === true),
+          is_pr: sortedSets.some((s) => s.is_pr === true),
+        };
+      });
 
       setWorkout({
-        id: workoutData.id,
-        date: workoutData.date,
-        body_parts: workoutData.body_parts || [],
-        duration_seconds: workoutData.duration_seconds ?? null,
-        exercises: exercisesData || [],
+        id: sessionData.id,
+        started_at: sessionData.started_at,
+        body_parts: bodyParts,
+        duration_seconds: sessionData.duration_seconds ?? null,
+        exercises,
       });
     } catch (err) {
       if (__DEV__) console.error('WorkoutDetailsScreen:', err);
@@ -198,8 +229,8 @@ export function WorkoutDetailsScreen({ route, navigation }: any) {
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         {/* ── Header ── */}
         <View style={styles.header}>
-          <Text style={styles.date}>{formatDate(workout.date)}</Text>
-          <Text style={styles.time}>{formatTime(workout.date)}</Text>
+          <Text style={styles.date}>{formatDate(workout.started_at)}</Text>
+          <Text style={styles.time}>{formatTime(workout.started_at)}</Text>
         </View>
 
         {/* ── Summary ── */}
