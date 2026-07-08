@@ -1,0 +1,122 @@
+Thank you for the thorough analysis. Here are the answers to all your 
+open questions before you proceed:
+
+---
+
+SCHEMA GAPS:
+
+1. DATE COLUMN
+   Use started_at for all date comparisons and displays.
+   started_at is always set (it defaults to now() on insert).
+   Replace all date references with started_at.
+   For date-only comparisons use: started_at::date
+
+2. BODY PARTS / MUSCLE GROUPS
+   session_muscle_groups IS populated — the migration already ran 
+   and 62 rows were inserted.
+   Use this query pattern to get muscle group names for a session:
+   
+   SELECT mg.name 
+   FROM session_muscle_groups smg
+   JOIN muscle_groups mg ON mg.id = smg.muscle_group_id
+   WHERE smg.session_id = [session_id]
+
+3. EXERCISE COUNT SHORTHAND
+   Yes — use session_exercises(count) as the PostgREST shorthand.
+   The FK relationship is correctly set up so this will work.
+   Replace all workout_exercises(count) with session_exercises(count)
+
+4. EXERCISE NAMES
+   The exercises master table IS populated with 45 exercises 
+   extracted from the existing data.
+   Use this JOIN pattern to get exercise names:
+   
+   session_exercises (
+     id, order_index,
+     exercises ( id, name )
+   )
+
+5. IS_PR AND PERSONAL RECORDS
+   Use session_sets.is_pr = true for the PRHistoryScreen.
+   The personal_records table exists but is not yet populated 
+   from existing data.
+   PRHistoryScreen should query session_sets.is_pr for now.
+   The query path is:
+   workout_sessions → session_exercises → session_sets (where is_pr = true)
+   JOIN exercises to get the exercise name
+
+6. WEIGHT COLUMN
+   The old workout_exercises.weight column was already in kg.
+   The migration copied it directly to session_sets.weight_kg.
+   No conversion needed — existing data is correct as-is.
+
+7. SETS AND REPS — ROWS vs COLUMNS
+   The migration created one session_sets row per set using 
+   generate_series on workout_exercises.sets.
+   For displaying sets/reps in WorkoutDetailsScreen and StatsScreen:
+   - Count of sets = COUNT(*) from session_sets for that session_exercise
+   - Reps per set = session_sets.reps
+   - Weight per set = session_sets.weight_kg
+
+---
+
+INFRASTRUCTURE:
+
+8. RLS AND SUPABASE CLIENT
+   Check safeSupabase.ts — it must use the authenticated session 
+   client (supabase.auth.getSession()) not the anon client.
+   If it currently uses the anon key only, update it to use 
+   the authenticated client before touching any query files.
+   All user data tables now have RLS active and will return 
+   empty results to unauthenticated requests silently.
+
+9. WORKOUT RESUME LOGIC
+   The old in-progress detection used whatever flag existed on 
+   the workouts table.
+   The new mechanism is: workout_sessions.status = 'in_progress'
+   When starting a workout: INSERT with status = 'in_progress'
+   When completing: UPDATE status = 'completed', 
+                         completed_at = now(),
+                         duration_seconds = [calculated value]
+   When resuming: SELECT WHERE user_id = auth.uid() 
+                         AND status = 'in_progress'
+                         ORDER BY started_at DESC LIMIT 1
+
+10. DELETE ACCOUNT CASCADE
+    The new schema has ON DELETE CASCADE set from auth.users 
+    to workout_sessions, and from workout_sessions to 
+    session_exercises, and from session_exercises to session_sets.
+    So deleting the auth.users row will cascade and clean up 
+    all workout data automatically.
+    DeleteAccountScreen only needs to delete the auth user — 
+    do NOT manually delete workout_sessions rows.
+
+---
+
+MIGRATION ORDER — please follow this exact order:
+
+Step 1: Check and fix safeSupabase.ts authenticated client (if needed)
+Step 2: WorkoutChecklistScreen.tsx (P1 — the writer)
+Step 3: HistoryScreen.tsx (P2)
+Step 4: CalendarScreen.tsx (P2)  
+Step 5: WorkoutDetailsScreen.tsx (P2)
+Step 6: HomeScreen.tsx (P3)
+Step 7: StatsScreen.tsx (P3)
+Step 8: PRHistoryScreen.tsx (P3)
+Step 9: ProfileScreen.tsx (P3)
+Step 10: notifications.ts (P4)
+Step 11: DeleteAccountScreen.tsx (P4)
+Step 12: goalPrefs.ts (type signature update only)
+
+---
+
+IMPORTANT RULES:
+- Update ONE file at a time
+- After each file show me the complete rewritten query code 
+  before saving it
+- Do NOT modify workoutPlans.ts, PlanDetailScreen.tsx, 
+  PlanLibraryScreen.tsx, or OnboardingScreen.tsx — 
+  these do not need changes
+- Do NOT drop or modify the old tables 
+  (workouts, workout_exercises, ai_workout_plans)
+- Start with Step 1 — show me safeSupabase.ts first
