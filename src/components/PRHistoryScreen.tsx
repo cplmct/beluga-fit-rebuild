@@ -88,41 +88,64 @@ export function PRHistoryScreen() {
       }
       setError('');
 
-      // Step 1 — get the current user's workout IDs and date map.
-      const { data: workoutRows, error: workoutsError } = await supabase
-        .from('workouts')
-        .select('id, date')
+      // Step 1 — get the current user's session IDs and date map.
+      const { data: sessionRows, error: sessionsError } = await supabase
+        .from('workout_sessions')
+        .select('id, started_at')
         .eq('user_id', user.id);
 
-      if (workoutsError) throw workoutsError;
+      if (sessionsError) throw sessionsError;
 
       const idDateMap: Record<string, string> = {};
-      for (const w of workoutRows ?? []) idDateMap[w.id] = w.date;
-      const workoutIds = Object.keys(idDateMap);
+      for (const s of sessionRows ?? []) idDateMap[s.id] = s.started_at;
+      const sessionIds = Object.keys(idDateMap);
 
-      if (workoutIds.length === 0) {
+      if (sessionIds.length === 0) {
         setRecords([]);
         return;
       }
 
-      // Step 2 — fetch all is_pr rows for those workouts.
+      // Step 2 — fetch exercises + sets for those sessions.
       // Guard to 500 IDs to stay within PostgREST URL limits (same as StatsScreen).
-      const { data: prRows, error: prError } = await supabase
-        .from('workout_exercises')
-        .select('exercise_name, body_part, weight, workout_id')
-        .in('workout_id', workoutIds.slice(0, 500))
-        .eq('is_pr', true)
-        .not('weight', 'is', null)
-        .gt('weight', 0);
+      const { data: exerciseRows, error: prError } = await supabase
+        .from('session_exercises')
+        .select(
+          'session_id, exercises(name, exercise_muscle_groups(muscle_groups(name))), session_sets(weight_kg, is_pr)'
+        )
+        .in('session_id', sessionIds.slice(0, 500));
 
       if (prError) throw prError;
+
+      // Flatten to one row per PR'd set, since is_pr/weight now live on session_sets.
+      const prRows: Array<{
+        exercise_name: string;
+        body_part: string;
+        weight: number;
+        session_id: string;
+      }> = [];
+      for (const ex of exerciseRows ?? []) {
+        const name = (ex as any).exercises?.name;
+        if (!name) continue;
+        const bodyPart =
+          (ex as any).exercises?.exercise_muscle_groups?.[0]?.muscle_groups?.name ?? '';
+        for (const s of (ex as any).session_sets ?? []) {
+          if (s.is_pr === true && s.weight_kg !== null && s.weight_kg > 0) {
+            prRows.push({
+              exercise_name: name,
+              body_part: bodyPart,
+              weight: s.weight_kg,
+              session_id: (ex as any).session_id,
+            });
+          }
+        }
+      }
 
       // Step 3 — client-side grouping: keep the highest weight per
       // (exercise_name, body_part) pair, tracking the date of that best row.
       const bestMap: Record<string, { weight: number; bodyPart: string; date: string }> = {};
       for (const row of prRows ?? []) {
         const key = `${row.exercise_name}||${row.body_part}`;
-        const rowDate = idDateMap[row.workout_id] ?? '';
+        const rowDate = idDateMap[row.session_id] ?? '';
         if (!bestMap[key] || row.weight > bestMap[key].weight) {
           bestMap[key] = { weight: row.weight, bodyPart: row.body_part, date: rowDate };
         }
