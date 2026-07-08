@@ -1,0 +1,142 @@
+I have just completed a full database schema migration on my Supabase project for Beluga Fit, 
+a React Native fitness tracking app built with Expo SDK 53 and TypeScript. 
+I need you to update all existing code to use the new schema.
+
+---
+
+OLD SCHEMA (being replaced — do NOT delete these tables yet, just stop querying them):
+
+Table: workouts
+- id, user_id, date, body_parts (TEXT[]), duration, duration_seconds, notes, created_at
+
+Table: workout_exercises
+- id, workout_id, exercise_name (free text), body_part (free text), sets, reps, 
+  weight, completed, is_pr, created_at
+
+Table: ai_workout_plans
+- id, user_id, title, goal, experience_level, days_per_week, 
+  available_equipment (TEXT[]), injuries_limitations, plan_data (JSONB), created_at
+
+---
+
+NEW SCHEMA (use these from now on):
+
+Table: workout_sessions
+- id, user_id, template_id, name, status (in_progress/completed/cancelled),
+  started_at, completed_at, duration_seconds, notes, source_workout_id, created_at
+
+Table: session_exercises
+- id, session_id, exercise_id, order_index, notes, source_exercise_id, created_at
+
+Table: session_sets
+- id, session_exercise_id, set_number, weight_kg, reps, duration_seconds,
+  rpe, is_warmup, is_completed, is_pr, completed_at, created_at
+
+Table: exercises (master exercise library — reference table)
+- id, name, category_id, description, instructions, difficulty_level,
+  is_unilateral, image_url, video_url, created_at, updated_at
+
+Table: exercise_categories (reference table)
+- id, name, created_at
+
+Table: muscle_groups (reference table)
+- id, name, body_region, created_at
+
+Table: equipment (reference table)
+- id, name, created_at
+
+Table: exercise_muscle_groups (junction table)
+- exercise_id, muscle_group_id, is_primary
+
+Table: exercise_equipment (junction table)
+- exercise_id, equipment_id
+
+Table: workout_templates
+- id, user_id, name, description, goal, experience_level, days_per_week,
+  estimated_duration_minutes, injuries_limitations, is_ai_generated,
+  is_public, source_plan_id, created_at, updated_at
+
+Table: workout_template_exercises
+- id, template_id, exercise_id, order_index, target_sets, target_reps,
+  target_duration_seconds, target_rest_seconds, notes
+
+Table: personal_records
+- id, user_id, exercise_id, record_type (max_weight/max_reps/max_volume/max_duration),
+  value, session_set_id, achieved_at, created_at
+
+Table: session_muscle_groups (junction table)
+- session_id, muscle_group_id
+
+Table: plan_equipment (junction table)
+- plan_id, equipment_id
+
+---
+
+KEY RELATIONSHIP CHANGES TO UNDERSTAND:
+
+1. workout_exercises.exercise_name (free text) 
+   → NOW: session_exercises.exercise_id (UUID FK → exercises.id)
+   To get exercise name: JOIN exercises ON exercises.id = session_exercises.exercise_id
+
+2. workout_exercises had one row per exercise with sets/reps columns
+   → NOW: session_exercises is one row per exercise,
+          session_sets is one row per SET (set_number, weight_kg, reps, is_completed)
+
+3. workouts.body_parts TEXT[] 
+   → NOW: session_muscle_groups junction table
+   To get muscle groups: JOIN session_muscle_groups → muscle_groups
+
+4. ai_workout_plans.available_equipment TEXT[]
+   → NOW: plan_equipment junction table
+   To get equipment: JOIN plan_equipment → equipment
+
+5. workouts.duration (minutes) 
+   → NOW: workout_sessions.duration_seconds (seconds)
+   Convert: duration_seconds / 60 = minutes
+
+6. workout_exercises.weight (no unit specified)
+   → NOW: session_sets.weight_kg (explicitly kilograms)
+
+---
+
+RLS POLICIES ARE NOW ACTIVE — all queries must be made as authenticated users.
+The anon key will be blocked from reading user data.
+Always use the authenticated Supabase client for user data queries.
+
+---
+
+TASKS:
+
+1. Search the entire codebase for any queries referencing these old tables:
+   - workouts
+   - workout_exercises  
+   - ai_workout_plans
+
+2. For each file found, rewrite the Supabase queries to use the new tables.
+
+3. Update all TypeScript interfaces and types to match the new schema.
+
+4. Update any INSERT operations:
+   - Creating a workout → INSERT into workout_sessions, then session_exercises, then session_sets
+   - Logging a set → INSERT into session_sets
+   - Saving an AI plan → INSERT into workout_templates
+
+5. Update all SELECT/fetch operations:
+   - Fetching workout history → SELECT from workout_sessions
+   - Fetching exercises in a workout → 
+     SELECT from session_exercises JOIN exercises JOIN session_sets
+   - Fetching exercise list → SELECT from exercises JOIN exercise_categories
+
+6. Update all DELETE operations to cascade correctly through the new FK relationships.
+
+7. Do NOT drop or modify the old tables (workouts, workout_exercises, ai_workout_plans) —
+   leave them in place until all code is confirmed working.
+
+8. After all queries are updated, run the app and verify:
+   - Workout history loads correctly
+   - Active workout logging saves correctly
+   - Exercise list displays correctly
+   - Personal records are tracked correctly
+
+Please start by searching the codebase for all files that reference the old table names 
+and list them before making any changes.
