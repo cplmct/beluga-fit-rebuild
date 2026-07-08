@@ -300,14 +300,15 @@ export function HomeScreen({ navigation }: any) {
       const ninetyDaysAgo = new Date();
       ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
-      const [profileRes, workoutsRes, weightRes, ap, goalResult] = await Promise.all([
+      const [profileRes, sessionsRes, weightRes, ap, goalResult] = await Promise.all([
         supabase.from('profiles').select('name').eq('id', user!.id).maybeSingle(),
         supabase
-          .from('workouts')
-          .select('id, date, body_parts')
+          .from('workout_sessions')
+          .select('id, started_at')
           .eq('user_id', user!.id)
-          .gte('date', ninetyDaysAgo.toISOString())
-          .order('date', { ascending: false }),
+          .eq('status', 'completed')
+          .gte('started_at', ninetyDaysAgo.toISOString())
+          .order('started_at', { ascending: false }),
         supabase
           .from('body_measurements')
           .select('weight, created_at')
@@ -325,28 +326,44 @@ export function HomeScreen({ navigation }: any) {
 
       setActivePlanState(ap);
 
-      const workouts = workoutsRes.data || [];
+      const sessions = sessionsRes.data || [];
       const today = todayStr();
-      const todayWorkouts = workouts.filter((w) => toLocalDateStr(w.date) === today);
+      const todaySessions = sessions.filter((s) => toLocalDateStr(s.started_at) === today);
 
       let todayWorkout: TodayWorkout | null = null;
-      if (todayWorkouts.length > 0) {
-        const { data: exRows } = await supabase
-          .from('workout_exercises')
-          .select('id')
-          .eq('workout_id', todayWorkouts[0].id);
+      if (todaySessions.length > 0) {
+        const todaySessionIds = todaySessions.map((s) => s.id);
+
+        const [exRowsRes, muscleGroupRes] = await Promise.all([
+          supabase
+            .from('session_exercises')
+            .select('id')
+            .in('session_id', todaySessionIds),
+          supabase
+            .from('session_muscle_groups')
+            .select('muscle_groups(name)')
+            .in('session_id', todaySessionIds),
+        ]);
 
         // Check again after the second await point.
         if (loadGenRef.current !== gen) return;
 
+        const bodyParts = [
+          ...new Set(
+            (muscleGroupRes.data || [])
+              .map((row: any) => row.muscle_groups?.name)
+              .filter((name: string | undefined): name is string => !!name)
+          ),
+        ];
+
         todayWorkout = {
-          bodyParts: [...new Set(todayWorkouts.flatMap((w) => w.body_parts || []))],
-          exerciseCount: exRows?.length || 0,
+          bodyParts,
+          exerciseCount: exRowsRes.data?.length || 0,
         };
       }
 
-      const workoutDates = workouts.map((w) => w.date);
-      const weeklyCount = countWorkoutsThisWeek(workouts);
+      const workoutDates = sessions.map((s) => s.started_at);
+      const weeklyCount = countWorkoutsThisWeek(sessions.map((s) => ({ date: s.started_at })));
       const dailyStreak = computeDailyStreak(workoutDates);
 
       setData({
@@ -356,7 +373,7 @@ export function HomeScreen({ navigation }: any) {
         weeklyGoal: goalResult,
         streak: dailyStreak,
         last7Days: computeCurrentWeekDays(workoutDates),
-        lastWorkoutDate: workouts.length > 0 ? workouts[0].date : null,
+        lastWorkoutDate: sessions.length > 0 ? sessions[0].started_at : null,
         latestWeight: weightRes.data
           ? { value: weightRes.data.weight, date: weightRes.data.created_at }
           : null,
