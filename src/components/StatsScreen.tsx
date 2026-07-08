@@ -162,12 +162,13 @@ export function StatsScreen({ navigation }: any) {
       const now = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-      const [workoutsRes, bodyRes] = await Promise.all([
+      const [sessionsRes, bodyRes] = await Promise.all([
         supabase
-          .from('workouts')
-          .select('id, date, body_parts, duration_seconds')
+          .from('workout_sessions')
+          .select('id, started_at, duration_seconds')
           .eq('user_id', user.id)
-          .order('date', { ascending: false }),
+          .eq('status', 'completed')
+          .order('started_at', { ascending: false }),
         supabase
           .from('body_measurements')
           .select('weight, created_at')
@@ -178,42 +179,42 @@ export function StatsScreen({ navigation }: any) {
       ]);
 
       // Surface query errors instead of silently falling through to empty state
-      if (workoutsRes.error) throw workoutsRes.error;
+      if (sessionsRes.error) throw sessionsRes.error;
 
-      const allWorkouts = workoutsRes.data || [];
-      const allWorkoutIds = allWorkouts.map((w) => w.id);
+      const allSessions = sessionsRes.data || [];
+      const allSessionIds = allSessions.map((s) => s.id);
 
-      const thisMonthWorkouts = allWorkouts.filter((w) => w.date >= startOfMonth);
-      const thisMonthIds = new Set(thisMonthWorkouts.map((w) => w.id));
+      const thisMonthSessions = allSessions.filter((s) => s.started_at >= startOfMonth);
+      const thisMonthIds = new Set(thisMonthSessions.map((s) => s.id));
 
       // Last 7 calendar days
       const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
-      const weeklyCount = allWorkouts.filter((w) => w.date >= sevenDaysAgo).length;
+      const weeklyCount = allSessions.filter((s) => s.started_at >= sevenDaysAgo).length;
 
-      let prExercises: Array<{ workout_id: string; is_pr: boolean }> = [];
+      let prExercises: Array<{ session_id: string; is_pr: boolean }> = [];
       let topPrs: Array<{ name: string; weight: number }> = [];
 
-      if (allWorkoutIds.length > 0) {
-        const [prRes, weightRes] = await Promise.all([
-          supabase
-            .from('workout_exercises')
-            .select('workout_id, is_pr')
-            .in('workout_id', allWorkoutIds.slice(0, 500))
-            .eq('is_pr', true),
-          supabase
-            .from('workout_exercises')
-            .select('exercise_name, weight')
-            .in('workout_id', allWorkoutIds.slice(0, 500))
-            .not('weight', 'is', null)
-            .gt('weight', 0),
-        ]);
-        prExercises = prRes.data || [];
+      if (allSessionIds.length > 0) {
+        const { data: exerciseRows } = await supabase
+          .from('session_exercises')
+          .select('session_id, exercises(name), session_sets(weight_kg, is_pr)')
+          .in('session_id', allSessionIds.slice(0, 500));
 
-        // Compute top 5 personal bests by heaviest weight
+        // One derived row per exercise: is_pr = ANY set is_pr
+        prExercises = (exerciseRows || []).map((ex: any) => ({
+          session_id: ex.session_id,
+          is_pr: (ex.session_sets || []).some((s: any) => s.is_pr === true),
+        }));
+
+        // Compute top 5 personal bests by heaviest single set weight
         const maxByExercise: Record<string, number> = {};
-        for (const row of weightRes.data || []) {
-          if ((row.weight ?? 0) > (maxByExercise[row.exercise_name] ?? 0)) {
-            maxByExercise[row.exercise_name] = row.weight;
+        for (const ex of exerciseRows || []) {
+          const name = (ex as any).exercises?.name;
+          if (!name) continue;
+          for (const s of (ex as any).session_sets || []) {
+            if (s.weight_kg !== null && s.weight_kg > (maxByExercise[name] ?? 0)) {
+              maxByExercise[name] = s.weight_kg;
+            }
           }
         }
         topPrs = Object.entries(maxByExercise)
@@ -222,29 +223,40 @@ export function StatsScreen({ navigation }: any) {
           .map(([name, weight]) => ({ name, weight }));
       }
 
-      const allDates = allWorkouts.map((w) => w.date);
-      const thisMonthPrCount = prExercises.filter((ex) => thisMonthIds.has(ex.workout_id)).length;
-      const totalPrs = prExercises.length;
+      const allDates = allSessions.map((s) => s.started_at);
+      const thisMonthPrCount = prExercises.filter(
+        (ex) => ex.is_pr && thisMonthIds.has(ex.session_id)
+      ).length;
+      const totalPrs = prExercises.filter((ex) => ex.is_pr).length;
 
-      const totalSecondsAll = allWorkouts.reduce(
-        (acc, w) => acc + (w.duration_seconds || 0),
+      const totalSecondsAll = allSessions.reduce(
+        (acc, s) => acc + (s.duration_seconds || 0),
         0
       );
-      const totalSecondsThisMonth = thisMonthWorkouts.reduce(
-        (acc, w) => acc + (w.duration_seconds || 0),
+      const totalSecondsThisMonth = thisMonthSessions.reduce(
+        (acc, s) => acc + (s.duration_seconds || 0),
         0
       );
 
-      const bodyPartCounts: Record<string, number> = {};
-      for (const w of allWorkouts) {
-        for (const part of w.body_parts || []) {
-          bodyPartCounts[part] = (bodyPartCounts[part] || 0) + 1;
+      let topBodyParts: Array<{ name: string; count: number }> = [];
+
+      if (allSessionIds.length > 0) {
+        const { data: muscleGroupRows } = await supabase
+          .from('session_muscle_groups')
+          .select('session_id, muscle_groups(name)')
+          .in('session_id', allSessionIds.slice(0, 500));
+
+        const bodyPartCounts: Record<string, number> = {};
+        for (const row of muscleGroupRows || []) {
+          const name = (row as any).muscle_groups?.name;
+          if (!name) continue;
+          bodyPartCounts[name] = (bodyPartCounts[name] || 0) + 1;
         }
+        topBodyParts = Object.entries(bodyPartCounts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5)
+          .map(([name, count]) => ({ name, count }));
       }
-      const topBodyParts = Object.entries(bodyPartCounts)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
-        .map(([name, count]) => ({ name, count }));
 
       const bodyData = bodyRes.data || [];
       const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
@@ -253,13 +265,13 @@ export function StatsScreen({ navigation }: any) {
 
       setStats({
         thisMonth: {
-          workoutCount: thisMonthWorkouts.length,
+          workoutCount: thisMonthSessions.length,
           totalMinutes: Math.round(totalSecondsThisMonth / 60),
           prCount: thisMonthPrCount,
         },
         weeklyCount,
         allTime: {
-          totalWorkouts: allWorkouts.length,
+          totalWorkouts: allSessions.length,
           totalMinutes: Math.round(totalSecondsAll / 60),
           currentStreak: computeStreak(allDates),
           longestStreak: computeLongestStreak(allDates),
