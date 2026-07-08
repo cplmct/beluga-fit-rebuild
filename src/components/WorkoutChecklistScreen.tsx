@@ -188,43 +188,66 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
       return;
     }
     try {
-      const { data: recentWorkouts } = await supabase
-        .from('workouts')
-        .select('id, date')
+      const { data: recentSessions } = await supabase
+        .from('workout_sessions')
+        .select('id, started_at')
         .eq('user_id', user.id)
-        .order('date', { ascending: false })
+        .eq('status', 'completed')
+        .order('started_at', { ascending: false })
         .limit(50);
 
-      if (!recentWorkouts || recentWorkouts.length === 0) {
+      if (!recentSessions || recentSessions.length === 0) {
         setLastTimeLoading(false);
         return;
       }
 
-      const workoutIds = recentWorkouts.map((w) => w.id);
+      const sessionIds = recentSessions.map((s) => s.id);
       const exerciseNames = exercises.map((ex: ExerciseSelection) => ex.name);
 
-      const { data: pastExercises } = await supabase
-        .from('workout_exercises')
-        .select('exercise_name, sets, reps, weight, workout_id')
-        .in('workout_id', workoutIds)
-        .in('exercise_name', exerciseNames);
+      const { data: exerciseRows } = await supabase
+        .from('exercises')
+        .select('id, name')
+        .in('name', exerciseNames);
 
-      const workoutDateMap: Record<string, string> = {};
-      for (const w of recentWorkouts) {
-        workoutDateMap[w.id] = w.date;
+      const exIdToName: Record<string, string> = {};
+      for (const row of exerciseRows || []) {
+        exIdToName[row.id] = row.name;
+      }
+      const exerciseIds = Object.keys(exIdToName);
+
+      if (exerciseIds.length === 0) {
+        setLastTimeLoading(false);
+        return;
+      }
+
+      const { data: pastExercises } = await supabase
+        .from('session_exercises')
+        .select('session_id, exercise_id, session_sets(reps, weight_kg, set_number)')
+        .in('session_id', sessionIds)
+        .in('exercise_id', exerciseIds);
+
+      const sessionDateMap: Record<string, string> = {};
+      for (const s of recentSessions) {
+        sessionDateMap[s.id] = s.started_at;
       }
 
       const sorted = (pastExercises || []).sort((a, b) => {
-        const dateA = workoutDateMap[a.workout_id] || '';
-        const dateB = workoutDateMap[b.workout_id] || '';
+        const dateA = sessionDateMap[a.session_id] || '';
+        const dateB = sessionDateMap[b.session_id] || '';
         return dateB.localeCompare(dateA);
       });
 
       const map: Record<string, LastTimeData> = {};
       for (const ex of sorted) {
-        if (!map[ex.exercise_name]) {
-          map[ex.exercise_name] = { sets: ex.sets, reps: ex.reps, weight: ex.weight };
-        }
+        const exName = exIdToName[ex.exercise_id];
+        if (!exName || map[exName]) continue;
+        const sets = (ex.session_sets as any[])?.length || 0;
+        const firstSet = (ex.session_sets as any[])?.[0];
+        map[exName] = {
+          sets,
+          reps: firstSet?.reps || 0,
+          weight: firstSet?.weight_kg ?? null,
+        };
       }
       setLastTimeMap(map);
     } catch {
@@ -289,97 +312,184 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
       const exercisesWithWeights = exercises.filter(
         (ex: ExerciseSelection) => ex.weight !== null && ex.weight !== ''
       );
-      const exerciseNames = [...new Set(exercisesWithWeights.map((ex: ExerciseSelection) => ex.name))];
+      const exerciseNamesForPr = [
+        ...new Set(exercisesWithWeights.map((ex: ExerciseSelection) => ex.name)),
+      ];
 
       let maxWeightMap: Record<string, number> = {};
 
-      if (exerciseNames.length > 0) {
-        const { data: userWorkoutIds } = await supabase
-          .from('workouts')
-          .select('id')
-          .eq('user_id', user.id);
+      if (exerciseNamesForPr.length > 0) {
+        const { data: prExerciseRows } = await supabase
+          .from('exercises')
+          .select('id, name')
+          .in('name', exerciseNamesForPr);
 
-        const workoutIds = (userWorkoutIds || []).map((w) => w.id);
+        const prExIdToName: Record<string, string> = {};
+        for (const row of prExerciseRows || []) {
+          prExIdToName[row.id] = row.name;
+        }
+        const prExerciseIds = Object.keys(prExIdToName);
 
-        if (workoutIds.length > 0) {
-          const { data: historicalWeights } = await supabase
-            .from('workout_exercises')
-            .select('exercise_name, weight')
-            .in('workout_id', workoutIds)
-            .in('exercise_name', exerciseNames as string[])
-            .not('weight', 'is', null);
+        if (prExerciseIds.length > 0) {
+          const { data: userSessions } = await supabase
+            .from('workout_sessions')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('status', 'completed');
 
-          for (const ex of historicalWeights || []) {
-            if (ex.weight > (maxWeightMap[ex.exercise_name] || 0)) {
-              maxWeightMap[ex.exercise_name] = ex.weight;
+          const sessionIds = (userSessions || []).map((s) => s.id);
+
+          if (sessionIds.length > 0) {
+            const { data: historicalExercises } = await supabase
+              .from('session_exercises')
+              .select('exercise_id, session_sets(weight_kg)')
+              .in('session_id', sessionIds)
+              .in('exercise_id', prExerciseIds);
+
+            for (const ex of historicalExercises || []) {
+              const exName = prExIdToName[ex.exercise_id];
+              if (!exName) continue;
+              for (const s of (ex.session_sets as any[]) || []) {
+                if (s.weight_kg !== null && s.weight_kg > (maxWeightMap[exName] || 0)) {
+                  maxWeightMap[exName] = s.weight_kg;
+                }
+              }
             }
           }
         }
       }
 
-      const workout = await safeQuery<{ id: string }>(
+      // Look up exercise IDs for all exercises in this workout
+      const allExerciseNames = exercises.map((ex: ExerciseSelection) => ex.name);
+      const { data: allExerciseRows } = await supabase
+        .from('exercises')
+        .select('id, name')
+        .in('name', allExerciseNames);
+
+      const nameToExId: Record<string, string> = {};
+      for (const row of allExerciseRows || []) {
+        nameToExId[row.name] = row.id;
+      }
+
+      // INSERT workout_sessions row
+      const session = await safeQuery<{ id: string }>(
         supabase
-          .from('workouts')
+          .from('workout_sessions')
           .insert({
             user_id: user.id,
-            body_parts: bodyParts,
-            date: new Date().toISOString(),
+            name: bodyParts.join(', ') + ' Workout',
+            status: 'completed',
+            started_at: new Date(startTimeRef.current).toISOString(),
+            completed_at: new Date().toISOString(),
             duration_seconds: durationSeconds,
           })
           .select()
           .maybeSingle()
       );
 
-      if (!workout || !workout.id) throw new Error('Failed to create workout');
+      if (!session || !session.id) throw new Error('Failed to create workout session');
 
-      const workoutExercises = exercises.map((exercise: ExerciseSelection, index: number) => {
-        const weight =
-          exercise.weight !== null && exercise.weight !== ''
-            ? parseFloat(exercise.weight as string)
-            : null;
-        const prevMax = maxWeightMap[exercise.name] || 0;
-        const isPr = weight !== null && weight > 0 && weight > prevMax;
-        return {
-          workout_id: workout.id,
-          exercise_name: exercise.name,
-          body_part: exercise.bodyPart,
-          sets: exercise.sets,
-          reps: exercise.reps,
-          weight,
-          completed: completedExercises.has(index),
-          is_pr: isPr,
-        };
+      // Build session_exercises rows — skip exercises not in master table
+      const validExercises: { exercise: ExerciseSelection; originalIndex: number }[] = [];
+      exercises.forEach((exercise: ExerciseSelection, idx: number) => {
+        if (nameToExId[exercise.name]) {
+          validExercises.push({ exercise, originalIndex: idx });
+        } else if (__DEV__) {
+          console.warn(
+            `[WorkoutChecklist] Exercise not in master table, skipped: ${exercise.name}`
+          );
+        }
       });
 
-      await safeQuery(supabase.from('workout_exercises').insert(workoutExercises));
+      if (validExercises.length > 0) {
+        const sessionExerciseRows = validExercises.map(({ exercise, originalIndex }) => ({
+          session_id: session.id,
+          exercise_id: nameToExId[exercise.name],
+          order_index: originalIndex,
+        }));
+
+        const insertedExercises = await safeQuery<{ id: string; order_index: number }[]>(
+          supabase
+            .from('session_exercises')
+            .insert(sessionExerciseRows)
+            .select('id, order_index')
+        );
+
+        // Batch-insert session_sets — one row per set per exercise
+        const allSetRows: object[] = [];
+        for (const insertedEx of insertedExercises || []) {
+          const match = validExercises.find((ve) => ve.originalIndex === insertedEx.order_index);
+          if (!match) continue;
+          const { exercise, originalIndex } = match;
+
+          const weight =
+            exercise.weight !== null && exercise.weight !== ''
+              ? parseFloat(exercise.weight as string)
+              : null;
+          const prevMax = maxWeightMap[exercise.name] || 0;
+          const isPr = weight !== null && weight > 0 && weight > prevMax;
+
+          for (let setNum = 1; setNum <= exercise.sets; setNum++) {
+            allSetRows.push({
+              session_exercise_id: insertedEx.id,
+              set_number: setNum,
+              reps: exercise.reps,
+              weight_kg: weight,
+              is_completed: completedExercises.has(originalIndex),
+              is_pr: setNum === 1 && isPr,
+            });
+          }
+        }
+
+        if (allSetRows.length > 0) {
+          await safeQuery(supabase.from('session_sets').insert(allSetRows));
+        }
+      }
 
       scheduleInactivityReminder(user.id);
 
-      // Only count PRs for exercises the user actually checked off.
-      // Deduplicate names in case the same exercise appears more than once.
-      const prExercises = workoutExercises.filter((ex) => ex.is_pr && ex.completed);
-      const prNames = [...new Set(prExercises.map((ex) => ex.exercise_name))];
+      // Build PR names for alert — completed exercises only, deduplicated
+      const prNames: string[] = [
+        ...new Set(
+          validExercises
+            .filter(({ exercise, originalIndex }) => {
+              const weight =
+                exercise.weight !== null && exercise.weight !== ''
+                  ? parseFloat(exercise.weight as string)
+                  : null;
+              const prevMax = maxWeightMap[exercise.name] || 0;
+              return (
+                weight !== null &&
+                weight > 0 &&
+                weight > prevMax &&
+                completedExercises.has(originalIndex)
+              );
+            })
+            .map(({ exercise }) => exercise.name)
+        ),
+      ];
+
       const durationText = formatDuration(durationSeconds);
       const lines = [`Duration: ${durationText}`];
       if (prNames.length > 0) {
         lines.push(
           `${prNames.length} personal record${prNames.length > 1 ? 's' : ''}:\n` +
-          prNames.map((n) => `• ${n}`).join('\n')
+            prNames.map((n) => `• ${n}`).join('\n')
         );
       }
 
-      haptic.success(); // reward the user for completing a workout
+      haptic.success();
       saveStatus.setSuccess();
-      workoutFinishedRef.current = true; // latch before clearing — stops both save paths from re-writing AsyncStorage
-      await clearWorkoutSession(); // workout is done — remove the rescue checkpoint
+      workoutFinishedRef.current = true;
+      await clearWorkoutSession();
       Alert.alert('Workout Saved!', `Great job!\n\n${lines.join('\n')}`, [
         {
           text: 'OK',
-          onPress: () => navigation.navigate('WorkoutDetails', { workoutId: workout.id }),
+          onPress: () => navigation.navigate('WorkoutDetails', { workoutId: session.id }),
         },
       ]);
     } catch (error: any) {
-      haptic.error(); // signal that the save failed
+      haptic.error();
       saveStatus.setError(error);
       Alert.alert('Error', error.message || 'Failed to save workout.');
     } finally {
