@@ -82,10 +82,10 @@ export function DeleteAccountScreen() {
   const fetchStats = async () => {
     if (!user) return;
     try {
-      const [workoutsRes, measurementsRes] = await Promise.all([
+      const [sessionsRes, measurementsRes] = await Promise.all([
         supabase
-          .from('workouts')
-          .select('date')
+          .from('workout_sessions')
+          .select('started_at')
           .eq('user_id', user.id),
         supabase
           .from('body_measurements')
@@ -96,13 +96,13 @@ export function DeleteAccountScreen() {
           .maybeSingle(),
       ]);
 
-      const workouts = workoutsRes.data || [];
+      const sessions = sessionsRes.data || [];
       const daysActive = new Set(
-        workouts.map((w) => (w.date as string).split('T')[0])
+        sessions.map((s) => (s.started_at as string).split('T')[0])
       ).size;
 
       setStats({
-        totalWorkouts: workouts.length,
+        totalWorkouts: sessions.length,
         daysActive,
         lastMeasurementDate: measurementsRes.data?.created_at ?? null,
       });
