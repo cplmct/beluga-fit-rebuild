@@ -371,6 +371,27 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
         nameToExId[row.name] = row.id;
       }
 
+      // ── (A) Fetch current personal_records for all exercises in this workout ──
+      // Used as the authoritative comparison guard for the upsert below.
+      // prWeightMap / prRepsMap keyed by exercise_id (not name).
+      let prWeightMap: Record<string, number> = {};
+      let prRepsMap: Record<string, number> = {};
+
+      const exerciseIds = Object.values(nameToExId);
+      if (exerciseIds.length > 0) {
+        const { data: existingPrs } = await supabase
+          .from('personal_records')
+          .select('exercise_id, record_type, value')
+          .eq('user_id', user.id)
+          .in('exercise_id', exerciseIds);
+
+        for (const pr of existingPrs || []) {
+          if (pr.record_type === 'max_weight') prWeightMap[pr.exercise_id] = pr.value;
+          if (pr.record_type === 'max_reps')   prRepsMap[pr.exercise_id]   = pr.value;
+        }
+      }
+      // ── END (A) ───────────────────────────────────────────────────────────────
+
       // INSERT workout_sessions row
       const session = await safeQuery<{ id: string }>(
         supabase
@@ -442,7 +463,75 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
         }
 
         if (allSetRows.length > 0) {
-          await safeQuery(supabase.from('session_sets').insert(allSetRows));
+          // ── (B) Return inserted set IDs so we can reference them in personal_records ──
+          const insertedSets = await safeQuery<
+            { id: string; session_exercise_id: string; set_number: number }[]
+          >(
+            supabase
+              .from('session_sets')
+              .insert(allSetRows)
+              .select('id, session_exercise_id, set_number')
+          );
+          // ── END (B) ────────────────────────────────────────────────────────────────
+
+          // ── (C) Upsert personal_records for max_weight and max_reps PRs ──────────
+          // Build a lookup: session_exercise_id → id of set_number=1
+          const seIdToFirstSetId: Record<string, string> = {};
+          for (const s of insertedSets || []) {
+            if (s.set_number === 1) seIdToFirstSetId[s.session_exercise_id] = s.id;
+          }
+
+          const prUpsertRows: object[] = [];
+          for (const insertedEx of insertedExercises || []) {
+            const match = validExercises.find((ve) => ve.originalIndex === insertedEx.order_index);
+            if (!match) continue;
+            const { exercise } = match;
+            const exId = nameToExId[exercise.name];
+            if (!exId) continue;
+
+            const weight =
+              exercise.weight !== null && exercise.weight !== ''
+                ? parseFloat(exercise.weight as string)
+                : null;
+            const setId = seIdToFirstSetId[insertedEx.id];
+            if (!setId) continue;
+
+            // max_weight — only upsert if new weight exceeds current personal record
+            if (weight !== null && weight > 0 && weight > (prWeightMap[exId] || 0)) {
+              prUpsertRows.push({
+                user_id: user.id,
+                exercise_id: exId,
+                record_type: 'max_weight',
+                value: weight,
+                session_set_id: setId,
+                achieved_at: new Date().toISOString(),
+              });
+            }
+
+            // max_reps — only upsert if new reps exceed current personal record
+            if (exercise.reps > (prRepsMap[exId] || 0)) {
+              prUpsertRows.push({
+                user_id: user.id,
+                exercise_id: exId,
+                record_type: 'max_reps',
+                value: exercise.reps,
+                session_set_id: setId,
+                achieved_at: new Date().toISOString(),
+              });
+            }
+          }
+
+          if (prUpsertRows.length > 0) {
+            await safeQuery(
+              supabase
+                .from('personal_records')
+                .upsert(prUpsertRows, {
+                  onConflict: 'user_id,exercise_id,record_type',
+                  ignoreDuplicates: false,
+                })
+            );
+          }
+          // ── END (C) ────────────────────────────────────────────────────────────────
         }
       }
 
