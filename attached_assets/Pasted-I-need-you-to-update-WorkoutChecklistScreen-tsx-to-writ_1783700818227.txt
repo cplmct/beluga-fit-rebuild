@@ -1,0 +1,51 @@
+I need you to update WorkoutChecklistScreen.tsx to write to the 
+personal_records table when a workout is saved.
+
+CONTEXT:
+- personal_records table has a UNIQUE constraint on (user_id, exercise_id, record_type)
+- record_type values are: 'max_weight' and 'max_reps'
+- Use UPSERT (INSERT ... ON CONFLICT DO UPDATE) so it always keeps the current best
+- This should happen AFTER session_sets are inserted, using the same PR detection 
+  logic that already exists in doSaveWorkout
+
+WHAT TO ADD:
+After the session_sets INSERT in doSaveWorkout, add an UPSERT to personal_records 
+for each exercise that achieved a new PR in this workout.
+
+For max_weight PRs:
+- Insert when: weight > previous max weight (already detected via maxWeightMap)
+- value = the new weight
+- session_set_id = the id of the set that achieved it
+- achieved_at = now()
+
+For max_reps PRs:
+- Insert when: reps > previous max reps for that exercise
+- value = the reps count  
+- session_set_id = the id of the set that achieved it
+- achieved_at = now()
+
+You need to fetch the previous max_reps per exercise from personal_records 
+(similar to how maxWeightMap works for weights) before saving.
+
+UPSERT PATTERN to use:
+supabase
+  .from('personal_records')
+  .upsert({
+    user_id: user.id,
+    exercise_id: nameToExId[exercise.name],
+    record_type: 'max_weight',
+    value: weight,
+    session_set_id: insertedSetId,
+    achieved_at: new Date().toISOString(),
+  }, {
+    onConflict: 'user_id,exercise_id,record_type',
+    ignoreDuplicates: false  // always update if new value is higher
+  })
+
+IMPORTANT — only upsert if the new value EXCEEDS the existing record:
+- For max_weight: only if weight > current personal_records value
+- For max_reps: only if reps > current personal_records value
+- Do NOT downgrade a PR if the user had a better performance previously
+
+Show me the complete updated doSaveWorkout function before applying any changes.
+Same review process — show me the plan first, I approve, then you apply.
