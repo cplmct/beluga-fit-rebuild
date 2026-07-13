@@ -14,9 +14,10 @@ import { useUnits } from '../contexts/UnitsContext';
 
 interface PRRecord {
   exerciseName: string;
-  bodyPart: string;
-  weight: number;
-  date: string;
+  bodyPart: string;        // primary muscle group name ('' if not seeded yet)
+  maxWeight: number | null; // null if no weight PR exists for this exercise
+  maxReps: number | null;   // null if no reps PR exists for this exercise
+  achievedAt: string;       // most recent of the two achieved_at dates
 }
 
 function formatDate(dateString: string): string {
@@ -88,81 +89,74 @@ export function PRHistoryScreen() {
       }
       setError('');
 
-      // Step 1 — get the current user's session IDs and date map.
-      const { data: sessionRows, error: sessionsError } = await supabase
-        .from('workout_sessions')
-        .select('id, started_at')
-        .eq('user_id', user.id);
-
-      if (sessionsError) throw sessionsError;
-
-      const idDateMap: Record<string, string> = {};
-      for (const s of sessionRows ?? []) idDateMap[s.id] = s.started_at;
-      const sessionIds = Object.keys(idDateMap);
-
-      if (sessionIds.length === 0) {
-        setRecords([]);
-        return;
-      }
-
-      // Step 2 — fetch exercises + sets for those sessions.
-      // Guard to 500 IDs to stay within PostgREST URL limits (same as StatsScreen).
-      const { data: exerciseRows, error: prError } = await supabase
-        .from('session_exercises')
-        .select(
-          'session_id, exercises(name, exercise_muscle_groups(muscle_groups(name))), session_sets(weight_kg, is_pr)'
-        )
-        .in('session_id', sessionIds.slice(0, 500));
+      const { data: prRows, error: prError } = await supabase
+        .from('personal_records')
+        .select(`
+          id,
+          record_type,
+          value,
+          achieved_at,
+          exercises (
+            id,
+            name,
+            exercise_muscle_groups (
+              muscle_groups ( name ),
+              is_primary
+            )
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('achieved_at', { ascending: false });
 
       if (prError) throw prError;
 
-      // Flatten to one row per PR'd set, since is_pr/weight now live on session_sets.
-      const prRows: Array<{
-        exercise_name: string;
-        body_part: string;
-        weight: number;
-        session_id: string;
-      }> = [];
-      for (const ex of exerciseRows ?? []) {
-        const name = (ex as any).exercises?.name;
-        if (!name) continue;
-        const bodyPart =
-          (ex as any).exercises?.exercise_muscle_groups?.[0]?.muscle_groups?.name ?? '';
-        for (const s of (ex as any).session_sets ?? []) {
-          if (s.is_pr === true && s.weight_kg !== null && s.weight_kg > 0) {
-            prRows.push({
-              exercise_name: name,
-              body_part: bodyPart,
-              weight: s.weight_kg,
-              session_id: (ex as any).session_id,
-            });
-          }
+      // Group by exercise_id — one PRRecord card per exercise
+      const grouped: Record<
+        string,
+        {
+          exerciseName: string;
+          bodyPart: string;
+          maxWeight: number | null;
+          maxReps: number | null;
+          achievedAt: string;
         }
-      }
+      > = {};
 
-      // Step 3 — client-side grouping: keep the highest weight per
-      // (exercise_name, body_part) pair, tracking the date of that best row.
-      const bestMap: Record<string, { weight: number; bodyPart: string; date: string }> = {};
       for (const row of prRows ?? []) {
-        const key = `${row.exercise_name}||${row.body_part}`;
-        const rowDate = idDateMap[row.session_id] ?? '';
-        if (!bestMap[key] || row.weight > bestMap[key].weight) {
-          bestMap[key] = { weight: row.weight, bodyPart: row.body_part, date: rowDate };
+        const ex = (row as any).exercises;
+        if (!ex) continue;
+        const exId: string = ex.id;
+        const exerciseName: string = ex.name;
+
+        // Primary muscle group name ('' if exercise_muscle_groups not yet seeded)
+        const primaryMg = (ex.exercise_muscle_groups ?? []).find(
+          (mg: any) => mg.is_primary === true
+        );
+        const bodyPart: string = primaryMg?.muscle_groups?.name ?? '';
+
+        if (!grouped[exId]) {
+          grouped[exId] = {
+            exerciseName,
+            bodyPart,
+            maxWeight: null,
+            maxReps: null,
+            achievedAt: row.achieved_at,
+          };
         }
+
+        // Keep most recent achieved_at across both record types for this exercise
+        if (row.achieved_at > grouped[exId].achievedAt) {
+          grouped[exId].achievedAt = row.achieved_at;
+        }
+
+        if (row.record_type === 'max_weight') grouped[exId].maxWeight = row.value;
+        if (row.record_type === 'max_reps')   grouped[exId].maxReps   = row.value;
       }
 
-      const sorted: PRRecord[] = Object.entries(bestMap)
-        .map(([key, val]) => ({
-          exerciseName: key.split('||')[0],
-          bodyPart: val.bodyPart,
-          weight: val.weight,
-          date: val.date,
-        }))
-        .sort(
-          (a, b) =>
-            a.bodyPart.localeCompare(b.bodyPart) ||
-            a.exerciseName.localeCompare(b.exerciseName)
-        );
+      // Sort by achievedAt descending (most recent PR first)
+      const sorted: PRRecord[] = Object.values(grouped).sort(
+        (a, b) => b.achievedAt.localeCompare(a.achievedAt)
+      );
 
       setRecords(sorted);
     } catch (err: any) {
@@ -184,15 +178,24 @@ export function PRHistoryScreen() {
     <View style={styles.card}>
       <View style={styles.cardTop}>
         <Text style={styles.exerciseName}>{item.exerciseName}</Text>
-        <Text style={styles.dateText}>{formatDate(item.date)}</Text>
+        <Text style={styles.dateText}>{formatDate(item.achievedAt)}</Text>
       </View>
       <View style={styles.cardBottom}>
-        <View style={styles.bodyPartChip}>
-          <Text style={styles.bodyPartText}>{item.bodyPart}</Text>
-        </View>
-        <View style={styles.weightChip}>
-          <Text style={styles.weightText}>🏆 {item.weight} {weightUnit}</Text>
-        </View>
+        {item.bodyPart ? (
+          <View style={styles.bodyPartChip}>
+            <Text style={styles.bodyPartText}>{item.bodyPart}</Text>
+          </View>
+        ) : null}
+        {item.maxWeight !== null && (
+          <View style={styles.weightChip}>
+            <Text style={styles.weightText}>🏆 {item.maxWeight} {weightUnit}</Text>
+          </View>
+        )}
+        {item.maxReps !== null && (
+          <View style={styles.repsChip}>
+            <Text style={styles.repsText}>🔁 {item.maxReps} reps</Text>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -251,7 +254,7 @@ export function PRHistoryScreen() {
       <FlatList
         data={records}
         renderItem={renderItem}
-        keyExtractor={(item) => `${item.exerciseName}||${item.bodyPart}`}
+        keyExtractor={(item) => item.exerciseName}
         contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl
@@ -333,6 +336,19 @@ const styles = StyleSheet.create({
   weightText: {
     fontSize: 12,
     color: '#92400e',
+    fontWeight: '700',
+  },
+  repsChip: {
+    backgroundColor: '#f0fdf4',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
+  },
+  repsText: {
+    fontSize: 12,
+    color: '#166534',
     fontWeight: '700',
   },
 
