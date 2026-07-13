@@ -1,0 +1,100 @@
+I need you to upgrade PRHistoryScreen.tsx to read from the 
+personal_records table directly instead of scanning session_sets.
+
+CONTEXT — Current behavior:
+PRHistoryScreen currently does a 2-step query:
+1. Gets all workout_sessions IDs for the user
+2. Queries session_exercises + session_sets looking for is_pr = true
+3. Groups results client-side to find best PR per exercise
+
+CONTEXT — New behavior:
+personal_records table now exists and is populated with one row 
+per user per exercise per record_type (max_weight, max_reps).
+It has a UNIQUE constraint on (user_id, exercise_id, record_type).
+It is the authoritative source for current PRs.
+
+NEW SCHEMA for personal_records:
+- id UUID
+- user_id UUID (FK → auth.users)
+- exercise_id UUID (FK → exercises)
+- record_type TEXT ('max_weight' or 'max_reps')
+- value NUMERIC
+- session_set_id UUID (FK → session_sets — the set that achieved it)
+- achieved_at TIMESTAMPTZ
+- created_at TIMESTAMPTZ
+
+exercises table:
+- id UUID
+- name TEXT
+- category_id UUID
+
+exercise_muscle_groups junction table:
+- exercise_id UUID
+- muscle_group_id UUID
+- is_primary BOOLEAN
+
+muscle_groups table:
+- id UUID
+- name TEXT
+
+WHAT TO CHANGE:
+Replace the current 2-step session scanning query with a single 
+clean query against personal_records:
+
+supabase
+  .from('personal_records')
+  .select(`
+    id,
+    record_type,
+    value,
+    achieved_at,
+    exercises (
+      id,
+      name,
+      exercise_muscle_groups (
+        muscle_groups ( name ),
+        is_primary
+      )
+    ),
+    session_sets (
+      reps,
+      weight_kg,
+      set_number
+    )
+  `)
+  .eq('user_id', user.id)
+  .order('achieved_at', { ascending: false })
+
+DISPLAY LOGIC:
+- Show both max_weight and max_reps PRs
+- Group by exercise name
+- For each exercise show:
+  - Exercise name
+  - Primary muscle group (from exercise_muscle_groups where is_primary = true)
+  - Max weight PR (value where record_type = 'max_weight')
+  - Max reps PR (value where record_type = 'max_reps')  
+  - Date achieved (achieved_at formatted)
+- Sort by achieved_at descending (most recent PR first)
+
+TYPESCRIPT INTERFACE — update PRRecord to:
+interface PRRecord {
+  exerciseName: string;
+  bodyPart: string;        // primary muscle group name
+  maxWeight: number | null; // null if no weight PR exists
+  maxReps: number | null;   // null if no reps PR exists
+  achievedAt: string;       // most recent of the two achieved_at dates
+}
+
+GROUPING LOGIC:
+Since personal_records has separate rows for max_weight and max_reps,
+group them client-side by exercise_id so each exercise shows ONE card
+with both its weight PR and reps PR displayed together.
+
+IMPORTANT RULES:
+- Remove ALL references to the old session scanning logic
+- Remove the old 2-step query (workout_sessions → session_exercises → session_sets)
+- Keep the same card UI/styling — only the data source changes
+- Keep handleRefresh, loading states, empty states unchanged
+- Run tsc --noEmit after changes — zero errors before applying
+- Show me the complete rewritten fetch function and updated 
+  PRRecord interface BEFORE applying any changes
