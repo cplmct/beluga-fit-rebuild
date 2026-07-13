@@ -1,0 +1,131 @@
+I need you to build a new ExerciseDetailScreen.tsx that shows 
+PR history over time for a specific exercise.
+
+CONTEXT:
+- personal_records table stores the CURRENT best PR per exercise per user
+- session_sets table stores ALL historical sets with weights/reps
+- To show PR history over time we need to query session_sets and 
+  find the progression of max weights over time for a specific exercise
+
+NAVIGATION:
+- This screen should be navigable from PRHistoryScreen
+- When a user taps an exercise card on PRHistoryScreen, 
+  navigate to ExerciseDetailScreen passing:
+  { exerciseId: string, exerciseName: string }
+- Add a touchable wrapper around each PR card in PRHistoryScreen 
+  to enable this navigation
+
+NEW FILE: src/components/ExerciseDetailScreen.tsx
+
+SCREEN SECTIONS:
+
+1. HEADER
+   - Exercise name (large title)
+   - Primary muscle group chip
+   - Back button (navigation.goBack())
+
+2. CURRENT PR CARD
+   - Reads from personal_records
+   - Shows current max weight PR with date achieved
+   - Shows current max reps PR with date achieved
+   - Styled prominently as the "best ever" card
+
+3. WEIGHT PROGRESSION CHART (simple visual)
+   - Shows last 10 sessions where this exercise was logged
+   - Each session shows: date + weight used + reps
+   - Simple list/timeline view (no complex chart library needed)
+   - Ordered by date ascending so you can see progression
+   - Query: session_sets → session_exercises → workout_sessions
+     filtered by exercise_id and user_id
+
+4. SESSION HISTORY LIST
+   - All sessions where this exercise was logged
+   - Each row shows:
+     - Date
+     - Sets x Reps @ Weight
+     - PR badge if any set has is_pr = true
+
+QUERIES NEEDED:
+
+Query 1 — Current PRs:
+supabase
+  .from('personal_records')
+  .select('record_type, value, achieved_at')
+  .eq('user_id', user.id)
+  .eq('exercise_id', exerciseId)
+
+Query 2 — Exercise muscle group:
+supabase
+  .from('exercise_muscle_groups')
+  .select('muscle_groups(name), is_primary')
+  .eq('exercise_id', exerciseId)
+  .eq('is_primary', true)
+  .maybeSingle()
+
+Query 3 — Session history:
+supabase
+  .from('session_exercises')
+  .select(`
+    id,
+    workout_sessions (
+      id,
+      started_at,
+      status
+    ),
+    session_sets (
+      set_number,
+      weight_kg,
+      reps,
+      is_completed,
+      is_pr
+    )
+  `)
+  .eq('exercise_id', exerciseId)
+  .eq('workout_sessions.user_id', user.id)
+  .eq('workout_sessions.status', 'completed')
+  .order('workout_sessions.started_at', { ascending: false })
+  .limit(20)
+
+TYPESCRIPT INTERFACES:
+
+interface CurrentPRs {
+  maxWeight: number | null;
+  maxWeightDate: string | null;
+  maxReps: number | null;
+  maxRepsDate: string | null;
+}
+
+interface SessionHistoryItem {
+  sessionId: string;
+  date: string;
+  sets: Array<{
+    setNumber: number;
+    weightKg: number | null;
+    reps: number | null;
+    isCompleted: boolean;
+    isPr: boolean;
+  }>;
+  hasPr: boolean;
+}
+
+STYLING:
+- Match the existing app style — same colors (#3b82f6 blue, #1f2937 dark text)
+- Current PR card: prominent gold/yellow accent (#f59e0b)
+- PR badge: same blue chip style as rest of app
+- Loading skeleton: same SkeletonBlock pattern used in other screens
+- Background: #f5f5f5
+
+NAVIGATION SETUP:
+After creating the screen also:
+1. Add ExerciseDetailScreen to the navigation stack in the app navigator
+2. Add navigation from PRHistoryScreen — wrap each PR card in TouchableOpacity
+   that calls: navigation.navigate('ExerciseDetail', { exerciseId, exerciseName })
+3. The exerciseId comes from the exercises table — you will need to fetch it 
+   when loading PRHistoryScreen OR pass it through personal_records join
+
+IMPORTANT:
+- Show me the complete ExerciseDetailScreen.tsx code first
+- Show me the PRHistoryScreen changes needed for navigation
+- Show me the navigator changes needed
+- Do NOT apply any changes until I approve all three
+- Run tsc --noEmit after applying — zero errors required
