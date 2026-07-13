@@ -13,6 +13,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useUnits } from '../contexts/UnitsContext';
 
 interface PRRecord {
+  exerciseId: string;
   exerciseName: string;
   bodyPart: string;        // primary muscle group name ('' if not seeded yet)
   maxWeight: number | null; // null if no weight PR exists for this exercise
@@ -65,7 +66,7 @@ function PRCardSkeleton() {
   );
 }
 
-export function PRHistoryScreen() {
+export function PRHistoryScreen({ navigation }: any) {
   const { user } = useAuth();
   const { weightUnit } = useUnits();
 
@@ -114,6 +115,7 @@ export function PRHistoryScreen() {
       const grouped: Record<
         string,
         {
+          exerciseId: string;
           exerciseName: string;
           bodyPart: string;
           maxWeight: number | null;
@@ -136,6 +138,7 @@ export function PRHistoryScreen() {
 
         if (!grouped[exId]) {
           grouped[exId] = {
+            exerciseId: exId,
             exerciseName,
             bodyPart,
             maxWeight: null,
@@ -175,29 +178,39 @@ export function PRHistoryScreen() {
   };
 
   const renderItem = ({ item }: { item: PRRecord }) => (
-    <View style={styles.card}>
-      <View style={styles.cardTop}>
-        <Text style={styles.exerciseName}>{item.exerciseName}</Text>
-        <Text style={styles.dateText}>{formatDate(item.achievedAt)}</Text>
+    <TouchableOpacity
+      activeOpacity={0.82}
+      onPress={() =>
+        navigation.navigate('ExerciseDetail', {
+          exerciseId: item.exerciseId,
+          exerciseName: item.exerciseName,
+        })
+      }
+    >
+      <View style={styles.card}>
+        <View style={styles.cardTop}>
+          <Text style={styles.exerciseName}>{item.exerciseName}</Text>
+          <Text style={styles.dateText}>{formatDate(item.achievedAt)}</Text>
+        </View>
+        <View style={styles.cardBottom}>
+          {item.bodyPart ? (
+            <View style={styles.bodyPartChip}>
+              <Text style={styles.bodyPartText}>{item.bodyPart}</Text>
+            </View>
+          ) : null}
+          {item.maxWeight !== null && (
+            <View style={styles.weightChip}>
+              <Text style={styles.weightText}>🏆 {item.maxWeight} {weightUnit}</Text>
+            </View>
+          )}
+          {item.maxReps !== null && (
+            <View style={styles.repsChip}>
+              <Text style={styles.repsText}>🔁 {item.maxReps} reps</Text>
+            </View>
+          )}
+        </View>
       </View>
-      <View style={styles.cardBottom}>
-        {item.bodyPart ? (
-          <View style={styles.bodyPartChip}>
-            <Text style={styles.bodyPartText}>{item.bodyPart}</Text>
-          </View>
-        ) : null}
-        {item.maxWeight !== null && (
-          <View style={styles.weightChip}>
-            <Text style={styles.weightText}>🏆 {item.maxWeight} {weightUnit}</Text>
-          </View>
-        )}
-        {item.maxReps !== null && (
-          <View style={styles.repsChip}>
-            <Text style={styles.repsText}>🔁 {item.maxReps} reps</Text>
-          </View>
-        )}
-      </View>
-    </View>
+    </TouchableOpacity>
   );
 
   if (loading) {

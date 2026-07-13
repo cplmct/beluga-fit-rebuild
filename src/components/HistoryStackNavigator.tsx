@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { HistoryScreen } from './HistoryScreen';
 import { WorkoutDetailsScreen } from './WorkoutDetailsScreen';
 import { PRHistoryScreen } from './PRHistoryScreen';
+import { ExerciseDetailScreen } from './ExerciseDetailScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -35,6 +36,11 @@ export function HistoryStackNavigator() {
         name="PRHistory"
         component={PRHistoryScreen}
         options={{ title: 'Personal Records' }}
+      />
+      <Stack.Screen
+        name="ExerciseDetail"
+        component={ExerciseDetailScreen}
+        options={({ route }: any) => ({ title: (route.params as any)?.exerciseName ?? 'Exercise' })}
       />
     </Stack.Navigator>
   );
