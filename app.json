@@ -53,6 +53,11 @@
       },
       "package": "com.belugafit.app",
       "permissions": ["INTERNET"],
+	  "splash": {
+		  "image": "./assets/splash.png",
+		  "resizeMode": "contain",
+		  "backgroundColor": "#091722"
+	  },
       "intentFilters": [
         {
           "action": "VIEW",
@@ -73,7 +78,8 @@
         {
           "backgroundColor": "#091722",
           "image": "./assets/splash.png",
-          "resizeMode": "contain"
+          "resizeMode": "contain",
+		  "imageWidth": 200
         }
       ],
       [
