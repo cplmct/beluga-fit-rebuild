@@ -49,15 +49,15 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#091722"
       },
       "package": "com.belugafit.app",
       "permissions": ["INTERNET"],
-	  "splash": {
-		  "image": "./assets/splash.png",
-		  "resizeMode": "cover",
-		  "backgroundColor": "#091722"
-	  },
+      "splash": {
+        "image": "./assets/splash.png",
+        "resizeMode": "cover",
+        "backgroundColor": "#091722"
+      },
       "intentFilters": [
         {
           "action": "VIEW",
@@ -79,7 +79,7 @@
           "backgroundColor": "#091722",
           "image": "./assets/splash.png",
           "resizeMode": "cover",
-		  "imageWidth": 400
+          "imageWidth": 400
         }
       ],
       [
