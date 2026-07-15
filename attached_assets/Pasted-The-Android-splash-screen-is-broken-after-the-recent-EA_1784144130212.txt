@@ -1,0 +1,50 @@
+The Android splash screen is broken after the recent EAS production build.
+
+SYMPTOMS:
+1. First phase: A zoomed-in version of the splash.png appears as a 
+   full-screen background (like it's being rendered at native resolution 
+   with no scaling)
+2. Second phase: A tiny version of the logo appears centered on screen 
+   with a black/dark box border around it — looks like a small rectangle 
+   floating on the background
+
+CURRENT app.json splash config:
+- Root splash: resizeMode "contain", backgroundColor "#091722"
+- Android splash: resizeMode "contain", backgroundColor "#091722" 
+- expo-splash-screen plugin: resizeMode "contain", imageWidth 400, 
+  backgroundColor "#091722"
+
+WHAT WAS WORKING BEFORE:
+The splash screen was working correctly in a previous build before the 
+recent database migration and dependency changes. The key changes that 
+happened since the last working build:
+- node_modules was deleted and reinstalled fresh
+- package-lock.json was deleted and regenerated
+- @expo/vector-icons was reinstalled (version changed)
+- Node version was bumped to 22 in eas.json
+- expo-splash-screen plugin config was modified in app.json
+
+WHAT I NEED YOU TO DO:
+
+1. Read the current app.json and check the splash configuration
+2. Read the current package.json and check what version of 
+   expo-splash-screen is installed
+3. Check node_modules/@expo/vector-icons/package.json for the version
+4. Check if there are any Android-specific splash drawable files that 
+   may be conflicting:
+   - android/app/src/main/res/drawable/splashscreen.xml
+   - android/app/src/main/res/drawable/splashscreen_logo.png
+   - android/app/src/main/res/values/colors.xml
+   Any hardcoded values here would override app.json config
+
+5. Check git log to find the last commit before splash was working 
+   vs what changed
+
+6. Check if expo-splash-screen generates its own Android native files 
+   during prebuild — if the android/ folder has stale generated files 
+   from a previous build, they may be conflicting with the new config
+
+7. Recommend the exact fix needed
+
+IMPORTANT: Do NOT make any changes yet. Just diagnose and report 
+what you find. Show me the full diagnosis before touching anything.
