@@ -1,0 +1,65 @@
+There is a critical bug in the workout saving flow. When a user 
+completes a workout with multiple exercises, only the exercises 
+that achieved a new PR are being saved/displayed. Non-PR exercises 
+are being silently dropped.
+
+SYMPTOMS:
+- User completed a workout with 5 exercises
+- After saving, History screen only shows 1 exercise
+- The 1 exercise shown was the one with a new PR
+- The other 4 exercises were not saved or not showing
+
+THIS STARTED AFTER: A database schema migration that changed the 
+workout saving flow from old tables (workouts, workout_exercises) 
+to new tables (workout_sessions, session_exercises, session_sets)
+
+WHAT I NEED YOU TO DO:
+
+1. Read the current WorkoutChecklistScreen.tsx doSaveWorkout function 
+   in full — specifically the section that:
+   a) Looks up exercise IDs from the exercises master table
+   b) Filters validExercises
+   c) Inserts session_exercises rows
+   d) Inserts session_sets rows
+
+2. Read WorkoutDetailsScreen.tsx — the query that fetches exercises 
+   for a completed workout session
+
+3. Read HistoryScreen.tsx — the query that fetches workout history 
+   and exercise counts
+
+4. Identify the bug — likely one of these:
+   a) The nameToExId lookup is failing for exercises whose names 
+      don't match exactly (case mismatch) between the static 
+      exercises.ts data and the exercises table in Supabase
+   b) The validExercises filter is incorrectly dropping exercises 
+      that don't have weights
+   c) The session_exercises insert is only inserting PR exercises
+   d) The WorkoutDetailsScreen query has a filter that only shows 
+      PR exercises
+   e) The exercises master table is missing exercises by name 
+      (case sensitivity issue — static data uses "Bench Press" 
+      capitalized, database has "bench press" lowercase)
+
+5. CRITICAL — Check the nameToExId lookup in doSaveWorkout:
+   The static exercises.ts file uses Title Case names 
+   (e.g. "Bench Press", "Squat", "Deadlift")
+   The exercises table in Supabase was seeded with lowercase names 
+   (e.g. "bench press", "squat", "deadlift")
+   The lookup uses: .in('name', allExerciseNames)
+   This is case-sensitive — "Bench Press" will NOT find "bench press"
+   
+   This is almost certainly the root cause. Only exercises that 
+   happened to achieve a PR would have their names looked up in a 
+   separate query (the PR detection loop) which may also handle 
+   the case mismatch differently.
+
+6. Provide the complete fix — do NOT apply yet, show me the fix 
+   first for review
+
+Show me your findings in order:
+- Root cause identified
+- Which file(s) need to change
+- What the fix is
+- Any Supabase data fixes needed (e.g. updating exercise names 
+  to Title Case in the database)
