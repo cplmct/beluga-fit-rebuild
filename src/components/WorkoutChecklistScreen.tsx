@@ -313,7 +313,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
         (ex: ExerciseSelection) => ex.weight !== null && ex.weight !== ''
       );
       const exerciseNamesForPr = [
-        ...new Set(exercisesWithWeights.map((ex: ExerciseSelection) => ex.name.toLowerCase())),
+        ...new Set(exercisesWithWeights.map((ex: ExerciseSelection) => ex.name)),
       ];
 
       let maxWeightMap: Record<string, number> = {};
@@ -360,7 +360,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
       }
 
       // Look up exercise IDs for all exercises in this workout
-      const allExerciseNames = exercises.map((ex: ExerciseSelection) => ex.name.toLowerCase());
+      const allExerciseNames = exercises.map((ex: ExerciseSelection) => ex.name);
       const { data: allExerciseRows } = await supabase
         .from('exercises')
         .select('id, name')
@@ -368,7 +368,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
 
       const nameToExId: Record<string, string> = {};
       for (const row of allExerciseRows || []) {
-        nameToExId[row.name.toLowerCase()] = row.id;
+        nameToExId[row.name] = row.id;
       }
 
       // ── (A) Fetch current personal_records for all exercises in this workout ──
@@ -413,7 +413,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
       // Build session_exercises rows — skip exercises not in master table
       const validExercises: { exercise: ExerciseSelection; originalIndex: number }[] = [];
       exercises.forEach((exercise: ExerciseSelection, idx: number) => {
-        if (nameToExId[exercise.name.toLowerCase()]) {
+        if (nameToExId[exercise.name]) {
           validExercises.push({ exercise, originalIndex: idx });
         } else if (__DEV__) {
           console.warn(
@@ -425,7 +425,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
       if (validExercises.length > 0) {
         const sessionExerciseRows = validExercises.map(({ exercise, originalIndex }) => ({
           session_id: session.id,
-          exercise_id: nameToExId[exercise.name.toLowerCase()],
+          exercise_id: nameToExId[exercise.name],
           order_index: originalIndex,
         }));
 
@@ -447,7 +447,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
             exercise.weight !== null && exercise.weight !== ''
               ? parseFloat(exercise.weight as string)
               : null;
-          const prevMax = maxWeightMap[exercise.name.toLowerCase()] || 0;
+          const prevMax = maxWeightMap[exercise.name] || 0;
           const isPr = weight !== null && weight > 0 && weight > prevMax;
 
           for (let setNum = 1; setNum <= exercise.sets; setNum++) {
@@ -486,7 +486,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
             const match = validExercises.find((ve) => ve.originalIndex === insertedEx.order_index);
             if (!match) continue;
             const { exercise } = match;
-            const exId = nameToExId[exercise.name.toLowerCase()];
+            const exId = nameToExId[exercise.name];
             if (!exId) continue;
 
             const weight =
@@ -546,7 +546,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
                 exercise.weight !== null && exercise.weight !== ''
                   ? parseFloat(exercise.weight as string)
                   : null;
-              const prevMax = maxWeightMap[exercise.name.toLowerCase()] || 0;
+              const prevMax = maxWeightMap[exercise.name] || 0;
               return (
                 weight !== null &&
                 weight > 0 &&

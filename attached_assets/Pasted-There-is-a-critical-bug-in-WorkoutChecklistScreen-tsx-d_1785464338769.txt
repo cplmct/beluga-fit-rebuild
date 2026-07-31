@@ -1,0 +1,51 @@
+There is a critical bug in WorkoutChecklistScreen.tsx doSaveWorkout.
+
+The exercises table was recently updated so all names are now Title Case
+(e.g. "Squat", "Deadlift", "Bench Press") matching the static exercises.ts data.
+
+THE BUG:
+On line 363, allExerciseNames is built with .toLowerCase():
+  const allExerciseNames = exercises.map((ex) => ex.name.toLowerCase());
+
+This produces lowercase names like ["squat", "deadlift"].
+
+On line 367, these lowercase names are used in a case-sensitive .in() query:
+  .in('name', allExerciseNames)
+
+Since the DB now has "Squat" not "squat", the query returns 0 rows.
+nameToExId is empty. All exercises are silently dropped. Nothing saves.
+
+THE FIX — two changes only:
+
+Change 1 — Line 363: Use original names (NOT lowercased) for the DB query
+BEFORE:
+  const allExerciseNames = exercises.map((ex: ExerciseSelection) => ex.name.toLowerCase());
+AFTER:
+  const allExerciseNames = exercises.map((ex: ExerciseSelection) => ex.name);
+
+Change 2 — Line 371: Use original name (NOT lowercased) as the key
+BEFORE:
+  nameToExId[row.name.toLowerCase()] = row.id;
+AFTER:
+  nameToExId[row.name] = row.id;
+
+All other toLowerCase() calls on exercise.name.toLowerCase() must also 
+be reverted to exercise.name since the DB names now exactly match 
+the static data names.
+
+Specifically revert these lines back to using exercise.name (no toLowerCase):
+- Line 316: exerciseNamesForPr — revert to ex.name
+- Line 371: nameToExId key — revert to row.name  
+- Line 416: validExercises filter — revert to exercise.name
+- Line 428: exercise_id lookup — revert to exercise.name
+- Line 450: prevMax lookup — revert to exercise.name
+- Line 489: exId lookup — revert to exercise.name
+- Line 549: prevMax in PR alert — revert to exercise.name
+
+Keep the maxWeightMap toLowerCase() calls on lines 353-354 since those 
+use DB-returned names which are already correct.
+
+After applying:
+1. Run tsc --noEmit — zero errors required
+2. Show me the exact lines changed before I commit
+3. Do NOT commit — I will handle git myself
