@@ -15,6 +15,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 interface ActiveUserChallenge {
   id: string;
+  challenge_id: string;
   current_progress: number;
   target_value: number;
   ends_at: string;
@@ -145,7 +146,7 @@ export function ChallengesScreen({ navigation }: any) {
         // Query 1 — user's active challenges (not yet expired)
         supabase
           .from('user_challenges')
-          .select('id, current_progress, target_value, ends_at, challenges(title, icon, challenge_type, difficulty)')
+          .select('id, challenge_id, current_progress, target_value, ends_at, challenges(title, icon, challenge_type, difficulty)')
           .eq('user_id', user.id)
           .eq('status', 'active')
           .gt('ends_at', new Date().toISOString())
@@ -251,7 +252,7 @@ export function ChallengesScreen({ navigation }: any) {
               style={styles.activeCard}
               onPress={() =>
                 navigation.navigate('ChallengeDetail', {
-                  challengeId: uc.id,
+                  challengeId: uc.challenge_id,
                   challengeTitle: ch.title,
                 })
               }
