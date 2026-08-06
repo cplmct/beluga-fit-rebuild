@@ -1,0 +1,72 @@
+I need you to update src/data/exercises.ts to add 24 new 
+calisthenics exercises to the existing exercise library.
+
+CRITICAL RULES:
+- Exercise names must be EXACTLY Title Case matching what was 
+  already inserted into the Supabase exercises table
+- Do NOT rename or alter any existing exercises
+- Add new exercises to the correct existing body part sections
+- Keep the same data structure: { name, category, equipment }
+
+EXACT NAMES ALREADY IN DATABASE (must match exactly):
+'Pike Push-ups', 'Archer Push-ups', 'Diamond Push-ups',
+'Pseudo Planche Push-ups', 'Typewriter Pull-ups', 'Australian Pull-ups',
+'Muscle-ups', 'Pistol Squat', 'Jump Squat', 'Box Jumps',
+'Broad Jumps', 'Nordic Curl', 'L-Sit', 'Dragon Flag',
+'Hollow Body Hold', 'Superman Hold', 'Handstand Push-ups',
+'Wall Walk', 'Bear Crawl', 'Inchworm', 'Burpee Pull-up',
+'Tuck Jump', 'Lateral Bound', 'Step-ups'
+
+ADD THESE TO EACH BODY PART SECTION:
+
+Chest section — add:
+{ name: 'Pike Push-ups', category: 'Strength', equipment: 'Bodyweight' },
+{ name: 'Archer Push-ups', category: 'Strength', equipment: 'Bodyweight' },
+{ name: 'Diamond Push-ups', category: 'Strength', equipment: 'Bodyweight' },
+{ name: 'Pseudo Planche Push-ups', category: 'Strength', equipment: 'Bodyweight' },
+{ name: 'Muscle-ups', category: 'Strength', equipment: 'Bodyweight' },
+
+Back section — add:
+{ name: 'Typewriter Pull-ups', category: 'Strength', equipment: 'Bodyweight' },
+{ name: 'Australian Pull-ups', category: 'Strength', equipment: 'Bodyweight' },
+{ name: 'Muscle-ups', category: 'Strength', equipment: 'Bodyweight' },
+
+Shoulders section — add:
+{ name: 'Handstand Push-ups', category: 'Strength', equipment: 'Bodyweight' },
+{ name: 'Wall Walk', category: 'Strength', equipment: 'Bodyweight' },
+{ name: 'Pike Push-ups', category: 'Strength', equipment: 'Bodyweight' },
+
+Arms section — add:
+{ name: 'Diamond Push-ups', category: 'Strength', equipment: 'Bodyweight' },
+
+Legs section — add:
+{ name: 'Pistol Squat', category: 'Strength', equipment: 'Bodyweight' },
+{ name: 'Jump Squat', category: 'Strength', equipment: 'Bodyweight' },
+{ name: 'Box Jumps', category: 'Strength', equipment: 'Bodyweight' },
+{ name: 'Broad Jumps', category: 'Strength', equipment: 'Bodyweight' },
+{ name: 'Nordic Curl', category: 'Strength', equipment: 'Bodyweight' },
+{ name: 'Step-ups', category: 'Strength', equipment: 'Bodyweight' },
+{ name: 'Tuck Jump', category: 'Strength', equipment: 'Bodyweight' },
+{ name: 'Lateral Bound', category: 'Strength', equipment: 'Bodyweight' },
+
+Core section — add:
+{ name: 'L-Sit', category: 'Strength', equipment: 'Bodyweight' },
+{ name: 'Dragon Flag', category: 'Strength', equipment: 'Bodyweight' },
+{ name: 'Hollow Body Hold', category: 'Strength', equipment: 'Bodyweight' },
+{ name: 'Superman Hold', category: 'Strength', equipment: 'Bodyweight' },
+{ name: 'Bear Crawl', category: 'Strength', equipment: 'Bodyweight' },
+{ name: 'Inchworm', category: 'Strength', equipment: 'Bodyweight' },
+{ name: 'Burpee Pull-up', category: 'Cardio', equipment: 'Bodyweight' },
+{ name: 'Wall Walk', category: 'Strength', equipment: 'Bodyweight' },
+
+NOTE: Some exercises appear in multiple body part sections 
+(e.g. Pike Push-ups in both Chest and Shoulders, 
+Muscle-ups in both Chest and Back) — this is intentional 
+and matches the existing pattern in the file.
+
+AFTER MAKING CHANGES:
+1. Run tsc --noEmit — zero errors required
+2. Show me a count of exercises per body part section 
+   before and after to confirm additions
+3. Show me the exact lines added — do not apply until I confirm
+4. Do NOT commit — I will handle git myself
