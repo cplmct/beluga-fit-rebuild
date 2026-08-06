@@ -4,6 +4,8 @@ import { HomeScreen } from './HomeScreen';
 import { BodyTrackerScreen } from './BodyTrackerScreen';
 import { StatsScreen } from './StatsScreen';
 import { ChangePasswordScreen } from './ChangePasswordScreen';
+import { ChallengesScreen } from './ChallengesScreen';
+import { ChallengeDetailScreen } from './ChallengeDetailScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -44,6 +46,19 @@ export function HomeStackNavigator() {
         name="ChangePassword"
         component={ChangePasswordScreen}
         options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="Challenges"
+        component={ChallengesScreen}
+        options={{ title: 'Challenges', ...lightHeaderOptions }}
+      />
+      <Stack.Screen
+        name="ChallengeDetail"
+        component={ChallengeDetailScreen}
+        options={({ route }: any) => ({
+          title: (route.params as any)?.challengeTitle ?? 'Challenge',
+          ...lightHeaderOptions,
+        })}
       />
     </Stack.Navigator>
   );
