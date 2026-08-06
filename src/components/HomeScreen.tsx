@@ -24,6 +24,19 @@ interface TodayWorkout {
   exerciseCount: number;
 }
 
+interface ActiveChallengePreview {
+  id: string;
+  challenge_id: string;
+  current_progress: number;
+  target_value: number;
+  ends_at: string;
+  challenges: {
+    title: string;
+    icon: string;
+    challenge_type: string;
+  };
+}
+
 interface DashboardData {
   profileName: string;
   todayWorkout: TodayWorkout | null;
@@ -33,6 +46,7 @@ interface DashboardData {
   last7Days: boolean[];
   lastWorkoutDate: string | null;
   latestWeight: { value: number | null; date: string } | null;
+  activeChallenges: ActiveChallengePreview[];
 }
 
 function getGreeting(): string {
@@ -240,6 +254,12 @@ function HomeSkeleton() {
         <View style={{ height: 10 }} />
         <SkeletonBlock width="100%" height={96} radius={14} />
       </View>
+      {/* Challenges card */}
+      <View style={styles.section}>
+        <SkeletonBlock width={100} height={11} radius={4} />
+        <View style={{ height: 10 }} />
+        <SkeletonBlock width="100%" height={72} radius={14} />
+      </View>
       {/* Body card */}
       <View style={styles.section}>
         <SkeletonBlock width={44} height={11} radius={4} />
@@ -268,6 +288,7 @@ export function HomeScreen({ navigation }: any) {
     last7Days: Array(7).fill(false),
     lastWorkoutDate: null,
     latestWeight: null,
+    activeChallenges: [],
   });
   const [activePlan, setActivePlanState] = useState<ActivePlanState | null>(null);
   const [loading, setLoading] = useState(true);
@@ -300,7 +321,7 @@ export function HomeScreen({ navigation }: any) {
       const ninetyDaysAgo = new Date();
       ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
-      const [profileRes, sessionsRes, weightRes, ap, goalResult] = await Promise.all([
+      const [profileRes, sessionsRes, weightRes, ap, goalResult, challengesRes] = await Promise.all([
         supabase.from('profiles').select('name').eq('id', user!.id).maybeSingle(),
         supabase
           .from('workout_sessions')
@@ -318,6 +339,14 @@ export function HomeScreen({ navigation }: any) {
           .maybeSingle(),
         getActivePlan(user!.id),
         getWeeklyGoal(),
+        supabase
+          .from('user_challenges')
+          .select('id, challenge_id, current_progress, target_value, ends_at, challenges(title, icon, challenge_type)')
+          .eq('user_id', user!.id)
+          .eq('status', 'active')
+          .gt('ends_at', new Date().toISOString())
+          .order('ends_at', { ascending: true })
+          .limit(2),
       ]);
 
       // Discard results if the screen blurred or a newer load started
@@ -377,6 +406,7 @@ export function HomeScreen({ navigation }: any) {
         latestWeight: weightRes.data
           ? { value: weightRes.data.weight, date: weightRes.data.created_at }
           : null,
+        activeChallenges: (challengesRes.data || []) as unknown as ActiveChallengePreview[],
       });
     } catch (err) {
       if (loadGenRef.current !== gen) return;
@@ -631,6 +661,85 @@ export function HomeScreen({ navigation }: any) {
             </View>
             <Text style={styles.noPlanArrow}>›</Text>
           </TouchableOpacity>
+        )}
+      </View>
+
+      {/* ── Challenges ── */}
+      <View style={styles.section}>
+        <View style={styles.sectionRow}>
+          <Text style={styles.sectionLabel}>CHALLENGES</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Challenges')}>
+            <Text style={styles.sectionLink}>View all</Text>
+          </TouchableOpacity>
+        </View>
+
+        {data.activeChallenges.length === 0 ? (
+          <View style={styles.challengesEmptyCard}>
+            <Text style={styles.challengesEmptyTitle}>No active challenges</Text>
+            <Text style={styles.challengesEmptySub}>Start one to track your progress</Text>
+            <TouchableOpacity
+              style={styles.challengesBrowseBtn}
+              onPress={() => navigation.navigate('Challenges')}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.challengesBrowseBtnText}>Browse Challenges</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <>
+            {data.activeChallenges.map((uc) => {
+              const ch = uc.challenges;
+              const progress =
+                uc.target_value > 0
+                  ? Math.min(uc.current_progress / uc.target_value, 1)
+                  : 0;
+              const days = Math.max(
+                0,
+                Math.ceil((new Date(uc.ends_at).getTime() - Date.now()) / 86400000)
+              );
+              return (
+                <TouchableOpacity
+                  key={uc.id}
+                  style={styles.challengeCard}
+                  onPress={() =>
+                    navigation.navigate('ChallengeDetail', {
+                      challengeId: uc.challenge_id,
+                      challengeTitle: ch.title,
+                    })
+                  }
+                  activeOpacity={0.82}
+                >
+                  <View style={styles.challengeCardAccent} />
+                  <View style={styles.challengeCardBody}>
+                    <View style={styles.challengeCardTop}>
+                      <Text style={styles.challengeCardIcon}>{ch.icon}</Text>
+                      <Text style={styles.challengeCardTitle} numberOfLines={1}>
+                        {ch.title}
+                      </Text>
+                      <Text style={styles.challengeCardDays}>
+                        {days === 0 ? 'Last day' : `${days}d left`}
+                      </Text>
+                    </View>
+                    <View style={styles.challengeCardTrack}>
+                      <View
+                        style={[
+                          styles.challengeCardFill,
+                          { width: `${progress * 100}%` as any },
+                        ]}
+                      />
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+            <TouchableOpacity
+              style={styles.challengesViewAll}
+              onPress={() => navigation.navigate('Challenges')}
+              activeOpacity={0.82}
+            >
+              <Text style={styles.challengesViewAllText}>View All Challenges →</Text>
+            </TouchableOpacity>
+          </>
         )}
       </View>
 
@@ -1028,4 +1137,92 @@ const styles = StyleSheet.create({
     backgroundColor: '#f59e0b',
   },
   resumeBtnText: { fontSize: 13, fontWeight: '700', color: '#fff' },
+
+  // ── Challenges ──
+  challengeCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    flexDirection: 'row',
+    marginBottom: 10,
+    overflow: 'hidden',
+  },
+  challengeCardAccent: {
+    width: 3,
+    backgroundColor: '#3b82f6',
+    alignSelf: 'stretch',
+  },
+  challengeCardBody: { flex: 1, padding: 14 },
+  challengeCardTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 10,
+  },
+  challengeCardIcon: { fontSize: 18 },
+  challengeCardTitle: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0f172a',
+  },
+  challengeCardDays: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748b',
+  },
+  challengeCardTrack: {
+    height: 5,
+    backgroundColor: '#e5e7eb',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  challengeCardFill: {
+    height: 5,
+    backgroundColor: '#3b82f6',
+    borderRadius: 3,
+    minWidth: 3,
+  },
+  challengesViewAll: {
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  challengesViewAllText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#2563eb',
+  },
+  challengesEmptyCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    padding: 20,
+    alignItems: 'center',
+  },
+  challengesEmptyTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0f172a',
+    marginBottom: 4,
+  },
+  challengesEmptySub: {
+    fontSize: 13,
+    color: '#94a3b8',
+    marginBottom: 14,
+  },
+  challengesBrowseBtn: {
+    backgroundColor: '#eff6ff',
+    borderRadius: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: '#dbeafe',
+  },
+  challengesBrowseBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#2563eb',
+  },
 });
