@@ -535,6 +535,125 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
         }
       }
 
+      // ── (D) Update challenge progress after workout save ─────────────────────
+      try {
+        // D1 — Mark expired active challenges as failed
+        await supabase
+          .from('user_challenges')
+          .update({ status: 'failed' })
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .lt('ends_at', new Date().toISOString());
+
+        // D2 — Fetch remaining active challenges with their config
+        const { data: activeUCs } = await supabase
+          .from('user_challenges')
+          .select('id, started_at, ends_at, target_value, challenges(challenge_type, target_exercise_id)')
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .gt('ends_at', new Date().toISOString());
+
+        // D3 — Compute and write progress for each active challenge
+        for (const uc of activeUCs || []) {
+          const ch = (uc as any).challenges;
+          if (!ch) continue;
+          const type: string = ch.challenge_type;
+          const targetExId: string | null = ch.target_exercise_id ?? null;
+          let newProgress = 0;
+          let shouldComplete = false;
+
+          if (type === 'consistency' || type === 'streak') {
+            // Count completed sessions within the challenge window
+            const { count } = await supabase
+              .from('workout_sessions')
+              .select('id', { count: 'exact', head: true })
+              .eq('user_id', user.id)
+              .eq('status', 'completed')
+              .gte('started_at', uc.started_at)
+              .lte('started_at', uc.ends_at);
+            newProgress = count ?? 0;
+            shouldComplete = newProgress >= uc.target_value;
+
+          } else if (type === 'duration') {
+            // Sum total workout minutes within the challenge window
+            const { data: durationSessions } = await supabase
+              .from('workout_sessions')
+              .select('duration_seconds')
+              .eq('user_id', user.id)
+              .eq('status', 'completed')
+              .gte('started_at', uc.started_at)
+              .lte('started_at', uc.ends_at);
+            const totalSeconds = (durationSessions || []).reduce(
+              (sum: number, s: any) => sum + (s.duration_seconds ?? 0),
+              0
+            );
+            newProgress = Math.floor(totalSeconds / 60);
+            shouldComplete = newProgress >= uc.target_value;
+
+          } else if (type === 'volume' && targetExId) {
+            // 3-step: session IDs → session_exercise IDs → reps sum
+            const { data: windowSessions } = await supabase
+              .from('workout_sessions')
+              .select('id')
+              .eq('user_id', user.id)
+              .eq('status', 'completed')
+              .gte('started_at', uc.started_at)
+              .lte('started_at', uc.ends_at);
+            const windowIds = (windowSessions || []).map((s: any) => s.id);
+
+            if (windowIds.length > 0) {
+              const { data: seRows } = await supabase
+                .from('session_exercises')
+                .select('id')
+                .in('session_id', windowIds)
+                .eq('exercise_id', targetExId);
+              const seIds = (seRows || []).map((r: any) => r.id);
+
+              if (seIds.length > 0) {
+                const { data: setRows } = await supabase
+                  .from('session_sets')
+                  .select('reps')
+                  .in('session_exercise_id', seIds);
+                newProgress = (setRows || []).reduce(
+                  (sum: number, r: any) => sum + (r.reps ?? 0),
+                  0
+                );
+              }
+            }
+            shouldComplete = newProgress >= uc.target_value;
+
+          } else if (type === 'pr' && targetExId) {
+            // Check for a PR on the target exercise achieved within the challenge window
+            const { data: prRows } = await supabase
+              .from('personal_records')
+              .select('id')
+              .eq('user_id', user.id)
+              .eq('exercise_id', targetExId)
+              .gte('achieved_at', uc.started_at)
+              .limit(1);
+            if ((prRows || []).length > 0) {
+              newProgress = 1;
+              shouldComplete = true;
+            }
+          }
+
+          // Write updated progress (and completion if threshold crossed)
+          const updatePayload: Record<string, any> = { current_progress: newProgress };
+          if (shouldComplete) {
+            updatePayload.status = 'completed';
+            updatePayload.completed_at = new Date().toISOString();
+          }
+          await supabase
+            .from('user_challenges')
+            .update(updatePayload)
+            .eq('id', uc.id);
+        }
+      } catch (challengeErr) {
+        // Best-effort: challenge update failure must not fail the workout save
+        if (__DEV__) console.warn('[WorkoutChecklist] Challenge progress update failed:', challengeErr);
+      }
+      // ── END (D) ────────────────────────────────────────────────────────────────
+
       scheduleInactivityReminder(user.id);
 
       // Build PR names for alert — completed exercises only, deduplicated
