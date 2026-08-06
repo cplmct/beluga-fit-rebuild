@@ -1,0 +1,215 @@
+I need you to build a complete Challenge System for Beluga Fit.
+Read the project structure first before making any changes.
+
+CONTEXT:
+- React Native app, Expo SDK 53, TypeScript
+- Supabase backend with RLS active
+- New tables already created in Supabase: challenges, user_challenges
+- Challenges accessed via a card/button on HomeScreen
+- Challenges auto-fail when ends_at passes (handled via query filter)
+- User can also manually Abandon a challenge
+
+DATABASE SCHEMA ALREADY EXISTS:
+
+challenges table:
+  id, title, description, challenge_type, target_value,
+  target_exercise_id, duration_days, difficulty, icon,
+  is_active, created_at
+
+challenge_type values: 'consistency' | 'volume' | 'pr' | 'streak' | 'duration'
+
+user_challenges table:
+  id, user_id, challenge_id, status, started_at, ends_at,
+  completed_at, current_progress, target_value, created_at
+  UNIQUE constraint on (user_id, challenge_id)
+
+status values: 'active' | 'completed' | 'failed' | 'abandoned'
+
+---
+
+TASK 1 — Create ChallengesScreen.tsx
+src/components/ChallengesScreen.tsx
+
+This screen has two sections:
+
+Section 1 — MY ACTIVE CHALLENGES
+- Query: user_challenges WHERE user_id = auth.uid() AND status = 'active'
+  AND ends_at > now() (auto-filter expired)
+- JOIN challenges to get title, icon, challenge_type, difficulty
+- Show for each: icon, title, difficulty badge, progress bar 
+  (current_progress / target_value), days remaining (ends_at - now())
+- Tapping navigates to ChallengeDetailScreen
+
+Section 2 — AVAILABLE CHALLENGES  
+- Query: challenges WHERE is_active = true
+- Filter out challenges user already has in user_challenges 
+  (any status) so they cannot join the same challenge twice
+- Show for each: icon, title, description preview, 
+  difficulty badge, duration in days
+- Tapping navigates to ChallengeDetailScreen
+
+STYLING:
+- Background: #f5f5f5
+- Active challenge cards: white with blue left border accent (#3b82f6)
+- Available challenge cards: white, clean
+- Difficulty badges: 
+  beginner = green (#16a34a bg #f0fdf4)
+  intermediate = orange (#c2410c bg #fff7ed)  
+  advanced = red (#dc2626 bg #fef2f2)
+- Progress bar: blue (#3b82f6) on light grey (#e5e7eb) track
+- Same skeleton loading pattern as other screens
+
+---
+
+TASK 2 — Create ChallengeDetailScreen.tsx
+src/components/ChallengeDetailScreen.tsx
+
+Route params: { challengeId: string, challengeTitle: string }
+
+SECTIONS:
+1. Header — icon (large), title, difficulty badge, challenge_type label
+2. Description — full description text
+3. Progress card (only if user has joined):
+   - Large progress bar
+   - "X / Y completed" or "X / Y reps" or "X / Y days" 
+     depending on challenge_type
+   - Days remaining or EXPIRED/COMPLETED/FAILED badge
+4. Stats row: Duration, Type, Difficulty
+5. Action button:
+   - If NOT joined: "Join Challenge" button (blue)
+     → INSERT into user_challenges with:
+       started_at = now()
+       ends_at = now() + duration_days
+       target_value = challenge.target_value
+       status = 'active'
+       current_progress = 0
+   - If joined and active: "Abandon Challenge" button (red outline)
+     → UPDATE user_challenges SET status = 'abandoned'
+   - If completed: "Challenge Completed! 🎉" (green, disabled)
+   - If failed: "Challenge Failed" (grey, disabled) 
+     + "Try Again" button which creates a NEW user_challenges row
+   - If abandoned: "Rejoin Challenge" button (blue outline)
+     → Creates NEW user_challenges row (new attempt)
+
+---
+
+TASK 3 — Update HomeScreen.tsx
+Add a Challenges section between the streak card and the 
+body progress card.
+
+Add this query to the existing loadDashboard function:
+  supabase
+    .from('user_challenges')
+    .select('id, current_progress, target_value, ends_at, 
+             challenges(title, icon, challenge_type)')
+    .eq('user_id', user.id)
+    .eq('status', 'active')
+    .gt('ends_at', new Date().toISOString())
+    .order('ends_at', { ascending: true })
+    .limit(2)
+
+UI: Show max 2 active challenge cards as a horizontal preview.
+Each card shows: icon, title, compact progress bar, days left.
+Below the cards: "View All Challenges →" link that navigates 
+to ChallengesScreen.
+If no active challenges: show "No active challenges — 
+Start one!" with a "Browse Challenges" button.
+
+---
+
+TASK 4 — Update WorkoutChecklistScreen.tsx
+After the personal_records upsert in doSaveWorkout,
+add challenge progress update logic:
+
+After saving a workout, fetch the user's active challenges
+and update current_progress for each:
+
+For 'consistency' and 'streak' type:
+  Count workout_sessions WHERE user_id = user.id 
+  AND status = 'completed'
+  AND started_at >= uc.started_at 
+  AND started_at <= uc.ends_at
+  UPDATE user_challenges SET current_progress = count
+  If current_progress >= target_value: SET status = 'completed', 
+  completed_at = now()
+
+For 'volume' type:
+  Sum reps from session_sets WHERE exercise_id = challenge.target_exercise_id
+  JOIN through session_exercises → workout_sessions
+  WHERE started_at is within challenge period
+  UPDATE user_challenges SET current_progress = sum
+  If current_progress >= target_value: SET status = 'completed'
+
+For 'duration' type:
+  Sum duration_seconds / 60 from workout_sessions
+  within challenge period
+  UPDATE user_challenges SET current_progress = sum_minutes
+  If current_progress >= target_value: SET status = 'completed'
+
+For 'pr' type:
+  Check if personal_records has a record WHERE exercise_id = 
+  challenge.target_exercise_id AND achieved_at >= uc.started_at
+  If yes: SET status = 'completed', current_progress = 1
+
+Also mark expired challenges as failed:
+  UPDATE user_challenges SET status = 'failed'
+  WHERE user_id = user.id 
+  AND status = 'active' 
+  AND ends_at < now()
+
+---
+
+TASK 5 — Update Navigation
+Add ChallengesScreen and ChallengeDetailScreen to the 
+HomeStackNavigator (or whichever stack HomeScreen is in).
+
+Stack.Screen name="Challenges" component={ChallengesScreen}
+Stack.Screen name="ChallengeDetail" component={ChallengeDetailScreen}
+  options={({ route }) => ({ title: route.params.challengeTitle })}
+
+---
+
+TYPESCRIPT INTERFACES:
+
+interface Challenge {
+  id: string;
+  title: string;
+  description: string;
+  challenge_type: 'consistency' | 'volume' | 'pr' | 'streak' | 'duration';
+  target_value: number;
+  target_exercise_id: string | null;
+  duration_days: number;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  icon: string;
+  is_active: boolean;
+}
+
+interface UserChallenge {
+  id: string;
+  user_id: string;
+  challenge_id: string;
+  status: 'active' | 'completed' | 'failed' | 'abandoned';
+  started_at: string;
+  ends_at: string;
+  completed_at: string | null;
+  current_progress: number;
+  target_value: number;
+  challenges?: Challenge;
+}
+
+---
+
+EXECUTION ORDER:
+1. Create ChallengeDetailScreen.tsx
+2. Create ChallengesScreen.tsx  
+3. Update HomeStackNavigator (or correct navigator) to add both screens
+4. Update HomeScreen.tsx
+5. Update WorkoutChecklistScreen.tsx
+
+After EACH file:
+- Run tsc --noEmit — fix errors before moving to next file
+- Show me what changed
+- Do NOT commit — I will handle git myself
+
+Show me the plan for Task 1 (ChallengesScreen) first
+before applying any changes.
