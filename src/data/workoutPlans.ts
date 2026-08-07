@@ -4,7 +4,8 @@ export type PlanCategory =
   | 'strength'
   | 'general-fitness'
   | 'beginner'
-  | 'home';
+  | 'home'
+  | 'calisthenics';
 
 export interface PlanExercise {
   name: string;
@@ -44,6 +45,7 @@ export const PLAN_CATEGORIES: Record<
   'general-fitness':  { label: 'General Fitness',  color: '#059669', accent: '#f0fdf4' },
   'beginner':         { label: 'Beginner',         color: '#d97706', accent: '#fffbeb' },
   'home':             { label: 'Home Workout',     color: '#0891b2', accent: '#ecfeff' },
+  'calisthenics':     { label: 'Calisthenics',     color: '#0f766e', accent: '#f0fdfa' },
 };
 
 export const WORKOUT_PLANS: WorkoutPlan[] = [
@@ -747,6 +749,120 @@ export const WORKOUT_PLANS: WorkoutPlan[] = [
           { name: 'Plank', bodyPart: 'Core', sets: 4, reps: '45 sec', equipment: 'Bodyweight' },
           { name: 'High Knees', bodyPart: 'Legs', sets: 3, reps: '45 sec', equipment: 'Bodyweight' },
           { name: 'Burpees', bodyPart: 'Core', sets: 3, reps: '8', equipment: 'Bodyweight' },
+        ],
+      },
+    ],
+  },
+
+  // ─────────────────────────────────────────────────────────
+  // CALISTHENICS
+  // ─────────────────────────────────────────────────────────
+  {
+    id: 'calisthenics-foundation',
+    title: 'Calisthenics Foundation',
+    category: 'calisthenics',
+    difficulty: 'Beginner',
+    durationWeeks: 4,
+    workoutsPerWeek: 3,
+    equipmentLevel: 'No Equipment',
+    description:
+      'Build a solid foundation of bodyweight strength with this 4-week beginner program. Master the fundamental movement patterns — push, pull, squat, hinge, and core — using only your bodyweight. No equipment needed.',
+    days: [
+      {
+        label: 'Day 1',
+        title: 'Push & Core',
+        focus: 'Chest, Shoulders, Triceps, Core',
+        exercises: [
+          { name: 'Push-ups',        bodyPart: 'Chest',     sets: 3, reps: '10',     equipment: 'Bodyweight' },
+          { name: 'Pike Push-ups',   bodyPart: 'Shoulders', sets: 3, reps: '8',      equipment: 'Bodyweight' },
+          { name: 'Diamond Push-ups',bodyPart: 'Arms',      sets: 3, reps: '8',      equipment: 'Bodyweight' },
+          { name: 'Plank',           bodyPart: 'Core',      sets: 3, reps: '30 sec', equipment: 'Bodyweight' },
+          { name: 'Hollow Body Hold',bodyPart: 'Core',      sets: 3, reps: '20 sec', equipment: 'Bodyweight' },
+        ],
+      },
+      {
+        label: 'Day 2',
+        title: 'Pull & Legs',
+        focus: 'Back, Biceps, Legs, Glutes',
+        exercises: [
+          { name: 'Australian Pull-ups', bodyPart: 'Back', sets: 3, reps: '10', equipment: 'Bodyweight' },
+          { name: 'Chin-ups',  bodyPart: 'Back', sets: 3, reps: '5',  equipment: 'Bodyweight', notes: 'Use assistance if needed' },
+          { name: 'Squat',     bodyPart: 'Legs', sets: 3, reps: '15', equipment: 'Bodyweight' },
+          { name: 'Lunges',    bodyPart: 'Legs', sets: 3, reps: '10', equipment: 'Bodyweight', notes: 'Each leg' },
+          { name: 'Calf Raises', bodyPart: 'Legs', sets: 3, reps: '20', equipment: 'Bodyweight' },
+        ],
+      },
+      {
+        label: 'Day 3',
+        title: 'Full Body & Core',
+        focus: 'Full Body, Core',
+        exercises: [
+          { name: 'Push-ups',          bodyPart: 'Chest', sets: 3, reps: '12',     equipment: 'Bodyweight' },
+          { name: 'Squat',             bodyPart: 'Legs',  sets: 3, reps: '15',     equipment: 'Bodyweight' },
+          { name: 'Mountain Climbers', bodyPart: 'Core',  sets: 3, reps: '20',     equipment: 'Bodyweight' },
+          { name: 'Inchworm',          bodyPart: 'Core',  sets: 3, reps: '8',      equipment: 'Bodyweight' },
+          { name: 'Side Plank',        bodyPart: 'Core',  sets: 3, reps: '20 sec', equipment: 'Bodyweight', notes: 'Each side' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'calisthenics-mastery',
+    title: 'Calisthenics Mastery',
+    category: 'calisthenics',
+    difficulty: 'Intermediate',
+    durationWeeks: 6,
+    workoutsPerWeek: 4,
+    equipmentLevel: 'No Equipment',
+    description:
+      'Take your bodyweight training to the next level with this 6-week intermediate program. Progress toward advanced movements like pistol squats, archer push-ups, and L-sits while building impressive functional strength.',
+    days: [
+      {
+        label: 'Day 1',
+        title: 'Push Power',
+        focus: 'Chest, Shoulders, Triceps',
+        exercises: [
+          { name: 'Archer Push-ups',         bodyPart: 'Chest',     sets: 4, reps: '6',  equipment: 'Bodyweight', notes: 'Each side' },
+          { name: 'Pike Push-ups',           bodyPart: 'Shoulders', sets: 4, reps: '10', equipment: 'Bodyweight' },
+          { name: 'Diamond Push-ups',        bodyPart: 'Arms',      sets: 3, reps: '12', equipment: 'Bodyweight' },
+          { name: 'Pseudo Planche Push-ups', bodyPart: 'Chest',     sets: 3, reps: '8',  equipment: 'Bodyweight' },
+          { name: 'Wall Walk',               bodyPart: 'Shoulders', sets: 3, reps: '5',  equipment: 'Bodyweight' },
+        ],
+      },
+      {
+        label: 'Day 2',
+        title: 'Pull Strength',
+        focus: 'Back, Lats, Biceps',
+        exercises: [
+          { name: 'Pull-ups',           bodyPart: 'Back', sets: 4, reps: '8',  equipment: 'Bodyweight' },
+          { name: 'Typewriter Pull-ups',bodyPart: 'Back', sets: 3, reps: '4',  equipment: 'Bodyweight', notes: 'Each side' },
+          { name: 'Australian Pull-ups',bodyPart: 'Back', sets: 3, reps: '12', equipment: 'Bodyweight' },
+          { name: 'Chin-ups',           bodyPart: 'Back', sets: 3, reps: '8',  equipment: 'Bodyweight' },
+          { name: 'Hanging Leg Raises', bodyPart: 'Core', sets: 3, reps: '10', equipment: 'Bodyweight' },
+        ],
+      },
+      {
+        label: 'Day 3',
+        title: 'Legs & Power',
+        focus: 'Legs, Glutes, Plyometrics',
+        exercises: [
+          { name: 'Pistol Squat', bodyPart: 'Legs', sets: 4, reps: '5',  equipment: 'Bodyweight', notes: 'Each leg — use support if needed' },
+          { name: 'Jump Squat',   bodyPart: 'Legs', sets: 3, reps: '10', equipment: 'Bodyweight' },
+          { name: 'Box Jumps',    bodyPart: 'Legs', sets: 3, reps: '8',  equipment: 'Bodyweight' },
+          { name: 'Nordic Curl',  bodyPart: 'Legs', sets: 3, reps: '5',  equipment: 'Bodyweight', notes: 'Anchor feet under something heavy' },
+          { name: 'Broad Jumps',  bodyPart: 'Legs', sets: 3, reps: '6',  equipment: 'Bodyweight' },
+        ],
+      },
+      {
+        label: 'Day 4',
+        title: 'Core & Skill',
+        focus: 'Core, Full Body Skills',
+        exercises: [
+          { name: 'L-Sit',           bodyPart: 'Core', sets: 4, reps: '10 sec',   equipment: 'Bodyweight' },
+          { name: 'Dragon Flag',     bodyPart: 'Core', sets: 3, reps: '5',        equipment: 'Bodyweight' },
+          { name: 'Hollow Body Hold',bodyPart: 'Core', sets: 3, reps: '30 sec',   equipment: 'Bodyweight' },
+          { name: 'Bear Crawl',      bodyPart: 'Core', sets: 3, reps: '20 steps', equipment: 'Bodyweight' },
+          { name: 'Inchworm',        bodyPart: 'Core', sets: 3, reps: '10',       equipment: 'Bodyweight' },
         ],
       },
     ],

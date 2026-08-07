@@ -21,6 +21,7 @@ const FILTER_TABS: { key: 'all' | PlanCategory; label: string }[] = [
   { key: 'strength',        label: 'Strength' },
   { key: 'general-fitness', label: 'General Fitness' },
   { key: 'home',            label: 'Home' },
+  { key: 'calisthenics',    label: 'Calisthenics' },
 ];
 
 const DIFFICULTY_COLOR: Record<string, string> = {
