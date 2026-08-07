@@ -368,6 +368,12 @@ text
 
 ---
 
+# - 24 calisthenics exercises added
+# - Challenge system tables and screens
+# - 10 seeded challenges
+
+---
+
 ## Remaining Tasks
 | Priority | Task |
 |----------|------|
