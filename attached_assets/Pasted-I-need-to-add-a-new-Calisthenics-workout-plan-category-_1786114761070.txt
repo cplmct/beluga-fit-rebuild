@@ -1,0 +1,201 @@
+I need to add a new Calisthenics workout plan category and plan 
+to Beluga Fit. Read both files fully before making any changes.
+
+FILES TO MODIFY:
+1. src/data/workoutPlans.ts
+2. src/components/PlanLibraryScreen.tsx
+
+---
+
+CHANGE 1 — src/data/workoutPlans.ts
+
+A) Add 'calisthenics' to the PlanCategory type:
+BEFORE:
+export type PlanCategory =
+  | 'weight-loss'
+  | 'muscle-gain'
+  | 'strength'
+  | 'general-fitness'
+  | 'beginner'
+  | 'home';
+
+AFTER:
+export type PlanCategory =
+  | 'weight-loss'
+  | 'muscle-gain'
+  | 'strength'
+  | 'general-fitness'
+  | 'beginner'
+  | 'home'
+  | 'calisthenics';
+
+B) Add calisthenics to PLAN_CATEGORIES record:
+Add this entry to PLAN_CATEGORIES:
+'calisthenics': { label: 'Calisthenics', color: '#0f766e', accent: '#f0fdfa' },
+
+C) Add TWO new calisthenics workout plans at the end of 
+WORKOUT_PLANS array (before the closing bracket), 
+after the home-hiit plan:
+
+Plan 1 — Beginner Calisthenics Foundation (4 weeks, 3x/week):
+{
+  id: 'calisthenics-foundation',
+  title: 'Calisthenics Foundation',
+  category: 'calisthenics',
+  difficulty: 'Beginner',
+  durationWeeks: 4,
+  workoutsPerWeek: 3,
+  equipmentLevel: 'No Equipment',
+  description: 'Build a solid foundation of bodyweight strength with 
+    this 4-week beginner program. Master the fundamental movement 
+    patterns — push, pull, squat, hinge, and core — using only 
+    your bodyweight. No equipment needed.',
+  days: [
+    {
+      label: 'Day 1',
+      title: 'Push & Core',
+      focus: 'Chest, Shoulders, Triceps, Core',
+      exercises: [
+        { name: 'Push-ups', bodyPart: 'Chest', sets: 3, reps: '10', equipment: 'Bodyweight' },
+        { name: 'Pike Push-ups', bodyPart: 'Shoulders', sets: 3, reps: '8', equipment: 'Bodyweight' },
+        { name: 'Diamond Push-ups', bodyPart: 'Arms', sets: 3, reps: '8', equipment: 'Bodyweight' },
+        { name: 'Plank', bodyPart: 'Core', sets: 3, reps: '30 sec', equipment: 'Bodyweight' },
+        { name: 'Hollow Body Hold', bodyPart: 'Core', sets: 3, reps: '20 sec', equipment: 'Bodyweight' },
+      ],
+    },
+    {
+      label: 'Day 2',
+      title: 'Pull & Legs',
+      focus: 'Back, Biceps, Legs, Glutes',
+      exercises: [
+        { name: 'Australian Pull-ups', bodyPart: 'Back', sets: 3, reps: '10', equipment: 'Bodyweight' },
+        { name: 'Chin-ups', bodyPart: 'Back', sets: 3, reps: '5', equipment: 'Bodyweight', notes: 'Use assistance if needed' },
+        { name: 'Squat', bodyPart: 'Legs', sets: 3, reps: '15', equipment: 'Bodyweight' },
+        { name: 'Lunges', bodyPart: 'Legs', sets: 3, reps: '10', equipment: 'Bodyweight', notes: 'Each leg' },
+        { name: 'Calf Raises', bodyPart: 'Legs', sets: 3, reps: '20', equipment: 'Bodyweight' },
+      ],
+    },
+    {
+      label: 'Day 3',
+      title: 'Full Body & Core',
+      focus: 'Full Body, Core',
+      exercises: [
+        { name: 'Push-ups', bodyPart: 'Chest', sets: 3, reps: '12', equipment: 'Bodyweight' },
+        { name: 'Squat', bodyPart: 'Legs', sets: 3, reps: '15', equipment: 'Bodyweight' },
+        { name: 'Mountain Climbers', bodyPart: 'Core', sets: 3, reps: '20', equipment: 'Bodyweight' },
+        { name: 'Inchworm', bodyPart: 'Core', sets: 3, reps: '8', equipment: 'Bodyweight' },
+        { name: 'Side Plank', bodyPart: 'Core', sets: 3, reps: '20 sec', equipment: 'Bodyweight', notes: 'Each side' },
+      ],
+    },
+  ],
+},
+
+Plan 2 — Intermediate Calisthenics Mastery (6 weeks, 4x/week):
+{
+  id: 'calisthenics-mastery',
+  title: 'Calisthenics Mastery',
+  category: 'calisthenics',
+  difficulty: 'Intermediate',
+  durationWeeks: 6,
+  workoutsPerWeek: 4,
+  equipmentLevel: 'No Equipment',
+  description: 'Take your bodyweight training to the next level with 
+    this 6-week intermediate program. Progress toward advanced 
+    movements like pistol squats, archer push-ups, and L-sits 
+    while building impressive functional strength.',
+  days: [
+    {
+      label: 'Day 1',
+      title: 'Push Power',
+      focus: 'Chest, Shoulders, Triceps',
+      exercises: [
+        { name: 'Archer Push-ups', bodyPart: 'Chest', sets: 4, reps: '6', equipment: 'Bodyweight', notes: 'Each side' },
+        { name: 'Pike Push-ups', bodyPart: 'Shoulders', sets: 4, reps: '10', equipment: 'Bodyweight' },
+        { name: 'Diamond Push-ups', bodyPart: 'Arms', sets: 3, reps: '12', equipment: 'Bodyweight' },
+        { name: 'Pseudo Planche Push-ups', bodyPart: 'Chest', sets: 3, reps: '8', equipment: 'Bodyweight' },
+        { name: 'Wall Walk', bodyPart: 'Shoulders', sets: 3, reps: '5', equipment: 'Bodyweight' },
+      ],
+    },
+    {
+      label: 'Day 2',
+      title: 'Pull Strength',
+      focus: 'Back, Lats, Biceps',
+      exercises: [
+        { name: 'Pull-ups', bodyPart: 'Back', sets: 4, reps: '8', equipment: 'Bodyweight' },
+        { name: 'Typewriter Pull-ups', bodyPart: 'Back', sets: 3, reps: '4', equipment: 'Bodyweight', notes: 'Each side' },
+        { name: 'Australian Pull-ups', bodyPart: 'Back', sets: 3, reps: '12', equipment: 'Bodyweight' },
+        { name: 'Chin-ups', bodyPart: 'Back', sets: 3, reps: '8', equipment: 'Bodyweight' },
+        { name: 'Hanging Leg Raises', bodyPart: 'Core', sets: 3, reps: '10', equipment: 'Bodyweight' },
+      ],
+    },
+    {
+      label: 'Day 3',
+      title: 'Legs & Power',
+      focus: 'Legs, Glutes, Plyometrics',
+      exercises: [
+        { name: 'Pistol Squat', bodyPart: 'Legs', sets: 4, reps: '5', equipment: 'Bodyweight', notes: 'Each leg — use support if needed' },
+        { name: 'Jump Squat', bodyPart: 'Legs', sets: 3, reps: '10', equipment: 'Bodyweight' },
+        { name: 'Box Jumps', bodyPart: 'Legs', sets: 3, reps: '8', equipment: 'Bodyweight' },
+        { name: 'Nordic Curl', bodyPart: 'Legs', sets: 3, reps: '5', equipment: 'Bodyweight', notes: 'Anchor feet under something heavy' },
+        { name: 'Broad Jumps', bodyPart: 'Legs', sets: 3, reps: '6', equipment: 'Bodyweight' },
+      ],
+    },
+    {
+      label: 'Day 4',
+      title: 'Core & Skill',
+      focus: 'Core, Full Body Skills',
+      exercises: [
+        { name: 'L-Sit', bodyPart: 'Core', sets: 4, reps: '10 sec', equipment: 'Bodyweight' },
+        { name: 'Dragon Flag', bodyPart: 'Core', sets: 3, reps: '5', equipment: 'Bodyweight' },
+        { name: 'Hollow Body Hold', bodyPart: 'Core', sets: 3, reps: '30 sec', equipment: 'Bodyweight' },
+        { name: 'Bear Crawl', bodyPart: 'Core', sets: 3, reps: '20 steps', equipment: 'Bodyweight' },
+        { name: 'Inchworm', bodyPart: 'Core', sets: 3, reps: '10', equipment: 'Bodyweight' },
+      ],
+    },
+  ],
+},
+
+---
+
+CHANGE 2 — src/components/PlanLibraryScreen.tsx
+
+Add calisthenics to the FILTER_TABS array.
+Add it after the 'home' entry:
+
+BEFORE:
+const FILTER_TABS: { key: 'all' | PlanCategory; label: string }[] = [
+  { key: 'all',             label: 'All' },
+  { key: 'beginner',        label: 'Beginner' },
+  { key: 'weight-loss',     label: 'Weight Loss' },
+  { key: 'muscle-gain',     label: 'Muscle Gain' },
+  { key: 'strength',        label: 'Strength' },
+  { key: 'general-fitness', label: 'General Fitness' },
+  { key: 'home',            label: 'Home' },
+];
+
+AFTER:
+const FILTER_TABS: { key: 'all' | PlanCategory; label: string }[] = [
+  { key: 'all',             label: 'All' },
+  { key: 'beginner',        label: 'Beginner' },
+  { key: 'weight-loss',     label: 'Weight Loss' },
+  { key: 'muscle-gain',     label: 'Muscle Gain' },
+  { key: 'strength',        label: 'Strength' },
+  { key: 'general-fitness', label: 'General Fitness' },
+  { key: 'home',            label: 'Home' },
+  { key: 'calisthenics',    label: 'Calisthenics' },
+];
+
+---
+
+EXECUTION:
+1. Apply Change 1 to workoutPlans.ts (type + category + 2 plans)
+2. Apply Change 2 to PlanLibraryScreen.tsx (filter tab)
+3. Run tsc --noEmit on full project — zero errors required
+4. Show me what changed and line counts
+5. Do NOT commit — I will handle git myself
+
+Show me the plan for Change 1 before applying anything.
+All exercise names must exactly match what is in src/data/exercises.ts
+(Title Case — e.g. "Push-ups" not "push-ups", "Squat" not "squat").
+The exercises.ts file already contains all exercises used in these 
+plans — do not add any new exercises.
