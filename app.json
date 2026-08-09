@@ -132,12 +132,6 @@
       },
       "privacyPolicyUrl": "https://belugafit.tranbtc.com/privacy",
       "termsOfServiceUrl": "https://belugafit.tranbtc.com/terms-of-service"
-    },
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/322e2792-29c9-4977-ad75-f5e21def0be4"
     }
   }
 }
