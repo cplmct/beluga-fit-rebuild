@@ -177,7 +177,9 @@ export function BodyTrackerScreen() {
       minute: '2-digit',
     });
 
-  const prepareChartData = (field: 'weight' | 'waist') => {
+  const prepareChartData = (
+    field: 'weight' | 'waist' | 'left_arm' | 'hips' | 'left_thigh'
+  ) => {
     const filtered = measurements.filter((m) => m[field] !== null).reverse();
     if (filtered.length < 2) return null;
 
@@ -240,7 +242,10 @@ export function BodyTrackerScreen() {
   }
 
   const weightChartData = prepareChartData('weight');
-  const waistChartData = prepareChartData('waist');
+  const waistChartData  = prepareChartData('waist');
+  const armChartData    = prepareChartData('left_arm');
+  const hipsChartData   = prepareChartData('hips');
+  const thighChartData  = prepareChartData('left_thigh');
 
   return (
     <ScrollView
@@ -291,6 +296,51 @@ export function BodyTrackerScreen() {
             withOuterLines
             withVerticalLabels
             withHorizontalLabels
+          />
+        </View>
+      )}
+
+      {armChartData && (
+        <View style={styles.chartCard}>
+          <Text style={styles.chartTitle}>Arm Trend ({lengthUnit})</Text>
+          <LineChart
+            data={armChartData}
+            width={screenWidth - 40}
+            height={200}
+            chartConfig={chartConfig}
+            bezier
+            style={styles.chart}
+            withInnerLines={false}
+          />
+        </View>
+      )}
+
+      {hipsChartData && (
+        <View style={styles.chartCard}>
+          <Text style={styles.chartTitle}>Hips Trend ({lengthUnit})</Text>
+          <LineChart
+            data={hipsChartData}
+            width={screenWidth - 40}
+            height={200}
+            chartConfig={chartConfig}
+            bezier
+            style={styles.chart}
+            withInnerLines={false}
+          />
+        </View>
+      )}
+
+      {thighChartData && (
+        <View style={styles.chartCard}>
+          <Text style={styles.chartTitle}>Thigh Trend ({lengthUnit})</Text>
+          <LineChart
+            data={thighChartData}
+            width={screenWidth - 40}
+            height={200}
+            chartConfig={chartConfig}
+            bezier
+            style={styles.chart}
+            withInnerLines={false}
           />
         </View>
       )}

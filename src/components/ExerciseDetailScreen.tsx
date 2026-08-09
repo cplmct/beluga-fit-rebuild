@@ -5,7 +5,9 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Dimensions,
 } from 'react-native';
+import { LineChart } from 'react-native-chart-kit';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useUnits } from '../contexts/UnitsContext';
@@ -234,6 +236,38 @@ export function ExerciseDetailScreen({ route, navigation }: any) {
 
   const hasAnyPr = currentPRs.maxWeight !== null || currentPRs.maxReps !== null;
 
+  const screenWidth = Dimensions.get('window').width;
+  const chartConfig = {
+    backgroundColor: '#ffffff',
+    backgroundGradientFrom: '#ffffff',
+    backgroundGradientTo: '#ffffff',
+    decimalPlaces: 1,
+    color: (opacity = 1) => `rgba(37, 99, 235, ${opacity})`,
+    labelColor: (opacity = 1) => `rgba(100, 116, 139, ${opacity})`,
+    style: { borderRadius: 12 },
+    propsForDots: { r: '4', strokeWidth: '2', stroke: '#2563eb' },
+  };
+
+  // Newest-first → filter to weighted sessions → take 10 most recent → reverse to oldest-first
+  const weightChartPoints = sessionHistory
+    .filter((item) => item.sets[0]?.weightKg != null)
+    .slice(0, 10)
+    .reverse();
+
+  const weightChartData =
+    weightChartPoints.length >= 2
+      ? {
+          labels: weightChartPoints.map((item) => formatShortDate(item.date)),
+          datasets: [
+            {
+              data: weightChartPoints.map((item) => item.sets[0].weightKg as number),
+              color: (opacity = 1) => `rgba(37, 99, 235, ${opacity})`,
+              strokeWidth: 2,
+            },
+          ],
+        }
+      : null;
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -292,6 +326,22 @@ export function ExerciseDetailScreen({ route, navigation }: any) {
         {sessionHistory.length > 0 && (
           <>
             <Text style={styles.sectionLabel}>Weight Progression</Text>
+            {weightChartData && (
+              <View style={styles.chartCard}>
+                <Text style={styles.chartTitle}>
+                  Weight (last {weightChartPoints.length} sessions)
+                </Text>
+                <LineChart
+                  data={weightChartData}
+                  width={screenWidth - 40}
+                  height={200}
+                  chartConfig={chartConfig}
+                  bezier
+                  style={{ borderRadius: 10 }}
+                  withInnerLines={false}
+                />
+              </View>
+            )}
             <View style={styles.progressionCard}>
               {[...sessionHistory]
                 .slice(0, 10)
@@ -465,6 +515,23 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     flexShrink: 0,
     textAlign: 'right',
+  },
+
+  // ── Weight chart ──
+  chartCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    padding: 12,
+    marginBottom: 16,
+    overflow: 'hidden',
+  },
+  chartTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748b',
+    marginBottom: 8,
   },
 
   // ── Progression ──
