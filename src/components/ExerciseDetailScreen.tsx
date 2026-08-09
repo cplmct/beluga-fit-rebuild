@@ -250,7 +250,9 @@ export function ExerciseDetailScreen({ route, navigation }: any) {
 
   // Newest-first → filter to weighted sessions → take 10 most recent → reverse to oldest-first
   const weightChartPoints = sessionHistory
-    .filter((item) => item.sets[0]?.weightKg != null)
+    .filter((item) =>
+      item.sets.length > 0 && item.sets[0]?.weightKg != null
+    )
     .slice(0, 10)
     .reverse();
 
@@ -260,7 +262,7 @@ export function ExerciseDetailScreen({ route, navigation }: any) {
           labels: weightChartPoints.map((item) => formatShortDate(item.date)),
           datasets: [
             {
-              data: weightChartPoints.map((item) => item.sets[0].weightKg as number),
+              data: weightChartPoints.map((item) => item.sets[0]?.weightKg ?? 0),
               color: (opacity = 1) => `rgba(37, 99, 235, ${opacity})`,
               strokeWidth: 2,
             },
