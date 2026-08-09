@@ -39,7 +39,7 @@ function AppContent() {
   useEffect(() => {
     if (!loading) {
       const elapsed = Date.now() - launchStartRef.current;
-      const remaining = Math.max(0, 1500 - elapsed);
+      const remaining = Math.max(0, 3500 - elapsed);
       const timer = setTimeout(() => setLaunchShouldFade(true), remaining);
       return () => clearTimeout(timer);
     }

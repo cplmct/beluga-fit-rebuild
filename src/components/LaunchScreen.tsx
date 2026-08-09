@@ -71,7 +71,7 @@ export function LaunchScreen({ shouldFade, onDismissed }: LaunchScreenProps) {
         duration: 400,
         useNativeDriver: true,
       }).start();
-    }, 600);
+    }, 800);
     return () => clearTimeout(timer);
   }, []);
 
@@ -81,7 +81,7 @@ export function LaunchScreen({ shouldFade, onDismissed }: LaunchScreenProps) {
       pointerEvents={shouldFade ? 'none' : 'box-only'}
     >
       <Image
-        source={require('../../assets/splash.png')}
+        source={require('../../assets/splash-icon.png')}
         style={styles.image}
         resizeMode="cover"
         fadeDuration={0}
