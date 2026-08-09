@@ -1,0 +1,99 @@
+I need to enhance the existing LaunchScreen.tsx to show a 
+rotating fitness coaching tip or motivational quote while 
+the app loads, displayed below the splash image.
+
+CURRENT BEHAVIOR:
+- LaunchScreen shows splash.png full screen
+- It stays visible for at least 1500ms (App.tsx timer)
+- Then fades out with a 280ms animation
+- Then dismisses via onDismissed callback
+
+WHAT TO ADD:
+Show a coaching tip text that appears with a subtle fade-in 
+animation after 600ms, displayed at the bottom of the screen 
+over the splash image. The tip should fade in smoothly and 
+be visible during the loading period before the screen fades out.
+
+TIPS DATA:
+Create a local array of 30 fitness coaching tips inside the file.
+Pick one randomly each time the app launches.
+Categorize them across these themes:
+- Nutrition (8 tips)
+- Training technique (8 tips)  
+- Recovery (7 tips)
+- Motivation (7 tips)
+
+Example tips:
+Nutrition:
+- "Protein within 30 minutes of your workout helps muscle recovery."
+- "Staying hydrated improves performance by up to 25%."
+- "Aim for 0.7–1g of protein per pound of bodyweight daily."
+- "Eating complex carbs before training gives sustained energy."
+- "A handful of nuts is a perfect pre-workout snack."
+- "Sleep is when your muscles actually grow — prioritize 7-9 hours."
+- "Creatine is one of the most researched and effective supplements."
+- "Meal prepping on Sundays makes healthy eating effortless all week."
+
+Training:
+- "Focus on form first — weight second. Injury sets you back months."
+- "Progressive overload — adding a little more each week — is the key to gains."
+- "Compound movements like squats and deadlifts build the most muscle."
+- "Rest 60-90 seconds between sets for hypertrophy goals."
+- "Warming up for 5 minutes prevents injury and improves performance."
+- "Mind-muscle connection — really feel the muscle working — increases activation."
+- "Tempo training: slow the eccentric phase to maximize time under tension."
+- "Supersets save time and keep your heart rate elevated."
+
+Recovery:
+- "Muscle soreness means you worked hard — soreness for days means you overdid it."
+- "Foam rolling before bed speeds up next-day recovery."
+- "Active recovery — light walking or yoga — beats total rest days."
+- "Ice baths reduce inflammation after intense training sessions."
+- "Magnesium before bed improves sleep quality and muscle recovery."
+- "Your muscles repair overnight — consistent sleep is non-negotiable."
+- "Stretching after a workout while muscles are warm prevents tightness."
+
+Motivation:
+- "Every expert was once a beginner. Show up today."
+- "You don't have to be great to start, but you have to start to be great."
+- "The only bad workout is the one that didn't happen."
+- "Consistency over intensity — small daily actions beat occasional heroics."
+- "Your future self is watching. Make them proud."
+- "Discipline is choosing what you want most over what you want now."
+- "The gym is 20% physical and 80% mental. Train both."
+
+UI DESIGN:
+Position: Bottom section of screen, centered
+Layout:
+  - Small label: "TODAY'S TIP" in uppercase, letter-spaced, 
+    small font (10px), color: rgba(255,255,255,0.5)
+  - Tip text: centered, white, 14px, max 2 lines, 
+    semi-transparent background pill behind the text area
+  - A thin horizontal line above the tip section as a divider
+
+Styling:
+  - Background behind tip: rgba(0,0,0,0.4) with 12px border radius
+  - Padding: 12px horizontal, 10px vertical
+  - Tip text color: rgba(255,255,255,0.9)
+  - Label color: rgba(255,255,255,0.5)
+  - Position: bottom 60px from screen bottom, 
+    horizontally centered with 24px margins on each side
+  - Appears with a fade-in animation starting after 600ms delay
+  - Opacity goes from 0 to 1 over 400ms
+
+ANIMATION SEQUENCE:
+1. LaunchScreen mounts: splash image visible immediately
+2. After 600ms: tip fades in (400ms duration)
+3. When shouldFade becomes true: entire screen (including tip) 
+   fades out together (existing 280ms animation — unchanged)
+
+IMPORTANT RULES:
+- Only modify LaunchScreen.tsx — do not touch App.tsx or any 
+  other file
+- The existing fade-out behavior must remain exactly the same
+- The tip picks randomly on mount using Math.random()
+- No external libraries — pure React Native Animated API only
+- TypeScript — no 'any' types unless absolutely necessary
+- Run tsc --noEmit after changes — zero errors required
+- Show me the complete updated file before applying
+- Do NOT commit — I will handle git myself
