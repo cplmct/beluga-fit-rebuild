@@ -71,7 +71,7 @@ export function LaunchScreen({ shouldFade, onDismissed }: LaunchScreenProps) {
         duration: 400,
         useNativeDriver: true,
       }).start();
-    }, 800);
+    }, 1200);
     return () => clearTimeout(timer);
   }, []);
 
