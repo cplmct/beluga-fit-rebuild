@@ -81,9 +81,9 @@ export function LaunchScreen({ shouldFade, onDismissed }: LaunchScreenProps) {
       pointerEvents={shouldFade ? 'none' : 'box-only'}
     >
       <Image
-        source={require('../../assets/splash-icon.png')}
+        source={require('../../assets/splash.png')}
         style={styles.image}
-        resizeMode="cover"
+        resizeMode="contain"
         fadeDuration={0}
       />
       <Animated.View style={[styles.tipContainer, { opacity: tipOpacity }]}>
