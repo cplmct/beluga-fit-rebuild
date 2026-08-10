@@ -1,0 +1,93 @@
+The RestTimerScreen already exists and is registered in 
+WorkoutStackNavigator. The timer works correctly with 
+30s/60s/90s presets, start/pause/reset, and haptic feedback.
+
+The ONLY missing feature is auto-starting the rest timer 
+when a user marks an exercise as complete in 
+WorkoutChecklistScreen.tsx.
+
+Read both files fully before making any changes:
+- src/components/WorkoutChecklistScreen.tsx
+- src/components/RestTimerScreen.tsx
+
+WHAT NEEDS TO CHANGE:
+
+1. WorkoutChecklistScreen.tsx — two additions only:
+
+A) Add a rest timer duration preference state:
+const [restDuration, setRestDuration] = useState(90);
+// 90 seconds is the default
+
+B) Update the toggleComplete function to auto-navigate 
+   to RestTimer when an exercise is marked complete 
+   (not when it is unchecked):
+
+Current toggleComplete:
+const toggleComplete = (index: number) => {
+  const newCompleted = new Set(completedExercises);
+  if (newCompleted.has(index)) {
+    newCompleted.delete(index);
+    haptic.light();
+  }
+  setCompletedExercises(newCompleted);
+};
+
+Updated toggleComplete:
+const toggleComplete = (index: number) => {
+  const newCompleted = new Set(completedExercises);
+  if (newCompleted.has(index)) {
+    // Unchecking — just remove, no timer
+    newCompleted.delete(index);
+    haptic.light();
+    setCompletedExercises(newCompleted);
+  } else {
+    // Checking complete — mark it and launch rest timer
+    newCompleted.add(index);
+    haptic.light();
+    setCompletedExercises(newCompleted);
+    // Navigate to RestTimer, passing the preferred duration
+    navigation.navigate('RestTimer', { initialSeconds: restDuration });
+  }
+};
+
+2. RestTimerScreen.tsx — update to accept route params:
+
+Current: ignores navigation and route props, always starts at 60s
+
+Updated: read initialSeconds from route.params if provided,
+fall back to 60 if not:
+
+export function RestTimerScreen({ route }: any) {
+  const initialSeconds = (route?.params as any)?.initialSeconds ?? 60;
+  const [timeLeft, setTimeLeft] = useState(initialSeconds);
+  const [isRunning, setIsRunning] = useState(true); // auto-start
+  const [initialTime, setInitialTime] = useState(initialSeconds);
+
+KEY CHANGES in RestTimerScreen:
+- Accept route params for initialSeconds
+- Set isRunning to TRUE on mount (auto-start immediately)
+- Timer auto-starts when navigated to from WorkoutChecklistScreen
+- All existing preset buttons still work (they override the param)
+- Existing haptic on completion unchanged
+
+3. Add 120s preset to RestTimerScreen:
+Currently has 30s, 60s, 90s — add 120s:
+
+<TouchableOpacity
+  style={[styles.presetButton, initialTime === 120 && styles.presetButtonActive]}
+  onPress={() => setPresetTime(120)}
+>
+  <Text style={[styles.presetButtonText, initialTime === 120 && styles.presetButtonTextActive]}>
+    2min
+  </Text>
+</TouchableOpacity>
+
+IMPORTANT RULES:
+- WorkoutChecklistScreen already has navigation prop — 
+  use it directly, do not add new navigation imports
+- Do not change any other behavior in toggleComplete 
+  beyond what is specified above
+- Do not break the existing save workout flow
+- Run tsc --noEmit after changes — zero errors required
+- Show me exact changes for both files before applying
+- Do NOT commit — I will handle git myself

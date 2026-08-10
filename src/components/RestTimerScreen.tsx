@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 
-export function RestTimerScreen() {
-  const [timeLeft, setTimeLeft] = useState(60);
-  const [isRunning, setIsRunning] = useState(false);
-  const [initialTime, setInitialTime] = useState(60);
+export function RestTimerScreen({ route }: any) {
+  const initialSeconds: number = (route?.params as any)?.initialSeconds ?? 60;
+  const [timeLeft, setTimeLeft] = useState(initialSeconds);
+  const [isRunning, setIsRunning] = useState(true); // auto-start when navigated from checklist
+  const [initialTime, setInitialTime] = useState(initialSeconds);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -138,6 +139,19 @@ export function RestTimerScreen() {
               ]}
             >
               90s
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.presetButton, initialTime === 120 && styles.presetButtonActive]}
+            onPress={() => setPresetTime(120)}
+          >
+            <Text
+              style={[
+                styles.presetButtonText,
+                initialTime === 120 && styles.presetButtonTextActive,
+              ]}
+            >
+              2min
             </Text>
           </TouchableOpacity>
         </View>

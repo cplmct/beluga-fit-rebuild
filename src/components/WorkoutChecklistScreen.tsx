@@ -58,6 +58,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
   const [isSaving, setIsSaving] = useState(false);
   const [lastTimeMap, setLastTimeMap] = useState<Record<string, LastTimeData>>({});
   const [lastTimeLoading, setLastTimeLoading] = useState(true);
+  const [restDuration] = useState(90);
 
   const startTimeRef = useRef(Date.now());
   // Latched to true the moment a workout is successfully saved.
@@ -259,12 +260,17 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
   const toggleComplete = (index: number) => {
     const newCompleted = new Set(completedExercises);
     if (newCompleted.has(index)) {
+      // Unchecking — just remove, no timer
       newCompleted.delete(index);
+      haptic.light();
+      setCompletedExercises(newCompleted);
     } else {
+      // Checking complete — mark it and launch rest timer
       newCompleted.add(index);
-      haptic.light(); // subtle confirmation when a set is checked off
+      haptic.light();
+      setCompletedExercises(newCompleted);
+      navigation.navigate('RestTimer', { initialSeconds: restDuration });
     }
-    setCompletedExercises(newCompleted);
   };
 
   const handleSwapSelect = (replacement: Exercise) => {
