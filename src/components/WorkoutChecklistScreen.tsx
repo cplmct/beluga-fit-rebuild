@@ -337,29 +337,19 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
         const prExerciseIds = Object.keys(prExIdToName);
 
         if (prExerciseIds.length > 0) {
-          const { data: userSessions } = await supabase
-            .from('workout_sessions')
-            .select('id')
+          // Single query against personal_records — canonical PR source,
+          // avoids the session_id .in() URL-limit issue on large histories.
+          const { data: existingWeightPRs } = await supabase
+            .from('personal_records')
+            .select('exercise_id, value')
             .eq('user_id', user.id)
-            .eq('status', 'completed');
+            .eq('record_type', 'max_weight')
+            .in('exercise_id', prExerciseIds);
 
-          const sessionIds = (userSessions || []).map((s) => s.id);
-
-          if (sessionIds.length > 0) {
-            const { data: historicalExercises } = await supabase
-              .from('session_exercises')
-              .select('exercise_id, session_sets(weight_kg)')
-              .in('session_id', sessionIds)
-              .in('exercise_id', prExerciseIds);
-
-            for (const ex of historicalExercises || []) {
-              const exName = prExIdToName[ex.exercise_id];
-              if (!exName) continue;
-              for (const s of (ex.session_sets as any[]) || []) {
-                if (s.weight_kg !== null && s.weight_kg > (maxWeightMap[exName.toLowerCase()] || 0)) {
-                  maxWeightMap[exName.toLowerCase()] = s.weight_kg;
-                }
-              }
+          for (const pr of existingWeightPRs || []) {
+            const exName = prExIdToName[pr.exercise_id];
+            if (exName) {
+              maxWeightMap[exName] = pr.value;
             }
           }
         }
