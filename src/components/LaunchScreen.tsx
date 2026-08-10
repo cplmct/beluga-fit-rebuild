@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, Image, StyleSheet, Text, View } from 'react-native';
+import { Animated, Dimensions, Image, StyleSheet, Text, View } from 'react-native';
 
 // ── Coaching tips (30 total) ──────────────────────────────────────────────────
 const TIPS: string[] = [
@@ -38,6 +38,8 @@ const TIPS: string[] = [
   'Discipline is choosing what you want most over what you want now.',
   'The gym is 20% physical and 80% mental. Train both.',
 ];
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface LaunchScreenProps {
   shouldFade: boolean;
@@ -104,7 +106,11 @@ const styles = StyleSheet.create({
     zIndex: 9999,
   },
   image: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
   },
   tipContainer: {
     position: 'absolute',
