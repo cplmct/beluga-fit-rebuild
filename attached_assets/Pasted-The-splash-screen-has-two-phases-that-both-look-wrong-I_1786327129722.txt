@@ -1,0 +1,89 @@
+The splash screen has two phases that both look wrong. 
+I need you to fully analyze and fix both.
+
+Read LaunchScreen.tsx and app.json before proposing anything.
+
+CURRENT PROBLEMS:
+
+PHASE 1 (Android OS native splash — controlled by expo-splash-screen plugin):
+- imageWidth: 400 is cutting off the splash-icon.png
+- The image is not fully visible — it is being cropped
+
+PHASE 2 (JS splash — controlled by LaunchScreen.tsx):
+- splash.png displays with resizeMode="contain" but still 
+  appears zoomed in / too large
+- The image style is StyleSheet.absoluteFillObject which 
+  stretches the image to fill the entire container
+- The combination of absoluteFillObject + contain is causing 
+  the image to be sized incorrectly
+
+ROOT CAUSE OF PHASE 2:
+The image style uses StyleSheet.absoluteFillObject which sets 
+width/height to fill the parent. With resizeMode="contain" on 
+an image that fills the entire screen, the image scales up 
+to fill the container while maintaining aspect ratio — which 
+on a tall phone means it fills height and may overflow width, 
+or fills width and has letterboxing. The issue is the image 
+is a portrait composition (863 x 1822px) displayed in a 
+portrait phone — so contain mode should work but the image 
+appears too zoomed because absoluteFillObject is making the 
+container too large relative to the natural image display.
+
+WHAT I WANT:
+Phase 1: The full splash-icon.png centered on #091722 background, 
+properly sized so nothing is cut off. 
+Reduce imageWidth to a value that shows the complete image.
+
+Phase 2 (LaunchScreen.tsx): The splash.png should display 
+centered on the dark navy background with proper sizing — 
+not filling the entire screen edge to edge, but centered 
+and sized to look like a proper splash screen. 
+The beluga logo and "BELUGA FIT" text should be clearly visible 
+and proportional.
+
+PROPOSED FIXES TO EVALUATE:
+
+Fix A — Phase 1: Change imageWidth from 400 to 300 in app.json
+This gives more room for the full image to display without cropping.
+
+Fix B — Phase 2: Change the image style in LaunchScreen.tsx
+Instead of absoluteFillObject, use explicit sizing with 
+width and height using Dimensions:
+
+import { Dimensions } from 'react-native';
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+image style change from:
+  image: {
+    ...StyleSheet.absoluteFillObject,
+  },
+
+to:
+  image: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+  },
+
+This explicitly sets the image to screen dimensions which 
+with resizeMode="contain" will properly contain the 863x1822 
+portrait image within the screen bounds.
+
+ALTERNATIVELY for Phase 2 — if the above still looks wrong:
+Use resizeMode="cover" which fills the screen completely 
+(may crop slightly on sides but the center composition 
+will be visible and properly sized).
+
+WHAT I NEED YOU TO DO:
+1. Read the current LaunchScreen.tsx fully
+2. Read the current app.json fully  
+3. Check the splash.png dimensions (863 x 1822px confirmed)
+4. Determine the correct fix for both phases
+5. Show me the exact proposed changes before applying anything
+6. Run tsc --noEmit after applying
+7. Do NOT commit — I will handle git myself
+
+The goal: a clean professional splash screen that looks like 
+a real app launch — not zoomed in, not cut off, not tiny.
