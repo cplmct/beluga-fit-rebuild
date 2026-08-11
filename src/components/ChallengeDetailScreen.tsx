@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
@@ -255,6 +256,14 @@ export function ChallengeDetailScreen({ route }: any) {
 
   const joinOrReset = async () => {
     if (!user || !challenge || isSubmitting) return;
+    if (userChallenge && userChallenge.status === 'completed') {
+      Alert.alert(
+        'Challenge Complete',
+        'You have already completed this challenge!',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
     setIsSubmitting(true);
     try {
       const now = new Date().toISOString();
@@ -285,22 +294,35 @@ export function ChallengeDetailScreen({ route }: any) {
     }
   };
 
-  const abandon = async () => {
+  const abandon = () => {
     if (!user || !userChallenge || isSubmitting) return;
-    setIsSubmitting(true);
-    try {
-      const { error } = await supabase
-        .from('user_challenges')
-        .update({ status: 'abandoned' })
-        .eq('id', userChallenge.id);
+    Alert.alert(
+      'Abandon Challenge',
+      'Are you sure you want to abandon this challenge? Your progress will be lost.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Abandon',
+          style: 'destructive',
+          onPress: async () => {
+            setIsSubmitting(true);
+            try {
+              const { error } = await supabase
+                .from('user_challenges')
+                .update({ status: 'abandoned' })
+                .eq('id', userChallenge.id);
 
-      if (error) throw error;
-      await fetchData();
-    } catch (err) {
-      if (__DEV__) console.error('ChallengeDetailScreen abandon:', err);
-    } finally {
-      setIsSubmitting(false);
-    }
+              if (error) throw error;
+              await fetchData();
+            } catch (err) {
+              if (__DEV__) console.error('ChallengeDetailScreen abandon:', err);
+            } finally {
+              setIsSubmitting(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   // ── Render states ─────────────────────────────────────────────────────────

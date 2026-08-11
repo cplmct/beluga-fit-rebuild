@@ -56,14 +56,12 @@ function getGreeting(): string {
   return 'Good evening';
 }
 
-function toLocalDateStr(dateString: string): string {
-  const d = new Date(dateString);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+function toUTCDateStr(dateString: string): string {
+  return new Date(dateString).toISOString().split('T')[0];
 }
 
 function todayStr(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  return new Date().toISOString().split('T')[0];
 }
 
 /**
@@ -72,15 +70,15 @@ function todayStr(): string {
  */
 function computeDailyStreak(workoutDates: string[]): number {
   if (workoutDates.length === 0) return 0;
-  const dateSet = new Set(workoutDates.map(toLocalDateStr));
+  const dateSet = new Set(workoutDates.map(toUTCDateStr));
   const today = new Date();
-  const todayDs = toLocalDateStr(today.toISOString());
+  const todayDs = toUTCDateStr(today.toISOString());
   const check = new Date(today);
   // Start from yesterday if today has no workout yet
   if (!dateSet.has(todayDs)) check.setDate(check.getDate() - 1);
   let streak = 0;
   while (true) {
-    const ds = toLocalDateStr(check.toISOString());
+    const ds = toUTCDateStr(check.toISOString());
     if (dateSet.has(ds)) {
       streak++;
       check.setDate(check.getDate() - 1);
@@ -93,7 +91,7 @@ function computeDailyStreak(workoutDates: string[]): number {
 
 /** Returns 7 booleans for Mon–Sun of the current calendar week. */
 function computeCurrentWeekDays(workoutDates: string[]): boolean[] {
-  const dateSet = new Set(workoutDates.map(toLocalDateStr));
+  const dateSet = new Set(workoutDates.map(toUTCDateStr));
   const today = new Date();
   const dow = today.getDay(); // 0=Sun … 6=Sat
   const daysFromMonday = dow === 0 ? 6 : dow - 1;
@@ -102,7 +100,7 @@ function computeCurrentWeekDays(workoutDates: string[]): boolean[] {
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
-    return dateSet.has(toLocalDateStr(d.toISOString()));
+    return dateSet.has(toUTCDateStr(d.toISOString()));
   });
 }
 
@@ -357,7 +355,7 @@ export function HomeScreen({ navigation }: any) {
 
       const sessions = sessionsRes.data || [];
       const today = todayStr();
-      const todaySessions = sessions.filter((s) => toLocalDateStr(s.started_at) === today);
+      const todaySessions = sessions.filter((s) => toUTCDateStr(s.started_at) === today);
 
       let todayWorkout: TodayWorkout | null = null;
       if (todaySessions.length > 0) {

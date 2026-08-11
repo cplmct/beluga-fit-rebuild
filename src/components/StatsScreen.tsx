@@ -34,16 +34,15 @@ interface StatsData {
   };
 }
 
-function toLocalDateStr(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+function toUTCDateStr(iso: string): string {
+  return new Date(iso).toISOString().split('T')[0];
 }
 
 function computeStreak(dates: string[]): number {
   if (!dates.length) return 0;
-  const dateStrs = [...new Set(dates.map(toLocalDateStr))].sort().reverse();
-  const today = toLocalDateStr(new Date().toISOString());
-  const yesterday = toLocalDateStr(new Date(Date.now() - 86400000).toISOString());
+  const dateStrs = [...new Set(dates.map(toUTCDateStr))].sort().reverse();
+  const today = toUTCDateStr(new Date().toISOString());
+  const yesterday = toUTCDateStr(new Date(Date.now() - 86400000).toISOString());
   if (dateStrs[0] !== today && dateStrs[0] !== yesterday) return 0;
   let streak = 1;
   for (let i = 1; i < dateStrs.length; i++) {
@@ -58,7 +57,7 @@ function computeStreak(dates: string[]): number {
 
 function computeLongestStreak(dates: string[]): number {
   if (!dates.length) return 0;
-  const dateStrs = [...new Set(dates.map(toLocalDateStr))].sort();
+  const dateStrs = [...new Set(dates.map(toUTCDateStr))].sort();
   let longest = 1;
   let current = 1;
   for (let i = 1; i < dateStrs.length; i++) {
