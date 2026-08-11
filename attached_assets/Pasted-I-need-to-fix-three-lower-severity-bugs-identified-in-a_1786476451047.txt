@@ -1,0 +1,112 @@
+I need to fix three lower-severity bugs identified in a 
+comprehensive audit of Beluga Fit. Read each file fully 
+before making any changes.
+
+FILES TO MODIFY:
+1. src/components/HistoryScreen.tsx
+2. src/utils/notifications.ts
+3. src/components/ChallengesScreen.tsx
+
+---
+
+BUG 1 — HistoryScreen.tsx — session_exercises count access
+
+PROBLEM: The query uses session_exercises(count) which 
+returns an array. The mapping code accesses 
+s.session_exercises?.[0]?.count assuming exactly one 
+element. This is fragile and could return wrong count 
+if the join returns multiple elements.
+
+FIX — Find this mapping in fetchWorkouts:
+exercise_count: s.session_exercises?.[0]?.count || 0,
+
+Replace with a safer access that handles both array 
+and object responses:
+exercise_count: Array.isArray(s.session_exercises)
+  ? (s.session_exercises[0]?.count ?? 0)
+  : ((s.session_exercises as any)?.count ?? 0),
+
+Also add a limit to the sessionIds .in() query for 
+muscle groups to prevent URL limit issues.
+Find: .in('session_id', sessionIds)
+If there is no slice or limit on this, add:
+.in('session_id', sessionIds.slice(0, 100))
+
+---
+
+BUG 2 — notifications.ts — Two fixes
+
+BUG 2A — Timezone comparison for inactivity trigger:
+PROBLEM: The check if (triggerDate <= new Date()) uses 
+local Date comparison. triggerDate is built from a UTC 
+ISO string — both sides of the comparison are actually 
+UTC milliseconds under the hood via JS Date, so this 
+is technically correct. However the comment and intent 
+is clearer with explicit millisecond comparison.
+
+FIX — Find: if (triggerDate <= new Date())
+Replace with: if (triggerDate.getTime() <= Date.now())
+This is semantically identical but explicitly UTC-safe 
+and intention-clear.
+
+BUG 2B — cancelAll cancels the inactivity reminder:
+PROBLEM: The scheduleDaily function calls 
+Notifications.cancelAllScheduledNotificationsAsync() 
+which cancels ALL scheduled notifications — including 
+the inactivity reminder that was set up separately.
+
+FIX — Find the scheduleDaily function.
+Find where cancelAllScheduledNotificationsAsync is called.
+
+Check if there is already a stored notification ID for 
+the daily reminder. If so, cancel only that ID:
+
+Replace:
+await Notifications.cancelAllScheduledNotificationsAsync();
+
+With:
+// Cancel only the daily reminder by identifier
+const allScheduled = await Notifications.getAllScheduledNotificationsAsync();
+const dailyNotifs = allScheduled.filter(n => 
+  n.content.data?.type === 'daily' || 
+  n.identifier?.includes('daily')
+);
+for (const notif of dailyNotifs) {
+  await Notifications.cancelScheduledNotificationAsync(notif.identifier);
+}
+
+If the scheduled notifications don't have a 'daily' 
+type in their data, add data: { type: 'daily' } to 
+the notification content when scheduling the daily 
+reminder, and data: { type: 'inactivity' } to the 
+inactivity reminder content.
+
+---
+
+BUG 3 — ChallengesScreen.tsx — Missing limit on catalogue
+
+PROBLEM: The challenges catalogue query fetches all 
+challenges with no limit. As the challenge library 
+grows this could return a very large payload.
+
+FIX — Find the challenges catalogue query:
+supabase
+  .from('challenges')
+  .select('id, title, description, difficulty, duration_days, icon')
+  .eq('is_active', true)
+  .order('difficulty')
+
+Add a limit:
+  .limit(50)
+
+---
+
+EXECUTION ORDER:
+1. Show me the plan for all three files with exact 
+   line numbers or function names before applying
+2. Apply all three fixes
+3. Run tsc --noEmit on full project — zero errors required
+4. Show what changed in each file
+5. Do NOT commit — I will handle git myself
+
+Show me the plan for all three files first.

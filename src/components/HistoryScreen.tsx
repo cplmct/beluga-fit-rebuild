@@ -116,7 +116,7 @@ export function HistoryScreen({ navigation }: any) {
         const { data: muscleGroupRows, error: mgError } = await supabase
           .from('session_muscle_groups')
           .select('session_id, muscle_groups(name)')
-          .in('session_id', sessionIds);
+          .in('session_id', sessionIds.slice(0, 100));
 
         if (mgError) throw mgError;
 
@@ -141,7 +141,9 @@ export function HistoryScreen({ navigation }: any) {
         started_at: s.started_at,
         body_parts: muscleGroupsBySession[s.id] || [],
         duration_seconds: s.duration_seconds ?? null,
-        exercise_count: s.session_exercises?.[0]?.count || 0,
+        exercise_count: Array.isArray(s.session_exercises)
+          ? (s.session_exercises[0]?.count ?? 0)
+          : ((s.session_exercises as any)?.count ?? 0),
       }));
 
       setWorkouts(mapped);

@@ -175,8 +175,16 @@ export async function cancelAll(): Promise<void> {
 }
 
 export async function scheduleDaily(prefs: NotifPrefs): Promise<boolean> {
-  // Always cancel existing first
-  await cancelAll();
+  // Cancel only the daily reminder — leave the inactivity reminder untouched
+  const allScheduled = await Notifications.getAllScheduledNotificationsAsync();
+  const dailyNotifs = allScheduled.filter(n =>
+    n.content.data?.type === 'daily' ||
+    n.identifier?.includes('daily')
+  );
+  for (const notif of dailyNotifs) {
+    await Notifications.cancelScheduledNotificationAsync(notif.identifier);
+  }
+  await saveScheduledId(null);
 
   if (!prefs.enabled) return true;
 
@@ -192,6 +200,7 @@ export async function scheduleDaily(prefs: NotifPrefs): Promise<boolean> {
       title: msg.title,
       body: msg.body,
       sound: 'default',
+      data: { type: 'daily' },
       ...(Platform.OS === 'android' ? { channelId: 'beluga-reminders' } : {}),
     },
     trigger: {
@@ -291,7 +300,7 @@ export async function scheduleInactivityReminder(userId: string): Promise<void> 
     triggerDate.setDate(triggerDate.getDate() + INACTIVITY_DAYS);
     triggerDate.setHours(INACTIVITY_HOUR, 0, 0, 0);
 
-    if (triggerDate <= new Date()) {
+    if (triggerDate.getTime() <= Date.now()) {
       if (__DEV__)
         console.log('[Notif] scheduleInactivityReminder — skipped (trigger date is in the past:', triggerDate.toLocaleString(), ')');
       return;
@@ -302,6 +311,7 @@ export async function scheduleInactivityReminder(userId: string): Promise<void> 
         title: 'Time to get back at it',
         body: "It's been a couple of days — open Beluga Fit and keep your progress going.",
         sound: 'default',
+        data: { type: 'inactivity' },
         ...(Platform.OS === 'android' ? { channelId: 'beluga-reminders' } : {}),
       },
       trigger: {

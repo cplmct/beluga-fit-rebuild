@@ -157,7 +157,8 @@ export function ChallengesScreen({ navigation }: any) {
           .from('challenges')
           .select('id, title, description, difficulty, duration_days, icon')
           .eq('is_active', true)
-          .order('difficulty'),
+          .order('difficulty')
+          .limit(50),
 
         // Query 3 — all challenge IDs user has ever joined (any status)
         supabase
