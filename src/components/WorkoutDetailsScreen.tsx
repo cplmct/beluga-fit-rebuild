@@ -173,6 +173,9 @@ export function WorkoutDetailsScreen({ route, navigation }: any) {
     }
   };
 
+  const displayWeight = (weightKg: number, unit: string): number =>
+    unit === 'lbs' ? Math.round(weightKg * 2.20462 * 10) / 10 : weightKg;
+
   const formatDate = (dateString: string) =>
     new Date(dateString).toLocaleDateString('en-US', {
       weekday: 'long',
@@ -321,7 +324,7 @@ export function WorkoutDetailsScreen({ route, navigation }: any) {
                   <View style={styles.detailItem}>
                     <Text style={styles.detailLabel}>Weight</Text>
                     <Text style={styles.detailValue}>
-                      {exercise.weight} {weightUnit}
+                      {displayWeight(exercise.weight, weightUnit)} {weightUnit}
                     </Text>
                   </View>
                 )}

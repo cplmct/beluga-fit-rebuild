@@ -158,7 +158,7 @@ export function ExerciseDetailScreen({ route, navigation }: any) {
             'session_id, session_sets ( set_number, weight_kg, reps, is_completed, is_pr )'
           )
           .eq('exercise_id', exerciseId)
-          .in('session_id', sessionIds.slice(0, 500));
+          .in('session_id', sessionIds);
 
         if (seErr) throw seErr;
 

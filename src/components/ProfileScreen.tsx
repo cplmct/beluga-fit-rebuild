@@ -39,17 +39,14 @@ function formatMemberSince(dateStr: string | undefined): string {
 
 function formatLastActive(dateStr: string | null): string {
   if (!dateStr) return 'No workouts yet';
-  const d = new Date(dateStr);
-  const now = new Date();
-  const diff = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
-  if (diff === 0) return 'Today';
-  if (diff === 1) return 'Yesterday';
-  if (diff < 7) return `${diff} days ago`;
-  return d.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  if (diffDays >= 1) return `${diffDays}d ago`;
+  if (diffHours >= 1) return `${diffHours}h ago`;
+  if (diffMins >= 1) return `${diffMins}m ago`;
+  return 'Just now';
 }
 
 function SectionLabel({ title }: { title: string }) {

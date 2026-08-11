@@ -205,13 +205,19 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
       const sessionIds = recentSessions.map((s) => s.id);
       const exerciseNames = exercises.map((ex: ExerciseSelection) => ex.name);
 
-      const { data: exerciseRows } = await supabase
-        .from('exercises')
-        .select('id, name')
-        .in('name', exerciseNames);
+      const chunkSize = 50;
+      const allExerciseRows: { id: string; name: string }[] = [];
+      for (let i = 0; i < exerciseNames.length; i += chunkSize) {
+        const chunk = exerciseNames.slice(i, i + chunkSize);
+        const { data: chunk_rows } = await supabase
+          .from('exercises')
+          .select('id, name')
+          .in('name', chunk);
+        if (chunk_rows) allExerciseRows.push(...chunk_rows);
+      }
 
       const exIdToName: Record<string, string> = {};
-      for (const row of exerciseRows || []) {
+      for (const row of allExerciseRows) {
         exIdToName[row.id] = row.name;
       }
       const exerciseIds = Object.keys(exIdToName);
@@ -251,7 +257,8 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
         };
       }
       setLastTimeMap(map);
-    } catch {
+    } catch (err) {
+      if (__DEV__) console.warn('[fetchLastTimeData] failed:', err);
     } finally {
       setLastTimeLoading(false);
     }

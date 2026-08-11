@@ -1,0 +1,145 @@
+I need to fix 5 genuine bugs identified in a comprehensive 
+audit of Beluga Fit. Read each file fully before making changes.
+
+FILES TO MODIFY:
+1. src/components/WorkoutChecklistScreen.tsx
+2. src/components/WorkoutDetailsScreen.tsx
+3. src/components/ProfileScreen.tsx
+4. src/components/ExerciseDetailScreen.tsx
+
+---
+
+BUG 1 — WorkoutChecklistScreen.tsx — Two fixes
+
+BUG 1A — Silent catch in fetchLastTimeData swallows errors:
+PROBLEM: The catch block in fetchLastTimeData is empty —
+if the fetch fails the user sees stale/no data with no 
+indication something went wrong.
+
+FIX — Find the catch block in fetchLastTimeData:
+} catch {
+} finally {
+
+Replace with:
+} catch (err) {
+  if (__DEV__) console.warn('[fetchLastTimeData] failed:', err);
+} finally {
+
+BUG 1B — .in('name', exerciseNames) could exceed URL limit:
+PROBLEM: exerciseNames is built from all exercises in the 
+current workout (potentially many). If it exceeds ~100 items 
+the PostgREST URL becomes too long and the query fails silently.
+
+FIX — Find in fetchLastTimeData:
+const { data: exerciseRows } = await supabase
+  .from('exercises')
+  .select('id, name')
+  .in('name', exerciseNames);
+
+Replace with a chunked version:
+const chunkSize = 50;
+const allExerciseRows: { id: string; name: string }[] = [];
+for (let i = 0; i < exerciseNames.length; i += chunkSize) {
+  const chunk = exerciseNames.slice(i, i + chunkSize);
+  const { data: chunk_rows } = await supabase
+    .from('exercises')
+    .select('id, name')
+    .in('name', chunk);
+  if (chunk_rows) allExerciseRows.push(...chunk_rows);
+}
+// Then use allExerciseRows instead of exerciseRows
+
+Update the downstream code that uses exerciseRows to 
+use allExerciseRows instead.
+
+---
+
+BUG 2 — WorkoutDetailsScreen.tsx — Weight display conversion
+
+PROBLEM: The workout details screen displays exercise weight
+with the user's weight unit label (e.g. "120 lbs") but the 
+weight_kg field stored in session_sets is ALWAYS in KG 
+regardless of display preference. So a user who logs in lbs 
+sees their stored KG value with the lbs label — showing the 
+wrong number.
+
+FIX — Find in WorkoutDetailsScreen.tsx where weight is 
+displayed. Look for something like:
+{exercise.weight} {weightUnit}
+or
+exercise.weight_kg
+
+When displaying weight to the user, convert from KG to 
+display unit:
+
+const displayWeight = (weightKg: number, unit: string) =>
+  unit === 'lbs' ? Math.round(weightKg * 2.20462 * 10) / 10 : weightKg;
+
+Then use displayWeight(exercise.weight_kg, weightUnit) 
+wherever the weight value is rendered.
+
+Make sure weightUnit is available from useUnits() — 
+add it if not already imported.
+
+---
+
+BUG 3 — ProfileScreen.tsx — formatLastActive timezone bug
+
+PROBLEM: formatLastActive computes time difference using
+new Date() (local time) compared to a UTC ISO string.
+This causes "last active" to show the wrong time for 
+users in non-UTC timezones.
+
+FIX — Find the formatLastActive function.
+The calculation likely does something like:
+const diff = new Date().getTime() - new Date(dateStr).getTime()
+
+This is actually correct since both sides resolve to UTC 
+milliseconds. BUT if the function uses local date methods 
+like getDate(), getMonth() etc. those are timezone-dependent.
+
+Check the function and replace any local date method calls:
+- new Date(x).getDate() → use UTC comparison via getTime()
+- Display as "X days ago" using millisecond diff only:
+
+const diffMs = Date.now() - new Date(dateStr).getTime();
+const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+const diffMins = Math.floor(diffMs / (1000 * 60));
+
+if (diffDays >= 1) return `${diffDays}d ago`;
+if (diffHours >= 1) return `${diffHours}h ago`;
+if (diffMins >= 1) return `${diffMins}m ago`;
+return 'Just now';
+
+---
+
+BUG 4 — ExerciseDetailScreen.tsx — Silent truncation at 500
+
+PROBLEM: The session_exercises query uses 
+.in('session_id', sessionIds.slice(0, 500)) which 
+silently drops data for users with more than 500 sessions.
+The screen already limits to 20 shown sessions, so fetching 
+500 is excessive. Instead fetch only the most recent sessions.
+
+FIX — Find the workout_sessions query in fetchAll:
+Currently fetches up to 100 recent sessions with .limit(100).
+This is fine — keep the .limit(100).
+
+Find: .in('session_id', sessionIds.slice(0, 500))
+Replace with: .in('session_id', sessionIds)
+
+Since sessionIds comes from a .limit(100) query it will 
+never exceed 100 items — the .slice(0, 500) cap is 
+unnecessary and the safe limit is already enforced upstream.
+
+---
+
+EXECUTION ORDER:
+1. Show me the plan for all 4 files with exact locations
+2. Apply all fixes
+3. Run tsc --noEmit — zero errors required
+4. Show what changed in each file
+5. Do NOT commit — I will handle git myself
+
+Show me the plan for all 4 files first.
