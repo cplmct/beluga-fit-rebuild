@@ -1,0 +1,149 @@
+I need to fix three bugs identified in a comprehensive audit 
+of Beluga Fit. Read each file fully before making any changes.
+
+FILES TO MODIFY:
+1. src/components/HomeScreen.tsx
+2. src/components/StatsScreen.tsx  
+3. src/components/ExerciseDetailScreen.tsx
+4. src/components/ChallengeDetailScreen.tsx
+
+---
+
+BUG 1 — Timezone UTC bug in streak/week calculations
+Files: HomeScreen.tsx AND StatsScreen.tsx
+
+PROBLEM: Both files use a local date conversion function 
+(toLocalDateStr or similar) that calls new Date(iso).getDate() 
+which uses the device's LOCAL timezone. But started_at is 
+stored in UTC. For users in negative UTC offsets (e.g. CDT 
+= UTC-5), a workout logged at 23:00 local time is stored as 
+04:00 UTC next day — so the streak calculation thinks the 
+workout happened on a different day than it actually did.
+This causes streaks to be off by 1 day and weekly counts 
+to be wrong near week boundaries.
+
+FIX — Create a UTC-safe date string function:
+
+In BOTH HomeScreen.tsx and StatsScreen.tsx, find the 
+toLocalDateStr function (or equivalent inline logic) that 
+converts ISO timestamps to date strings.
+
+Replace with this UTC-safe version:
+function toUTCDateStr(iso: string): string {
+  return new Date(iso).toISOString().split('T')[0];
+}
+
+Then replace ALL calls to toLocalDateStr(x) with 
+toUTCDateStr(x) in both files.
+
+Also update any comparison like:
+const today = new Date().toISOString().split('T')[0];
+to ensure consistency — use UTC throughout.
+
+IMPORTANT: Only change the date string conversion logic.
+Do not change any other logic in computeDailyStreak, 
+computeCurrentWeekDays, or any other function.
+
+---
+
+BUG 2 — ExerciseDetailScreen.tsx — Chart shows warmup weight
+
+PROBLEM: The weightChartPoints derivation uses 
+item.sets[0]?.weightKg which is the FIRST set logged.
+If a user did a warmup set at 60kg followed by working 
+sets at 100kg, the chart shows 60kg — not the actual 
+working weight.
+
+FIX — Use the heaviest set per session instead of first set:
+
+Find this line:
+const weightChartPoints = sessionHistory
+  .filter((item) => 
+    item.sets.length > 0 && item.sets[0]?.weightKg != null
+  )
+  .slice(0, 10)
+  .reverse();
+
+Replace with:
+const weightChartPoints = sessionHistory
+  .filter((item) => 
+    item.sets.length > 0 && 
+    item.sets.some(s => s.weightKg != null && s.weightKg > 0)
+  )
+  .slice(0, 10)
+  .reverse();
+
+Find this line in the chart data derivation:
+data: weightChartPoints.map((item) => item.sets[0]?.weightKg ?? 0),
+
+Replace with:
+data: weightChartPoints.map((item) => 
+  Math.max(...item.sets
+    .filter(s => s.weightKg != null && s.weightKg > 0)
+    .map(s => s.weightKg as number)
+  )
+),
+
+---
+
+BUG 3 — ChallengeDetailScreen.tsx — Two fixes
+
+BUG 3A — joinOrReset allows resetting a COMPLETED challenge:
+The current upsert resets progress to 0 for ANY existing 
+record including completed ones. A user who completed a 
+challenge should not be able to "rejoin" and reset their 
+completed status.
+
+FIX — Add a guard before the upsert in joinOrReset:
+If userChallenge exists AND status === 'completed', 
+show an Alert saying the challenge is already completed 
+and return early without upserting.
+
+Add this at the top of the joinOrReset function, 
+before the upsert:
+if (userChallenge && userChallenge.status === 'completed') {
+  Alert.alert(
+    'Challenge Complete',
+    'You have already completed this challenge!',
+    [{ text: 'OK' }]
+  );
+  return;
+}
+
+BUG 3B — No confirmation before abandoning challenge:
+The abandon action immediately updates status to 'abandoned'
+with no confirmation dialog.
+
+FIX — Wrap the abandon logic in an Alert.alert confirmation:
+
+Find the abandon function (or the onPress that calls the 
+abandon Supabase update). Wrap it like this:
+
+Alert.alert(
+  'Abandon Challenge',
+  'Are you sure you want to abandon this challenge? Your progress will be lost.',
+  [
+    { text: 'Cancel', style: 'cancel' },
+    {
+      text: 'Abandon',
+      style: 'destructive',
+      onPress: async () => {
+        // existing abandon logic goes here
+      },
+    },
+  ]
+);
+
+---
+
+EXECUTION ORDER:
+1. Fix HomeScreen.tsx — UTC date fix only
+2. Fix StatsScreen.tsx — UTC date fix only  
+3. Fix ExerciseDetailScreen.tsx — heaviest set chart fix
+4. Fix ChallengeDetailScreen.tsx — Bug 3A then 3B
+5. Run tsc --noEmit on full project after all four files
+6. Show plan for Bug 1 (HomeScreen UTC fix) first
+
+Do NOT apply anything yet — show me the plan for 
+HomeScreen.tsx first with exact line numbers.
+Do NOT commit — I will handle git myself.
