@@ -195,32 +195,31 @@ export function StatsScreen({ navigation }: any) {
       let topPrs: Array<{ name: string; weight: number }> = [];
 
       if (allSessionIds.length > 0) {
-        const { data: exerciseRows } = await supabase
-          .from('session_exercises')
-          .select('session_id, exercises(name), session_sets(weight_kg, is_pr)')
-          .in('session_id', allSessionIds.slice(0, 500));
+        const [exerciseRes, topPrRes] = await Promise.all([
+          supabase
+            .from('session_exercises')
+            .select('session_id, session_sets(is_pr)')
+            .in('session_id', allSessionIds),
+          supabase
+            .from('personal_records')
+            .select('exercise_id, value, exercises(name)')
+            .eq('user_id', user.id)
+            .eq('record_type', 'max_weight')
+            .order('value', { ascending: false })
+            .limit(5),
+        ]);
 
         // One derived row per exercise: is_pr = ANY set is_pr
-        prExercises = (exerciseRows || []).map((ex: any) => ({
+        prExercises = (exerciseRes.data || []).map((ex: any) => ({
           session_id: ex.session_id,
           is_pr: (ex.session_sets || []).some((s: any) => s.is_pr === true),
         }));
 
-        // Compute top 5 personal bests by heaviest single set weight
-        const maxByExercise: Record<string, number> = {};
-        for (const ex of exerciseRows || []) {
-          const name = (ex as any).exercises?.name;
-          if (!name) continue;
-          for (const s of (ex as any).session_sets || []) {
-            if (s.weight_kg !== null && s.weight_kg > (maxByExercise[name] ?? 0)) {
-              maxByExercise[name] = s.weight_kg;
-            }
-          }
-        }
-        topPrs = Object.entries(maxByExercise)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 5)
-          .map(([name, weight]) => ({ name, weight }));
+        // Top 5 personal bests from canonical personal_records table
+        topPrs = (topPrRes.data || []).map((pr: any) => ({
+          name: pr.exercises?.name ?? 'Unknown',
+          weight: pr.value,
+        }));
       }
 
       const allDates = allSessions.map((s) => s.started_at);
@@ -244,7 +243,7 @@ export function StatsScreen({ navigation }: any) {
         const { data: muscleGroupRows } = await supabase
           .from('session_muscle_groups')
           .select('session_id, muscle_groups(name)')
-          .in('session_id', allSessionIds.slice(0, 500));
+          .in('session_id', allSessionIds);
 
         const bodyPartCounts: Record<string, number> = {};
         for (const row of muscleGroupRows || []) {

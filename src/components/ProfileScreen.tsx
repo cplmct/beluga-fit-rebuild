@@ -207,7 +207,7 @@ export function ProfileScreen() {
         .update({
           name: profile.name.trim() || null,
           height: profile.height ? parseFloat(profile.height) : null,
-          weight: profile.weight ? parseFloat(profile.weight) : null,
+          weight: profile.weight ? parseFloat(profile.weight) * (weightUnit === 'lbs' ? 0.453592 : 1) : null,
           gender: profile.gender.trim() || null,
           age: profile.age ? parseInt(profile.age, 10) : null,
           updated_at: new Date().toISOString(),

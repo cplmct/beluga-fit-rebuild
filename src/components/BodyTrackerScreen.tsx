@@ -131,7 +131,7 @@ export function BodyTrackerScreen() {
       const { error } = await supabase.from('body_measurements').insert({
         user_id: user.id,
         height: height ? parseFloat(height) : null,
-        weight: weight ? parseFloat(weight) : null,
+        weight: weight ? parseFloat(weight) * (weightUnit === 'lbs' ? 0.453592 : 1) : null,
         chest: chest ? parseFloat(chest) : null,
         waist: waist ? parseFloat(waist) : null,
         hips: hips ? parseFloat(hips) : null,
@@ -184,6 +184,9 @@ export function BodyTrackerScreen() {
     if (filtered.length < 2) return null;
 
     const values = filtered.map((m) => m[field] as number);
+    const displayValues = field === 'weight'
+      ? values.map(v => weightUnit === 'lbs' ? v * 2.20462 : v)
+      : values;
     const labels = filtered.map((m) => {
       const d = new Date(m.created_at);
       return `${d.getMonth() + 1}/${d.getDate()}`;
@@ -197,7 +200,7 @@ export function BodyTrackerScreen() {
       labels: displayLabels.length > 0 ? displayLabels : labels.slice(-maxPoints),
       datasets: [
         {
-          data: values,
+          data: displayValues,
           color: (opacity = 1) => `rgba(37, 99, 235, ${opacity})`,
           strokeWidth: 2,
         },

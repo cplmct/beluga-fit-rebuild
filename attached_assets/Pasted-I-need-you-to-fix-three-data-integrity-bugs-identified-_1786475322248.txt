@@ -1,0 +1,106 @@
+I need you to fix three data integrity bugs identified in a 
+comprehensive audit of Beluga Fit. Read each file fully 
+before making any changes.
+
+FILES TO MODIFY:
+1. src/components/BodyTrackerScreen.tsx
+2. src/components/ProfileScreen.tsx
+3. src/components/StatsScreen.tsx
+
+---
+
+BUG 1 — BodyTrackerScreen.tsx — Weight Unit Conversion
+
+PROBLEM: In handleSave, weight is stored directly from the 
+user's input without unit conversion. If the user has their 
+unit preference set to lbs, the value is saved as lbs in the 
+database but the field is meant to store KG. This corrupts 
+body measurement data.
+
+Same bug applies to the body measurement chart — if weight 
+is stored in KG but user views in lbs, the chart shows 
+wrong values.
+
+FIX A — handleSave: Convert weight from display unit to KG 
+before saving:
+BEFORE: weight: weight ? parseFloat(weight) : null,
+AFTER:  weight: weight ? parseFloat(weight) * (weightUnit === 'lbs' ? 0.453592 : 1) : null,
+
+FIX B — prepareChartData for weight field only: Convert 
+stored KG values to display unit for chart rendering.
+After: const values = filtered.map((m) => m[field] as number);
+Add: const displayValues = field === 'weight' 
+  ? values.map(v => weightUnit === 'lbs' ? v * 2.20462 : v)
+  : values;
+Then use displayValues instead of values in the datasets.
+
+FIX C — chartTitle for weight chart: 
+BEFORE: Weight Trend ({weightUnit})
+AFTER:  Weight Trend ({weightUnit}) — already correct, no change needed
+
+---
+
+BUG 2 — ProfileScreen.tsx — Weight Unit Conversion
+
+PROBLEM: Same bug as BodyTrackerScreen. In handleSave, 
+the profile weight is stored directly from user input 
+without converting from lbs to KG.
+
+FIX — handleSave: Find where profile weight is saved to 
+Supabase profiles table and add conversion:
+BEFORE: weight: profile.weight ? parseFloat(profile.weight) : null,
+AFTER:  weight: profile.weight ? parseFloat(profile.weight) * (weightUnit === 'lbs' ? 0.453592 : 1) : null,
+
+Also check if weightUnit is imported from useUnits() in 
+ProfileScreen — if not, add it:
+const { weightUnit } = useUnits();
+
+---
+
+BUG 3 — StatsScreen.tsx — Two fixes needed
+
+BUG 3A — Scanning session_sets for max weight instead of 
+personal_records (violates canonical PR source rule):
+
+Find the fetchStats function where topPrs is calculated 
+by scanning session_sets weights. Replace with a direct 
+personal_records query:
+
+REMOVE the session_exercises embedding approach for topPrs.
+
+ADD after allSessionIds is built:
+const { data: topPrRows } = await supabase
+  .from('personal_records')
+  .select('exercise_id, value, exercises(name)')
+  .eq('user_id', user.id)
+  .eq('record_type', 'max_weight')
+  .order('value', { ascending: false })
+  .limit(5);
+
+const topPrs = (topPrRows || []).map((pr: any) => ({
+  name: pr.exercises?.name ?? 'Unknown',
+  weight: pr.value,
+}));
+
+BUG 3B — Hard limit of 500 sessions silently drops data:
+
+Find: .in('session_id', allSessionIds.slice(0, 500))
+REPLACE with: .in('session_id', allSessionIds)
+
+The personal_records fix above means we no longer need 
+to scan session_sets for weights. The remaining 
+session_exercises query for prExercises (is_pr flag) 
+should also be reconsidered — but for now just remove 
+the .slice(0, 500) cap.
+
+---
+
+EXECUTION ORDER:
+1. Fix BodyTrackerScreen.tsx (Bug 1 — fixes A, B, C)
+2. Fix ProfileScreen.tsx (Bug 2)
+3. Fix StatsScreen.tsx (Bug 3A first, then 3B)
+4. Run tsc --noEmit on full project after all three files
+5. Show what changed in each file before applying
+6. Do NOT commit — I will handle git myself
+
+Show me the plan for Bug 1 (BodyTrackerScreen) first.
