@@ -74,6 +74,23 @@ export const COACHING_NAME_TO_KEY: Record<string, string> = {
   'Kettlebell Good Morning': 'kettlebell-good-morning',
   'Typewriter Pull-ups': 'typewriter-pull-ups',
   'Australian Pull-ups': 'australian-pull-ups',
+  // ── Shoulders batch ──────────────────────────────────────────────────────────
+  'Overhead Press': 'overhead-press',
+  'Military Press': 'military-press',
+  'Dumbbell Shoulder Press': 'dumbbell-shoulder-press',
+  'Arnold Press': 'arnold-press',
+  'Lateral Raises': 'lateral-raises',
+  'Front Raises': 'front-raises',
+  'Rear Delt Fly': 'rear-delt-fly',
+  'Upright Row': 'upright-row',
+  'Shrugs': 'shrugs',
+  'Cable Lateral Raises': 'cable-lateral-raises',
+  'Kettlebell Press': 'kettlebell-press',
+  'Kettlebell Halo': 'kettlebell-halo',
+  'Kettlebell Clean and Press': 'kettlebell-clean-and-press',
+  'Kettlebell Front Raise': 'kettlebell-front-raise',
+  'Handstand Push-ups': 'handstand-push-ups',
+  'Wall Walk': 'wall-walk',               // shared: Shoulders + Core (added once)
 };
 
 export const EXERCISE_COACHING: Record<string, ExerciseCoaching> = {
@@ -2613,6 +2630,1175 @@ export const EXERCISE_COACHING: Record<string, ExerciseCoaching> = {
       'Ensure the bar or surface you use is stable and can support your full bodyweight before beginning.',
       'Shoulder discomfort during the pull is a signal to adjust grip width or body angle.',
       'Progress the foot position gradually — moving from a shallow angle to near-horizontal is a significant strength jump.',
+      'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // SHOULDERS
+  // ════════════════════════════════════════════════════════════════════════════
+
+  // ── Overhead Press ────────────────────────────────────────────────────────────
+  'overhead-press': {
+    exerciseKey: 'overhead-press',
+    displayName: 'Overhead Press',
+    summary:
+      'A standing barbell pressing movement where the bar travels from shoulder height to full ' +
+      'overhead extension. It trains the front and lateral deltoids, triceps, and upper traps, ' +
+      'and requires the whole body to work as a stable base.',
+    setup: [
+      'Grip the bar just outside shoulder width with wrists stacked over your forearms — avoid letting the wrists bend back excessively.',
+      'Unrack with the bar resting on your front deltoids or upper chest, elbows slightly in front of the bar.',
+      'Stand with feet roughly hip-width apart, a natural knee bend, and your core braced.',
+      'Squeeze the glutes and brace the trunk before pressing — this prevents the lower back from arching excessively.',
+      'A slight lean back as the bar passes the forehead is normal; it is not the same as collapsing the lower back.',
+    ],
+    execution: [
+      'Press the bar in a vertical or very slightly arcing path, moving the head back briefly as the bar clears the forehead.',
+      'As the bar passes your head, bring your body back under the bar rather than pressing forward.',
+      'Lock out overhead with the bar above your wrists, elbows, and shoulders — ears visible in front of your upper arms is a useful check.',
+      'Lower under control, allowing the bar to return to the front delt position.',
+      'Reset the brace before each rep on heavier sets.',
+    ],
+    breathing: [
+      'Breathe in and brace before pressing.',
+      'Exhale at the top or just past the sticking point.',
+      'Re-brace at the starting position between heavy reps.',
+      'On lighter sets, breathe rhythmically once per rep.',
+    ],
+    cues: [
+      '"Armpits forward" — rotating the elbows slightly forward before pressing helps engage the press more efficiently.',
+      '"Bar over the mid-foot" — the bar path should stay over your centre of balance.',
+      '"Squeeze the glutes" — lower-body tension creates a stable base and limits excessive lower-back extension.',
+      '"Lockout tall" — fully extend and shrug slightly at the top to engage the upper traps in a stable overhead position.',
+    ],
+    commonMistakes: [
+      'Pressing the bar forward rather than vertically — the bar should travel straight up, not away from the body.',
+      'Excessive lower-back arch — brace the trunk and glutes rather than leaning back to get the bar overhead.',
+      'Flaring the elbows wide before pressing — a moderate elbow angle (slightly in front of the bar) is more efficient.',
+      'Stopping short of full lockout — a partial press at the top leaves the upper traps under-utilised.',
+      'Rushing the descent — a controlled lowering phase maintains tension and positions the bar correctly for the next rep.',
+    ],
+    variations: [
+      {
+        name: 'Seated Barbell Overhead Press',
+        purpose: 'Seated eliminates leg-drive assistance and requires the upper body to do more of the work.',
+        formChange: 'Sit on an upright bench with the bar in a rack at shoulder height. Press the same vertical path.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Dumbbell Shoulder Press',
+        purpose: 'Each arm moves independently; useful for addressing left-right differences and allows more natural wrist rotation.',
+        formChange: 'Hold dumbbells at shoulder height. Press overhead from a seated or standing position.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Push Press',
+        purpose: 'Uses a brief leg drive to overcome the sticking point; allows heavier loads than a strict press.',
+        formChange: 'Dip the knees slightly and drive the legs to initiate the bar path, then press to lockout.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Landmine Press',
+        purpose: 'An angled press from chest to overhead that is often more comfortable for the shoulder joint.',
+        formChange: 'Fix one end of a barbell in a corner or landmine. Press the free end upward at an angle from shoulder height.',
+        difficulty: 'easier',
+      },
+    ],
+    safetyNotes: [
+      'Use a rack with safeties at the correct height — failing on the overhead press with no support is awkward to bail from.',
+      'Shoulder discomfort at the bottom of the press (when the bar is at the front delt) can sometimes be reduced by widening the grip slightly or adjusting elbow angle.',
+      'Do not force the shoulder into a position that feels unstable or painful — a reduced range of motion is preferable.',
+      'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Military Press ────────────────────────────────────────────────────────────
+  'military-press': {
+    exerciseKey: 'military-press',
+    displayName: 'Military Press',
+    summary:
+      'A strict standing barbell overhead press performed with feet together and no leg drive. ' +
+      'The constrained stance and absence of lower-body assistance places greater demand on the ' +
+      'shoulders and trunk than a standard overhead press with a wider base.',
+    setup: [
+      'Stand with feet together or very close — this narrower base is what distinguishes a military press from a standard overhead press.',
+      'Grip the bar just outside shoulder width, wrists stacked over forearms.',
+      'Unrack with the bar on your front deltoids, elbows slightly in front.',
+      'Brace the trunk and glutes firmly — the narrow stance means less natural stability, so the core must work harder.',
+      'No knee bend or dip before the press — this movement does not use leg drive.',
+    ],
+    execution: [
+      'Press the bar vertically, moving the head back briefly as the bar clears the forehead.',
+      'Drive to full lockout overhead — ears visible in front of upper arms at the top.',
+      'Lower under control to the front delt position.',
+      'Maintain the narrow foot position throughout — if you find yourself widening the stance, you are compensating.',
+      'If a truly strict press with feet together is not available to you, a shoulder-width stance with deliberate no-dip discipline is a practical alternative.',
+    ],
+    breathing: [
+      'Breathe in and brace before pressing.',
+      'Exhale at the top or past the sticking point.',
+      'Re-brace between reps, especially on heavier sets.',
+    ],
+    cues: [
+      '"Feet together, trunk on" — the combination of the narrow base and a braced trunk is what makes this a military press.',
+      '"No dip" — any knee bend before the press makes it a push press; keep the legs straight.',
+      '"Vertical bar path" — the bar should travel straight up, not forward.',
+      '"Control the descent" — the lowering phase matters; do not let the bar drop.',
+    ],
+    commonMistakes: [
+      'Dipping the knees before pressing — this turns the lift into a push press; keep the legs locked throughout.',
+      'Widening the feet during the set — the narrow stance should be maintained for the whole set.',
+      'Pressing the bar forward — the bar should stay over the mid-foot and travel vertically.',
+      'Arching the lower back excessively — trunk bracing is more important here than with a wider-stance press.',
+      'Confusing the military press with a push press — they are distinct; the military press uses no leg assistance.',
+    ],
+    variations: [
+      {
+        name: 'Overhead Press (standard)',
+        purpose: 'A shoulder-width or hip-width stance makes the press less demanding on trunk stability; a practical starting point.',
+        formChange: 'Widen the feet to shoulder or hip width. The pressing mechanics are otherwise identical.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Seated Military Press',
+        purpose: 'Sitting eliminates the balance challenge of the narrow stance while preserving the strict, no-leg-drive character.',
+        formChange: 'Sit upright on a bench with no back support. Feet together. Press with no lean-back or torso momentum.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Dumbbell Shoulder Press',
+        purpose: 'Independent arm movement; a useful alternative when barbell access is limited.',
+        formChange: 'Hold dumbbells at shoulder height. Press overhead seated or standing.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Push Press',
+        purpose: 'Leg drive assists the bar past the sticking point; not a military press, but a progression for heavier loads.',
+        formChange: 'Add a brief knee dip before the press. Wider foot stance is permitted.',
+        difficulty: 'easier',
+      },
+    ],
+    safetyNotes: [
+      'The narrow stance reduces stability — start with a lighter load than your standard overhead press until you are comfortable with the balance demand.',
+      'If the narrow stance causes lower-back discomfort, a slightly wider stance with strict no-leg-drive discipline achieves a similar stimulus.',
+      'Do not force overhead range if shoulder mobility is limited — use a range that feels stable and controlled.',
+      'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Dumbbell Shoulder Press ───────────────────────────────────────────────────
+  'dumbbell-shoulder-press': {
+    exerciseKey: 'dumbbell-shoulder-press',
+    displayName: 'Dumbbell Shoulder Press',
+    summary:
+      'A pressing movement where each arm moves independently, training the front and lateral ' +
+      'deltoids and triceps. The independent arm movement can reduce left-right imbalances and ' +
+      'allows a more natural wrist path than a barbell.',
+    setup: [
+      'Sit on an upright bench with back support, or stand — both are valid choices with slightly different stability demands.',
+      'Hold a dumbbell in each hand at shoulder height, palms facing forward or angled inward (neutral grip).',
+      'Sit tall with a natural lower-back curve — avoid flattening the back against the pad by craning forward.',
+      'Brace your core before pressing.',
+      'A useful starting position has the dumbbells at ear height, elbows roughly at 90°.',
+    ],
+    execution: [
+      'Press both dumbbells upward, allowing the wrists to rotate slightly if using a neutral starting grip.',
+      'Stop just short of the dumbbells touching at the top to maintain tension on the muscles.',
+      'Lower under control to the starting position — the elbows should not drop below the bench line.',
+      'Avoid an exaggerated lower-back arch to get extra range — use a range of motion your shoulders can control comfortably.',
+      'Choose a range of motion that feels stable for your shoulder joint; the elbows should track in a comfortable plane.',
+    ],
+    breathing: [
+      'Breathe in before lowering the dumbbells.',
+      'Exhale as you press overhead.',
+      'On lighter sets, breathe once per rep.',
+      'Re-brace between heavy reps.',
+    ],
+    cues: [
+      '"Even pressure through both hands" — helps identify and address any side-to-side differences.',
+      '"Stop short of touching" — maintains tension through the set.',
+      '"Wrists over elbows" — keeping the wrist stacked over the elbow throughout the press protects the joint.',
+      '"Tall posture" — pressing with a slumped back reduces the stability of the shoulder position.',
+    ],
+    commonMistakes: [
+      'Letting the dumbbells drift too far forward or backward at the top — the wrist should stay stacked over the elbow.',
+      'Excessive lower-back arch — indicates the load is too heavy or the seated position needs adjustment.',
+      'Touching the dumbbells at the top — allows brief muscle relaxation; stopping just short keeps tension more consistent.',
+      'Dropping the elbows below a comfortable plane — the shoulder has limits to its comfortable range at the bottom.',
+      'One side leading the other significantly — indicates a strength asymmetry worth monitoring.',
+    ],
+    variations: [
+      {
+        name: 'Neutral-grip Dumbbell Press',
+        purpose: 'Palms facing each other throughout can reduce shoulder-joint stress for some people.',
+        formChange: 'Start and finish with palms facing inward (hammer grip). Press in the same arc.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Single-arm Dumbbell Press',
+        purpose: 'Trains one side at a time; increases core anti-rotation demand.',
+        formChange: 'Press with one arm only, keeping the opposite hand on your thigh or core. Press and lower on one side.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Overhead Barbell Press',
+        purpose: 'A bilateral barbell alternative; heavier loading potential with a fixed bar path.',
+        formChange: 'Use a barbell on a rack. Both hands share the bar. Press vertically from the front delts.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Arnold Press',
+        purpose: 'Adds a rotation component from a neutral starting grip to a pronated finish; involves more of the shoulder through the movement.',
+        formChange: 'Begin with palms facing your face. Rotate the wrists outward as you press to finish palms-forward at the top.',
+        difficulty: 'similar',
+      },
+    ],
+    safetyNotes: [
+      'If your shoulder clicks or catches at the bottom of the range, reduce depth or try a neutral grip.',
+      'Avoid forcing the elbow below a comfortable level at the start of each rep.',
+      'Do not force a shoulder position that feels unstable or painful — adjust load or range first.',
+      'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Arnold Press ──────────────────────────────────────────────────────────────
+  'arnold-press': {
+    exerciseKey: 'arnold-press',
+    displayName: 'Arnold Press',
+    summary:
+      'A dumbbell shoulder press variation that begins with palms facing inward and rotates ' +
+      'to a pronated finish as the dumbbells are pressed overhead. The rotation involves the ' +
+      'shoulder through a longer arc than a standard press.',
+    setup: [
+      'Sit upright on a bench with back support, or stand.',
+      'Hold both dumbbells at shoulder height with palms facing toward your face — the starting position differs from a standard press.',
+      'Elbows are roughly at shoulder height, pointed forward or slightly downward at the start.',
+      'Brace your core before pressing.',
+      'Start with a lighter load than your standard dumbbell press — the rotation adds a control demand.',
+    ],
+    execution: [
+      'As you press the dumbbells upward, simultaneously rotate your wrists so the palms face forward by the time the arms are fully extended.',
+      'The rotation should feel smooth and controlled, not forced — the wrists should reach the pronated position naturally as the arms extend.',
+      'Stop just short of the dumbbells touching at the top.',
+      'Reverse the movement on the way down: rotate the wrists back to palms-facing-inward as you lower to the start.',
+      'Choose a range of motion you can control; do not force the shoulder into a position that feels unstable.',
+    ],
+    breathing: [
+      'Breathe in before pressing.',
+      'Exhale as you press and rotate to the top.',
+      'Breathe in on the way down.',
+    ],
+    cues: [
+      '"Rotate as you rise" — the wrist rotation and the press happen simultaneously, not sequentially.',
+      '"Control the rotation" — the reverse rotation on the way down is as important as the press itself.',
+      '"Light load, full arc" — the value of the Arnold press is the range, not the maximum weight.',
+      '"Shoulders stay down" — avoid shrugging as you reach the top.',
+    ],
+    commonMistakes: [
+      'Forcing the rotation faster than the press allows — the two should happen together at the same pace.',
+      'Using too heavy a load — the rotation adds complexity; reduce the weight relative to your standard press.',
+      'Starting with palms facing forward (same as a standard press) — the defining feature of the Arnold press is the palms-inward starting position.',
+      'Shrugging at the top — keep the shoulder blades depressed through the full press.',
+      'Losing control during the descent rotation — the lowering phase should mirror the pressing phase.',
+    ],
+    variations: [
+      {
+        name: 'Dumbbell Shoulder Press',
+        purpose: 'A standard press without the rotation; useful as a regression or to compare the two movement patterns.',
+        formChange: 'Keep palms facing forward throughout — no rotation. Press and lower with a fixed grip.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Single-arm Arnold Press',
+        purpose: 'One side at a time; allows more focus on the rotation quality of each arm.',
+        formChange: 'Perform with one dumbbell. Keep the opposite hand on your thigh for balance.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Landmine Press',
+        purpose: 'A fixed-arc overhead press that is often more comfortable for the shoulder joint.',
+        formChange: 'Fix a barbell end in a landmine or corner. Press the free end from shoulder height to full extension at an angle.',
+        difficulty: 'easier',
+      },
+    ],
+    safetyNotes: [
+      'The rotation through the shoulder joint is the distinguishing feature of this exercise — do not force it if it feels uncomfortable.',
+      'Front-shoulder or rotator-cuff discomfort during the rotation is a signal to reduce load or range of motion.',
+      'Start lighter than you expect and build up gradually with this variation.',
+      'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Lateral Raises ────────────────────────────────────────────────────────────
+  'lateral-raises': {
+    exerciseKey: 'lateral-raises',
+    displayName: 'Lateral Raises',
+    summary:
+      'A shoulder isolation exercise where the arms are raised outward to roughly shoulder height ' +
+      'with dumbbells or cables. It places relatively more emphasis on the lateral deltoid.',
+    setup: [
+      'Stand or sit with a dumbbell in each hand, palms facing inward at your sides.',
+      'A slight bend in the elbow is useful throughout — it reduces stress on the elbow joint.',
+      'Stand tall with a natural posture; avoid pre-leaning to one side.',
+      'Keep the shoulders depressed — not shrugged — before beginning.',
+      'Use a light-to-moderate load; the lateral raise is a detail movement where control matters more than load.',
+    ],
+    execution: [
+      'Raise both arms outward to the sides until they are roughly level with your shoulders.',
+      'Lead with your elbows rather than your hands — the wrists can be slightly lower than the elbows throughout.',
+      'Pause briefly at the top before lowering under control.',
+      'Lower slowly — a two-to-three second descent is more effective than a fast drop.',
+      'Choose a range of motion you can control without shrugging or swinging; stopping just below shoulder height is fine if that is your comfortable range.',
+    ],
+    breathing: [
+      'Breathe out as you raise the arms.',
+      'Breathe in as you lower them.',
+      'Keep breathing steadily; avoid holding your breath across multiple reps.',
+    ],
+    cues: [
+      '"Pour a jug" — tilting the pinky side of the hand slightly upward (as if pouring) can increase lateral delt engagement for some people.',
+      '"Lead with the elbow" — the elbow travels slightly above the wrist throughout the arc.',
+      '"Shoulders stay down" — shrugging during the raise shifts demand to the upper traps rather than the lateral delt.',
+      '"Slow the descent" — the lowering phase is where much of the training stimulus occurs.',
+    ],
+    commonMistakes: [
+      'Using too much weight — heavy lateral raises almost always involve shrugging, swinging, or a shortened range of motion.',
+      'Shrugging to raise the arms — the shoulders should stay depressed as the arms rise.',
+      'Raising above shoulder height — there is limited additional lateral delt benefit above parallel, and the upper traps take over.',
+      'Swinging the torso — momentum from the trunk removes the challenge from the shoulder.',
+      'Fully straightening the elbows — a slight bend is a practical starting point for reducing elbow stress.',
+    ],
+    variations: [
+      {
+        name: 'Cable Lateral Raise',
+        purpose: 'Cables maintain tension at the bottom of the arc (where dumbbells have minimal tension), providing a different stimulus.',
+        formChange: 'Set the cable at the lowest position. Stand beside the cable and raise the arm to shoulder height.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Leaning Lateral Raise',
+        purpose: 'Holding a fixed point and leaning away from it increases the range of motion at the bottom.',
+        formChange: 'Hold a rack or pole with one hand. Lean slightly away and raise the opposite arm with a dumbbell.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Seated Lateral Raise',
+        purpose: 'Seated position removes any possibility of using a leg push or torso swing for momentum.',
+        formChange: 'Sit on the edge of a bench. Perform the same arm raise with strict torso position.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Band Lateral Raise',
+        purpose: 'A resistance band alternative; tension increases through the range of motion.',
+        formChange: 'Step on a resistance band with both feet. Hold the band in each hand at the sides. Raise to shoulder height.',
+        difficulty: 'similar',
+      },
+    ],
+    safetyNotes: [
+      'Start with a weight that lets you complete reps with a controlled arc and no shrugging — it will likely feel lighter than expected.',
+      'Shoulder impingement symptoms (pinching at the top of the arc) may be reduced by slightly tilting the pinky up or reducing range of motion.',
+      'Do not force the shoulder into a position that feels unstable or painful.',
+      'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Front Raises ──────────────────────────────────────────────────────────────
+  'front-raises': {
+    exerciseKey: 'front-raises',
+    displayName: 'Front Raises',
+    summary:
+      'A shoulder exercise where the arms are raised forward to roughly shoulder height, training ' +
+      'the front deltoid. The front delt is also heavily involved in most pressing movements, ' +
+      'so front raises are often used as an accessory rather than a primary exercise.',
+    setup: [
+      'Stand with a dumbbell, plate, or cable handle in each hand (or one held with both hands for a plate).',
+      'Palms facing down or angled inward — choose what feels natural for your wrist.',
+      'Stand tall with a natural posture and core lightly braced.',
+      'Keep the elbows slightly bent throughout — a locked straight arm is not required.',
+      'A light load is appropriate; front raises are a supplemental movement for most training goals.',
+    ],
+    execution: [
+      'Raise both arms forward to roughly shoulder height — parallel to the floor is a common stopping point.',
+      'Keep the movement controlled and deliberate; avoid using the trunk to swing the weight up.',
+      'Pause briefly at the top, then lower under control.',
+      'You do not need to raise above shoulder height — extra elevation recruits more upper trap and does not significantly add front delt work.',
+      'Choose a range of motion you can control comfortably with minimal torso lean.',
+    ],
+    breathing: [
+      'Breathe out as you raise the arms.',
+      'Breathe in as you lower them.',
+      'Keep breathing steadily throughout the set.',
+    ],
+    cues: [
+      '"Raise to parallel" — stopping at shoulder height is a clear, practical target.',
+      '"Torso stays tall" — any trunk lean to assist the raise is momentum, not muscle.',
+      '"Controlled descent" — lowering slowly is as valuable as raising deliberately.',
+      '"Elbows slightly soft" — a gentle bend reduces joint stress at the endpoint.',
+    ],
+    commonMistakes: [
+      'Swinging the torso back to generate momentum — reduces the demand on the front delt significantly.',
+      'Raising the arms well above shoulder height — adds little benefit and tends to involve the upper trap heavily.',
+      'Using too much weight — the front delt is a relatively small muscle; loads that require momentum are counterproductive.',
+      'Raising both arms simultaneously when the weight is too heavy — alternating arms allows better control per rep.',
+      'Ignoring the descent — the lowering phase provides training benefit; do not let the arms drop quickly.',
+    ],
+    variations: [
+      {
+        name: 'Plate Front Raise',
+        purpose: 'Holding a plate with both hands provides a stable, symmetrical load and natural grip.',
+        formChange: 'Hold a weight plate with both hands at the sides (like a steering wheel). Raise forward to shoulder height.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Alternating Dumbbell Front Raise',
+        purpose: 'One arm at a time allows better control and a brief rest between sides.',
+        formChange: 'Raise one arm at a time while the opposite arm rests at the side. Alternate each rep.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Cable Front Raise',
+        purpose: 'Provides constant tension through the range of motion, unlike dumbbells which have minimal tension at the bottom.',
+        formChange: 'Set a cable at floor level. Face away from the machine and raise the handle from hip to shoulder height.',
+        difficulty: 'similar',
+      },
+    ],
+    safetyNotes: [
+      'Front raises may feel redundant if your programme already includes significant overhead and chest pressing; consider whether they add meaningful volume for your goals.',
+      'Shoulder pain at the top of the range can often be addressed by stopping just below shoulder height.',
+      'Do not force the shoulder into a position that feels unstable or painful — adjust range or load first.',
+      'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Rear Delt Fly ─────────────────────────────────────────────────────────────
+  'rear-delt-fly': {
+    exerciseKey: 'rear-delt-fly',
+    displayName: 'Rear Delt Fly',
+    summary:
+      'A pulling movement that trains the rear deltoid, lower traps, and rhomboids through a ' +
+      'horizontal arc. It is often performed in a hinged or supported position to reduce lower-back ' +
+      'demand and isolate the rear shoulder.',
+    setup: [
+      'A useful starting position: hinge forward at the hips until your torso is close to parallel with the floor.',
+      'Hold a dumbbell in each hand, arms hanging straight below your shoulders, palms facing each other.',
+      'A slight bend in the elbows is useful — maintain this angle throughout.',
+      'Keep the spine in a comfortable neutral position; avoid rounding the back to reach the floor.',
+      'Alternatively, lie face-down on an incline bench for a fully supported setup.',
+    ],
+    execution: [
+      'Raise both arms outward and upward in a wide arc, leading with your elbows.',
+      'Aim to bring your arms roughly to the level of your torso — parallel to the floor is a useful target.',
+      'At the top, squeeze the rear delts and retract the shoulder blades briefly.',
+      'Lower under control, allowing the arms to return to hanging below the shoulders.',
+      'The movement is a fly, not a row — avoid bending the elbows more throughout the lift.',
+    ],
+    breathing: [
+      'Breathe out as you raise the arms.',
+      'Breathe in as you lower them.',
+      'Keep breathing steadily; the hinged position can make breathing feel more effortful.',
+    ],
+    cues: [
+      '"Lead with the elbows" — this keeps the rear delt as the primary mover.',
+      '"Squeeze at the top" — a brief hold at the top reinforces rear delt engagement.',
+      '"Thumbs slightly up" — rotating the thumb up as the arm rises can increase rear delt involvement for some people.',
+      '"Fly, not row" — the elbows should not bend more during the lift.',
+    ],
+    commonMistakes: [
+      'Bending the elbows progressively during the lift — this turns the movement into a row and reduces rear delt isolation.',
+      'Using too much weight — heavy rear delt flies almost always involve trunk swinging or arm pulling.',
+      'Not reaching parallel — a range of motion that stops well short of horizontal loses the peak contraction at the top.',
+      'Shrugging at the top — the trapezius taking over is common with too much weight or if the arm position is too high.',
+      'Raising the arms too high (above horizontal) — shifts demand to the upper traps significantly.',
+    ],
+    variations: [
+      {
+        name: 'Incline Bench Rear Delt Fly',
+        purpose: 'Lying face-down on an incline bench removes lower-back demand and allows full focus on the rear delt.',
+        formChange: 'Set a bench to 30–45°. Lie face-down and perform the same wide arc with arms hanging below.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Cable Rear Delt Fly',
+        purpose: 'Cables maintain tension throughout the arc; set the pulleys high and cross the cables for a horizontal pull.',
+        formChange: 'Set both pulleys at face height. Stand in the centre, cross your hands, and pull the handles apart in a wide arc.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Reverse Pec Deck',
+        purpose: 'A machine guides the arc and allows a heavier load with consistent resistance.',
+        formChange: 'Sit facing the pec deck pad. Grip the handles and move the arms apart in the reverse fly arc.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Face Pulls',
+        purpose: 'Adds an external-rotation finish to a similar cable pulling pattern; trains the rear delt and rotator cuff together.',
+        formChange: 'Set a cable at face height with a rope. Pull the rope toward your face while rotating the forearms upward.',
+        difficulty: 'similar',
+      },
+    ],
+    safetyNotes: [
+      'The hinged position places load on the lower back — use a supported setup if lower-back fatigue is a concern.',
+      'Keep the load light enough that the movement quality is high throughout all reps.',
+      'Do not force the shoulder into a position that feels unstable or painful.',
+      'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Upright Row ───────────────────────────────────────────────────────────────
+  'upright-row': {
+    exerciseKey: 'upright-row',
+    displayName: 'Upright Row',
+    summary:
+      'A pulling movement where the bar or dumbbells are drawn upward along the torso, training the ' +
+      'lateral deltoids and upper trapezius. The grip width and how high you pull can be adjusted ' +
+      'to find a range of motion that is comfortable for your shoulders.',
+    setup: [
+      'Hold a barbell, dumbbells, or cable handle in front of your body, arms extended.',
+      'Grip width affects comfort — a wider grip tends to feel more comfortable for the shoulder for many people; a close grip places the elbows in a more internally rotated position.',
+      'Stand with feet hip-width apart and a comfortable posture.',
+      'Let the bar or dumbbells rest at hip level before starting.',
+    ],
+    execution: [
+      'Pull the weight upward by driving your elbows upward and outward.',
+      'Raise only through a range of motion that feels comfortable — the elbows do not need to reach a fixed height.',
+      'Many people find that stopping when the weight is roughly at upper-chest or chin level is sufficient and comfortable.',
+      'Lower under control back to the starting position.',
+      'Avoid using a swinging torso to generate momentum — the pull should come from the shoulders and traps.',
+    ],
+    breathing: [
+      'Breathe in before pulling.',
+      'Exhale as you pull upward or at the top.',
+      'Breathe in on the way down.',
+    ],
+    cues: [
+      '"Elbows lead" — the elbows should travel higher than the wrists throughout the pull.',
+      '"Stop where it is comfortable" — there is no universal correct height; raise to where the shoulder feels stable.',
+      '"Control the descent" — lower slowly rather than dropping the weight back down.',
+      '"Wide grip for comfort" — a grip wider than hip width can feel more natural for the shoulder joint.',
+    ],
+    commonMistakes: [
+      'Forcing the elbows to a fixed height regardless of shoulder comfort — adjust the range to what is pain-free.',
+      'Close grip creating shoulder discomfort — try a wider grip as a first adjustment.',
+      'Swinging the torso to pull the weight — momentum bypasses the target muscles.',
+      'Pulling the bar so high it contacts the chin — this is not required and a more moderate range is equally effective.',
+    ],
+    variations: [
+      {
+        name: 'Dumbbell Upright Row',
+        purpose: 'Dumbbells allow the hands to travel a more natural path rather than being locked to a fixed bar.',
+        formChange: 'Hold a dumbbell in each hand. Pull upward in the same pattern, elbows leading.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Cable Upright Row',
+        purpose: 'Consistent cable tension throughout the range; easy to adjust load.',
+        formChange: 'Set a cable at the lowest position. Grip the bar and pull upward in the same pattern.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Lateral Raise',
+        purpose: 'An alternative that trains the lateral deltoid without the internal-rotation position of an upright row.',
+        formChange: 'Raise the arms outward to the sides rather than pulling vertically. No bar involved.',
+        difficulty: 'similar',
+      },
+    ],
+    safetyNotes: [
+      'Some people experience shoulder discomfort with upright rows — particularly at a close grip and when pulling to chin height. Adjusting grip width and limiting the range of motion are practical first steps.',
+      'If discomfort persists regardless of grip or range of motion, lateral raises and cable high pulls offer similar training stimulus with a different shoulder position.',
+      'Do not force the shoulder into a position that feels unstable or painful.',
+      'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Shrugs ────────────────────────────────────────────────────────────────────
+  'shrugs': {
+    exerciseKey: 'shrugs',
+    displayName: 'Shrugs',
+    summary:
+      'A simple shoulder-elevation movement with a barbell, dumbbells, or cables that primarily ' +
+      'trains the upper trapezius. The movement is a vertical shrug of the shoulders — ' +
+      'not a circular roll.',
+    setup: [
+      'Hold a barbell in front of you at hip height (or dumbbells at the sides), arms straight.',
+      'Stand with feet hip-width apart, posture upright.',
+      'Let the shoulders start in a relaxed, natural position — not pre-elevated.',
+      'Grip should be firm but not white-knuckled; straps are a practical option if grip limits the set before the traps do.',
+    ],
+    execution: [
+      'Elevate both shoulders straight upward — imagine trying to touch your ears with your shoulders.',
+      'Hold briefly at the top before lowering under control.',
+      'Lower the shoulders fully to a relaxed position between reps.',
+      'Avoid rolling the shoulders forward or backward — a straight vertical elevation is sufficient and more consistent.',
+      'Keep the neck relaxed; there is no need to tuck or strain the head during the lift.',
+    ],
+    breathing: [
+      'Breathe in before shrugging.',
+      'Exhale at the top of the shrug or as you lower.',
+      'Keep breathing steadily across the set.',
+    ],
+    cues: [
+      '"Straight up, straight down" — the shrug is a vertical movement; rolling adds complexity without adding benefit.',
+      '"Pause at the top" — a brief hold makes the contraction more deliberate.',
+      '"Neck stays long" — avoid shortening the neck or tensing the jaw during the shrug.',
+      '"Full lower" — coming all the way down between reps maintains the full range of motion.',
+    ],
+    commonMistakes: [
+      'Rolling the shoulders — circular rolling is not necessary and can feel uncomfortable on the shoulder joint under load.',
+      'Not holding at the top — rushing through removes the peak contraction benefit.',
+      'Not lowering fully between reps — short reps limit the range of motion and the training stimulus.',
+      'Bending the elbows — the arms should stay straight throughout; any arm bending turns the movement into a partial row.',
+      'Straining the neck — the neck should be relaxed; the traps, not the neck muscles, should be doing the work.',
+    ],
+    variations: [
+      {
+        name: 'Dumbbell Shrugs',
+        purpose: 'Dumbbells allow the hands to rest naturally at the sides rather than in front of the body; some people find this more comfortable.',
+        formChange: 'Hold a dumbbell in each hand at the sides. Shrug straight up in the same pattern.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Cable Shrugs',
+        purpose: 'Consistent tension through the range of motion; easier to adjust load incrementally.',
+        formChange: 'Set a cable at floor height. Grip the bar and perform the same straight-up shrug.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Barbell Behind-the-back Shrug',
+        purpose: 'Bar behind the hips changes the angle of pull on the traps slightly.',
+        formChange: 'Hold the barbell behind you at hip level. Shrug straight up in the same pattern.',
+        difficulty: 'similar',
+      },
+    ],
+    safetyNotes: [
+      'Use straps or hook grips if grip fatigue consistently limits your sets before the traps are worked.',
+      'Neck soreness after shrugs is sometimes related to unconscious neck tension during the lift — focus on a long, relaxed neck.',
+      'Avoid loading shrugs so heavily that you cannot maintain a straight-up shrug path and a controlled descent.',
+      'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Cable Lateral Raises ──────────────────────────────────────────────────────
+  'cable-lateral-raises': {
+    exerciseKey: 'cable-lateral-raises',
+    displayName: 'Cable Lateral Raises',
+    summary:
+      'A cable-based version of the lateral raise that provides tension at the bottom of the arc — ' +
+      'where dumbbells have little resistance. This makes the shoulder work through more of its range ' +
+      'than a dumbbell version typically allows.',
+    setup: [
+      'Set the cable pulley at the lowest position.',
+      'Stand beside the cable station with the working arm closest to the machine.',
+      'Grip the handle with the hand farthest from the machine, reaching across the body.',
+      'Stand tall with a slight stance for stability; the free hand can hold the machine for support.',
+      'The cable should be pulling slightly across your body at the bottom — this is what provides tension through the bottom of the arc.',
+    ],
+    execution: [
+      'Raise the arm outward to roughly shoulder height in a wide arc, maintaining a slight elbow bend.',
+      'Keep the movement smooth — the cable provides consistent tension that rewards a controlled pace.',
+      'Pause briefly at the top before lowering under control.',
+      'Avoid leaning away from the machine with the trunk to assist the raise — keep the torso stable.',
+      'Complete all reps on one side before switching.',
+    ],
+    breathing: [
+      'Breathe out as you raise the arm.',
+      'Breathe in as you lower.',
+      'Keep breathing steadily throughout.',
+    ],
+    cues: [
+      '"Bottom tension is the point" — the benefit over dumbbells is the cable load at the start of the arc.',
+      '"Torso stays still" — any lateral lean shifts the movement away from the shoulder.',
+      '"Lead with the elbow" — the elbow tracks slightly above the wrist throughout the arc.',
+      '"Slow the descent" — the cable makes it easy to lower quickly; resist that temptation.',
+    ],
+    commonMistakes: [
+      'Leaning away from the cable — this changes the pulling angle and is often a sign the load is too heavy.',
+      'Using momentum to swing the arm up — slow controlled raises yield better lateral delt work.',
+      'Setting the cable too high — the pulley should be at floor level to maintain the tension at the bottom of the arc.',
+      'Pulling the handle too far across the body at the start — a gentle cross-body position is fine; reaching awkwardly can strain the shoulder.',
+    ],
+    variations: [
+      {
+        name: 'Dumbbell Lateral Raise',
+        purpose: 'No cable machine required; provides more load at the top of the arc and less at the bottom.',
+        formChange: 'Hold dumbbells at the sides. Raise outward to shoulder height in the same arc.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Behind-the-body Cable Lateral Raise',
+        purpose: 'Running the cable behind the back slightly changes the angle of pull on the lateral delt.',
+        formChange: 'Set the cable low on the opposite side. Pass the cable behind your body and raise the arm on the near side.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Single-arm Cable Lateral Raise (facing the machine)',
+        purpose: 'Standing facing the cable provides a slightly different arc and tension profile.',
+        formChange: 'Face the cable machine. Grip the handle with the arm opposite the machine. Raise outward.',
+        difficulty: 'similar',
+      },
+    ],
+    safetyNotes: [
+      'Start with a lighter load than your dumbbell lateral raise — the constant cable tension can feel harder through the full arc.',
+      'Shoulder discomfort at the top of the range can often be addressed by stopping just below horizontal.',
+      'Do not force the shoulder into a position that feels unstable or painful.',
+      'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Kettlebell Press ──────────────────────────────────────────────────────────
+  'kettlebell-press': {
+    exerciseKey: 'kettlebell-press',
+    displayName: 'Kettlebell Press',
+    summary:
+      'A single-arm overhead pressing movement using a kettlebell held in the rack position. ' +
+      'The offset weight of the kettlebell challenges wrist alignment and shoulder stability differently ' +
+      'from a dumbbell, and the single-arm nature requires core anti-rotation control.',
+    setup: [
+      'Clean the kettlebell to the rack position: forearm roughly vertical, bell resting on the outside of the forearm, elbow close to the ribs.',
+      'Wrist should be straight or only very slightly extended — the bell should feel secure, not tilting.',
+      'Stand with feet hip-width apart, brace your core before pressing.',
+      'Squeeze the glutes on the working side for added trunk stability.',
+      'The rack position takes practice — if it feels awkward, start with a lighter bell and practise the clean and rack separately.',
+    ],
+    execution: [
+      'Press the kettlebell straight overhead until the arm reaches full extension.',
+      'At lockout, the bicep should be close to or beside the ear — the arm is vertical, not angled forward.',
+      'Lower back to the rack position under control.',
+      'Keep the trunk stable throughout — avoid leaning sideways to complete the press.',
+      'Choose a load you can press with a straight-up path; leaning is a sign the load is too heavy or the rack position is not stable.',
+    ],
+    breathing: [
+      'Breathe in and brace before pressing.',
+      'Exhale at the top or just past the sticking point.',
+      'Re-brace before the next rep.',
+    ],
+    cues: [
+      '"Rack first, press second" — the quality of the rack position determines the quality of the press.',
+      '"Straight wrist" — the bell should not tilt the wrist back excessively during the press.',
+      '"Bicep beside the ear at lockout" — a useful check for full overhead extension.',
+      '"Core braced against rotation" — the body should not rotate toward the pressing arm during the lift.',
+    ],
+    commonMistakes: [
+      'Wrist bending backward during the press — practice the rack and press with a lighter bell until the wrist stays aligned.',
+      'Leaning away from the pressing arm — the trunk should remain vertical; lean is a sign of insufficient strength or an unstable rack.',
+      'The bell tilting backward at the top — the arm should be vertical with the bell balanced above the forearm.',
+      'Pressing from a poor rack position — if the rack feels unstable, stop and reset before pressing.',
+      'Gripping the handle too tightly — a moderate, controlled grip is sufficient; white-knuckling the bell does not add stability.',
+    ],
+    variations: [
+      {
+        name: 'Bottom-up Kettlebell Press',
+        purpose: 'Pressing with the bell inverted (handle down, ball up) demands much more wrist and shoulder stability.',
+        formChange: 'Grip the handle and hold the bell upside down. Press with the ball pointing upward throughout.',
+        difficulty: 'harder',
+      },
+      {
+        name: 'Half-kneeling Kettlebell Press',
+        purpose: 'Kneeling on the same-side knee as the pressing arm changes the hip and trunk stability demand.',
+        formChange: 'Drop to one knee. The same-side knee is down. Press from the rack position on the kneeling-side arm.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Double Kettlebell Press',
+        purpose: 'Pressing two kettlebells simultaneously doubles the load and the bilateral shoulder demand.',
+        formChange: 'Clean two kettlebells to the rack position. Press both at the same time.',
+        difficulty: 'harder',
+      },
+      {
+        name: 'Dumbbell Shoulder Press',
+        purpose: 'A more stable implement for building overhead pressing strength before transitioning to the kettlebell rack position.',
+        formChange: 'Hold dumbbells at shoulder height. Press overhead with the same vertical path.',
+        difficulty: 'easier',
+      },
+    ],
+    safetyNotes: [
+      'Master the clean and rack position with a light bell before adding pressing load — a poor rack creates instability at the shoulder.',
+      'Forearm bruising from the clean is common for beginners — it reduces as technique improves.',
+      'Do not force the shoulder into overhead range if the rack position is not stable.',
+      'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Kettlebell Halo ───────────────────────────────────────────────────────────
+  'kettlebell-halo': {
+    exerciseKey: 'kettlebell-halo',
+    displayName: 'Kettlebell Halo',
+    summary:
+      'A mobility and stability exercise where a light kettlebell is circled around the head in a ' +
+      'controlled arc. It moves the shoulder through a large range of motion while the trunk stays ' +
+      'stable — commonly used as a warm-up or accessory movement.',
+    setup: [
+      'Hold the kettlebell by the horns (both hands gripping the sides of the handle) at chest level, bell facing down.',
+      'Stand or kneel — kneeling removes lower-body compensation and focuses the movement on the trunk and shoulder.',
+      'Start with a light bell; this is not a strength exercise and heavy loading is counterproductive.',
+      'Stand tall with feet hip-width apart and the core lightly braced.',
+    ],
+    execution: [
+      'Begin moving the kettlebell in an arc around your head, keeping the bell as close to the head as comfortably possible.',
+      'The path goes from in front of the face, around one side of the head, behind the neck, around the other side, and back to the front.',
+      'Keep the ribs pulled down and the trunk stable — avoid letting the lower back arch or the ribs flare as the bell passes behind.',
+      'Move at a slow, deliberate pace; this is a controlled movement, not a swing.',
+      'Complete a set number of circles in one direction, then reverse.',
+    ],
+    breathing: [
+      'Breathe steadily throughout — the movement should not require breath-holding.',
+      'A light exhale as the bell passes in front (the more demanding phase) is a useful pattern.',
+    ],
+    cues: [
+      '"Ribs down" — the most common failure point is the lower back arching as the bell passes behind the head.',
+      '"Bell close to the head" — a tighter arc means more control and a more effective movement.',
+      '"Slow and deliberate" — rushing through halos reduces the mobility and stability benefit.',
+      '"Tall posture" — the head should not duck toward the bell; the bell moves around the head.',
+    ],
+    commonMistakes: [
+      'Using a bell that is too heavy — the halo is a mobility drill, not a strength exercise; a very light bell is appropriate.',
+      'Arching the lower back as the bell passes behind — brace the trunk and keep the ribs neutral.',
+      'Ducking or tilting the head to make room — the head should stay still while the bell circles around it.',
+      'Rushing the movement — a slow, controlled arc is more effective than a fast swing.',
+    ],
+    variations: [
+      {
+        name: 'Kneeling Kettlebell Halo',
+        purpose: 'Removes any lower-body compensation and requires the trunk to work harder to stay stable.',
+        formChange: 'Kneel on both knees (or one knee) instead of standing. Same circular path around the head.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Plate Halo',
+        purpose: 'A weight plate is an alternative to a kettlebell; the flat shape can be easier to grip.',
+        formChange: 'Hold a weight plate by the edges at chest height. Circle it around the head in the same controlled arc.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Seated Halo',
+        purpose: 'Sitting on a bench removes the lower-body stability element entirely.',
+        formChange: 'Sit upright on a bench. Perform the same circular path with the bell.',
+        difficulty: 'easier',
+      },
+    ],
+    safetyNotes: [
+      'Use a light bell — heavier halos tend to force the lower back to arch to compensate, which defeats the purpose of the exercise.',
+      'Keep the movement slow enough to stop at any point — this is especially important when learning the path behind the head.',
+      'If the shoulder has limited range that makes the behind-the-neck portion uncomfortable, reduce the arc size rather than forcing it.',
+      'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Kettlebell Clean and Press ────────────────────────────────────────────────
+  'kettlebell-clean-and-press': {
+    exerciseKey: 'kettlebell-clean-and-press',
+    displayName: 'Kettlebell Clean and Press',
+    summary:
+      'A two-phase movement that combines a clean (lifting the bell from the floor to the rack ' +
+      'position) with a strict overhead press. It trains the posterior chain, shoulders, and ' +
+      'triceps while requiring full-body coordination.',
+    setup: [
+      'Stand with the kettlebell on the floor between your feet, roughly centred under your hip.',
+      'Hinge at the hips to grip the handle, arm straight, shoulder over the bell.',
+      'Brace your core before the clean phase begins.',
+      'The rack position is the goal of the clean phase — the forearm vertical, bell resting on the outside of the forearm, elbow close to the ribs.',
+      'Practise the clean and the press as separate exercises before linking them.',
+    ],
+    execution: [
+      'Initiate the clean with a hip-hinge drive — not a bicep curl. The hips extend and the bell travels in a tight arc close to the body.',
+      'As the bell reaches chest height, rotate your forearm under the bell to catch it in the rack position.',
+      'Allow the bell to settle into the rack before pressing — do not rush from the clean into the press.',
+      'Press from the rack position straight overhead to full extension, bicep beside the ear.',
+      'Lower the bell to the rack, then return to the floor by reversing the clean under control.',
+    ],
+    breathing: [
+      'Breathe in and brace before the clean.',
+      'Exhale as the bell settles into the rack.',
+      'Re-brace, then exhale through the press.',
+      'Breathe in before lowering back to the floor.',
+    ],
+    cues: [
+      '"Hip drive, not arm curl" — the clean is powered by the hips, not the bicep.',
+      '"Bell stays close" — a bell that swings away from the body during the clean is harder to receive in a controlled rack.',
+      '"Quiet rack" — the bell should land softly in the rack position, not crash onto the forearm.',
+      '"Press from stable rack" — pause in the rack before pressing rather than chaining the two movements without control.',
+    ],
+    commonMistakes: [
+      'Curling the bell up with the arm rather than using hip drive — this limits the load and strains the bicep.',
+      'The bell crashing onto the forearm — caused by the bell swinging out too wide; keep the path close to the body.',
+      'Pressing before the rack is stable — rushing from the clean to the press leads to poor rack position and an unstable press.',
+      'Using a push-press (knee dip) instead of a strict press without intending to — add a knee dip deliberately only if that is the goal.',
+      'Lowering the bell too quickly back to the floor — control the descent just as you control the ascent.',
+    ],
+    variations: [
+      {
+        name: 'Kettlebell Clean (alone)',
+        purpose: 'Practising the clean phase in isolation before adding the press; essential for building technique.',
+        formChange: 'Perform only the clean phase from the floor to the rack position, then lower and repeat.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Kettlebell Press (from rack, no clean)',
+        purpose: 'Practising the press phase independently to build overhead strength without the clean complexity.',
+        formChange: 'Clean the bell once and hold in the rack. Perform multiple press reps from the rack without re-cleaning.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Double Kettlebell Clean and Press',
+        purpose: 'Two kettlebells double the load and coordination demand.',
+        formChange: 'Clean two kettlebells simultaneously. Press both at the same time from the double-rack position.',
+        difficulty: 'harder',
+      },
+      {
+        name: 'Kettlebell Clean and Push Press',
+        purpose: 'Adds a knee dip before the press to assist heavier loads past the sticking point.',
+        formChange: 'Clean to the rack, then use a brief leg drive to initiate the press before locking out with the shoulder.',
+        difficulty: 'similar',
+      },
+    ],
+    safetyNotes: [
+      'Master the clean and the press as separate movements before combining them — the combined movement requires both skills.',
+      'Forearm bruising from the clean is common for beginners; it reduces as technique and the rack position improve.',
+      'Do not force the clean or the press through a range that feels unstable — reduce the load first.',
+      'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Kettlebell Front Raise ────────────────────────────────────────────────────
+  'kettlebell-front-raise': {
+    exerciseKey: 'kettlebell-front-raise',
+    displayName: 'Kettlebell Front Raise',
+    summary:
+      'A front-delt accessory movement using a kettlebell held by the horns or the handle. ' +
+      'The arc and grip are slightly different from a dumbbell front raise, and it can be ' +
+      'performed with one or two hands.',
+    setup: [
+      'Stand with feet hip-width apart, tall posture.',
+      'For a two-arm raise: hold the kettlebell by the horns at hip height, bell facing down.',
+      'For a single-arm raise: grip the handle in one hand at the side.',
+      'Use a light load — the front delt is relatively small and is already trained by most pressing work.',
+      'Core lightly braced before beginning.',
+    ],
+    execution: [
+      'Raise the kettlebell forward to roughly shoulder height, keeping the elbows slightly bent.',
+      'Pause briefly at the top before lowering under control.',
+      'Avoid using the trunk to swing the bell — the raise should come from the shoulder.',
+      'Keep the ribs pulled down; do not let the lower back arch to reach shoulder height.',
+      'Lower slowly — a controlled descent increases the training stimulus.',
+    ],
+    breathing: [
+      'Breathe out as you raise the bell.',
+      'Breathe in as you lower it.',
+      'Keep breathing steadily throughout the set.',
+    ],
+    cues: [
+      '"Raise to parallel" — shoulder height is a practical and sufficient endpoint.',
+      '"Ribs down" — avoid rib flare or lower-back arch at the top.',
+      '"Controlled descent" — resist the bell on the way down rather than letting gravity take it.',
+      '"Minimal trunk movement" — if the torso is swinging, reduce the load.',
+    ],
+    commonMistakes: [
+      'Using momentum from the legs or trunk to raise the bell — reduces the demand on the front delt.',
+      'Raising significantly above shoulder height — adds little front delt benefit and increases upper-trap involvement.',
+      'Rib flare at the top of the raise — keep the core braced and the ribs neutral.',
+      'Too heavy a load — the kettlebell front raise should use a modest weight for clean, controlled reps.',
+    ],
+    variations: [
+      {
+        name: 'Dumbbell Front Raise',
+        purpose: 'A standard dumbbell alternative with a more conventional grip.',
+        formChange: 'Hold a dumbbell in one or both hands. Raise forward to shoulder height.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Plate Front Raise',
+        purpose: 'A plate held with both hands provides a stable, symmetrical grip.',
+        formChange: 'Hold a weight plate at the sides. Raise forward with both arms.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Cable Front Raise',
+        purpose: 'Provides consistent tension at the bottom of the arc that dumbbells and kettlebells lack.',
+        formChange: 'Set a cable at floor level. Face away from the machine and raise the handle from hip to shoulder height.',
+        difficulty: 'similar',
+      },
+    ],
+    safetyNotes: [
+      'The front deltoid is heavily trained by pressing movements — keep front raise volume moderate and loads light.',
+      'Shoulder discomfort at the top of the range can usually be addressed by stopping just below shoulder height.',
+      'Do not force the shoulder into a position that feels unstable or painful.',
+      'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Handstand Push-ups ────────────────────────────────────────────────────────
+  'handstand-push-ups': {
+    exerciseKey: 'handstand-push-ups',
+    displayName: 'Handstand Push-ups',
+    summary:
+      'An advanced vertical pressing movement performed upside down, using the wall for balance ' +
+      'support. It trains the shoulders, triceps, and upper traps under full bodyweight load. ' +
+      'Significant overhead pressing strength, shoulder stability, and a degree of balance control ' +
+      'are required before attempting this movement.',
+    setup: [
+      'Build prerequisite strength: pike push-ups, elevated pike push-ups, and overhead pressing should feel strong before attempting wall-assisted handstand push-ups.',
+      'Place your hands roughly shoulder-width apart (or slightly wider) on the floor, roughly 15–30 cm from the wall.',
+      'Kick up or walk your feet up the wall to a handstand position — walk the feet up rather than kicking up powerfully if you are new to this.',
+      'Once in position, your body should be as vertical as possible with the core braced and the lower back not excessively arched.',
+      'The head looks at the floor rather than toward the wall.',
+    ],
+    execution: [
+      'Lower your head toward the floor by bending your elbows, keeping the elbows tracking roughly over your hands rather than flaring very wide.',
+      'Lower to a depth you can control — the top of the head touching or approaching the floor is the full-range endpoint, but a partial range is a valid starting point.',
+      'Press back up to full lockout.',
+      'Choose a range of motion you can safely return from — the ability to press back up is as important as the ability to lower.',
+      'When finished, walk your feet down the wall rather than dropping away from it.',
+    ],
+    breathing: [
+      'Breathe in before lowering.',
+      'Exhale as you press back up or at lockout.',
+      'Avoid holding your breath through the full movement — the inverted position makes breathing feel effortful, but continue breathing.',
+    ],
+    cues: [
+      '"Hands close to the wall" — too much distance from the wall makes the balance more difficult and the body less vertical.',
+      '"Core braced" — a braced midsection keeps the body in a more vertical line and reduces lower-back arching.',
+      '"Slow the descent" — a controlled lowering phase builds the strength and confidence needed for this skill.',
+      '"Press, do not drift" — the press should be vertically upward, not toward the wall.',
+    ],
+    commonMistakes: [
+      'Attempting handstand push-ups without sufficient pressing strength — build a foundation with pike push-ups and overhead pressing first.',
+      'Hands placed too far from the wall — reduces the verticality of the position and makes balance harder.',
+      'Excessive lower-back arch — indicates insufficient core bracing or insufficient overhead shoulder flexibility.',
+      'Lowering to a depth you cannot press back from — start with a partial range of motion and build depth gradually.',
+      'Kicking up with too much force when learning — walking the feet up the wall is safer and more controlled.',
+    ],
+    variations: [
+      {
+        name: 'Elevated Pike Push-up',
+        purpose: 'Feet on a box or bench increase the shoulder angle without requiring a full inversion; a key regression.',
+        formChange: 'Place feet on an elevated surface. Hands on the floor in a pike. Lower the head toward the floor.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Partial-range Handstand Push-up',
+        purpose: 'Starting with a limited descent builds strength safely before working toward full range.',
+        formChange: 'In the wall-supported handstand position, lower only as far as you can comfortably press back up from.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Pike Push-up',
+        purpose: 'A floor-based version with a less extreme angle; an earlier step in the progression.',
+        formChange: 'Hips elevated in a pike on the floor. Lower the head toward the floor between the hands.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Freestanding Handstand Push-up',
+        purpose: 'The ultimate progression — no wall for balance; requires handstand skill in addition to pressing strength.',
+        formChange: 'Balance in a freestanding handstand and perform the same press. Only appropriate after the wall-assisted version is fully controlled.',
+        difficulty: 'harder',
+      },
+    ],
+    safetyNotes: [
+      'Do not attempt handstand push-ups until you can confidently walk up to and hold a wall-supported handstand — the pressing demand without the balance skill is a recipe for an uncontrolled fall.',
+      'Wrist discomfort is common in the handstand position — warm up the wrists thoroughly and consider push-up handles if it persists.',
+      'Neck and shoulder stress increases significantly if you fall out of a vertical line — practise with a spotter or soft mat when learning.',
+      'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Wall Walk ─────────────────────────────────────────────────────────────────
+  // Shared record: Shoulders + Core (do not add again in the Core batch)
+  'wall-walk': {
+    exerciseKey: 'wall-walk',
+    displayName: 'Wall Walk',
+    summary:
+      'A progressive inversion movement where you begin in a push-up plank, walk your feet up a wall ' +
+      'behind you, and walk your hands toward the wall until you reach a near-handstand or handstand ' +
+      'position. It challenges shoulder strength, overhead control, trunk stability, and full-body ' +
+      'coordination — and importantly, requires you to walk back down under control.',
+    setup: [
+      'Start in a push-up plank position with your feet against the base of the wall, toes touching.',
+      'Hands should be flat on the floor, roughly shoulder-width apart.',
+      'Brace your core before moving — the trunk should remain stable throughout.',
+      'Choose a goal position for this session: a modest inversion (feet at hip or waist height) is a valid and effective target; a full handstand is not required.',
+      'Ensure you have enough clear space in front of you to walk your hands forward during the return.',
+    ],
+    execution: [
+      'From the plank, push one foot up the wall, then the other, so your feet are elevated.',
+      'Walk your hands toward the wall while your feet walk higher — the body becomes increasingly vertical.',
+      'Move slowly and deliberately; each hand and foot placement should feel stable before the next.',
+      'Stop at a position you can comfortably return from — do not walk higher than you can safely descend.',
+      'To return, walk your hands away from the wall and your feet down the wall in the reverse sequence.',
+    ],
+    breathing: [
+      'Breathe steadily throughout the movement.',
+      'A short exhale during each hand or foot movement can help with stability.',
+      'Avoid holding your breath for the duration of the walk — the effort can feel intense, especially near the inverted position.',
+    ],
+    cues: [
+      '"Move one limb at a time" — small, deliberate steps are safer than large, rapid movements.',
+      '"Core on throughout" — a braced trunk prevents the lower back from arching as the body becomes more vertical.',
+      '"Stop where you can return" — only move to a position you can reverse without rushing.',
+      '"Slow the return" — walking back down requires the same control as walking up.',
+    ],
+    commonMistakes: [
+      'Walking up too quickly — speed reduces control; slow deliberate movement is the goal.',
+      'Going higher than you can safely descend from — always maintain the ability to walk back down.',
+      'Losing trunk control as the body approaches vertical — rib flare or lower-back arch indicate the core is not maintaining position.',
+      'Rushing the descent — walking back down should be just as controlled as the ascent.',
+      'Attempting a full handstand position before building the necessary shoulder strength and body awareness — start with a modest inversion and progress over time.',
+    ],
+    variations: [
+      {
+        name: 'Incline Wall Walk',
+        purpose: 'A partial wall walk stopping when the feet are at hip or chest height; a beginner-friendly version.',
+        formChange: 'Walk your feet up to hip or waist height only. Hold briefly, then walk back down.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Elevated Pike Push-up',
+        purpose: 'Builds the shoulder and trunk strength needed for wall walks without the balance challenge of inversion.',
+        formChange: 'Place feet on a box or bench with hips elevated. Lower the head toward the floor in a pike position.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Full Wall Walk to Handstand Hold',
+        purpose: 'Walking all the way to a near-handstand and holding — a natural progression once the movement is well-controlled.',
+        formChange: 'Walk hands to within a few inches of the wall and hold the near-vertical position for a timed hold.',
+        difficulty: 'harder',
+      },
+    ],
+    safetyNotes: [
+      'Wrist discomfort is common in this position — warm up the wrists before attempting wall walks and use push-up handles if needed.',
+      'Shoulder fatigue near an inverted position can happen quickly — begin with a limited inversion and build endurance gradually.',
+      'Never move to a position you are not confident you can descend from — getting stuck near the top is a fall risk.',
       'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
     ],
     contentVersion: 1,
