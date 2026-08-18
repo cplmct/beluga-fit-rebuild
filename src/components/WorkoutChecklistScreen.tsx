@@ -425,6 +425,33 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
         }
       });
 
+      // Convert each entered weight to the canonical storage unit (kg) once,
+      // keyed by the exercise's original index so the set-insert, PR-upsert,
+      // and PR-alert paths all compare/store the same value. personal_records
+      // .value and session_sets.weight_kg both hold kilograms; the user's
+      // display unit only affects data entry. Reusing one converted value
+      // guarantees no branch mixes a raw lbs figure against stored kg baselines.
+      //
+      // NOTE: rows written before this conversion existed, by users whose
+      // display unit was lbs, may hold lbs-shaped values in weight_kg /
+      // personal_records.value with no entered_unit provenance captured. Those
+      // rows require a separate data review — do NOT backfill blind
+      // conversions here without a proven entered-unit column.
+      const weightKgByIndex = new Map<number, number | null>();
+      for (const { exercise, originalIndex } of validExercises) {
+        const entered = exercise.weight;
+        weightKgByIndex.set(
+          originalIndex,
+          entered !== null && entered !== ''
+            ? Math.round(
+                parseFloat(entered as string) *
+                  (weightUnit === 'lbs' ? 0.453592 : 1) *
+                  100
+              ) / 100
+            : null
+        );
+      }
+
       if (validExercises.length > 0) {
         const sessionExerciseRows = validExercises.map(({ exercise, originalIndex }) => ({
           session_id: session.id,
@@ -446,19 +473,18 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
           if (!match) continue;
           const { exercise, originalIndex } = match;
 
-          const weight =
-            exercise.weight !== null && exercise.weight !== ''
-              ? parseFloat(exercise.weight as string)
-              : null;
+          // weight_kg is always kilograms (see weightKgByIndex above).
+          const weightKg = weightKgByIndex.get(originalIndex) ?? null;
           const prevMax = maxWeightMap[exercise.name] || 0;
-          const isPr = weight !== null && weight > 0 && weight > prevMax;
+          // prevMax comes from personal_records.value (kg), so compare kg-vs-kg.
+          const isPr = weightKg !== null && weightKg > 0 && weightKg > prevMax;
 
           for (let setNum = 1; setNum <= exercise.sets; setNum++) {
             allSetRows.push({
               session_exercise_id: insertedEx.id,
               set_number: setNum,
               reps: exercise.reps,
-              weight_kg: weight,
+              weight_kg: weightKg,
               is_completed: completedExercises.has(originalIndex),
               is_pr: setNum === 1 && isPr,
             });
@@ -488,24 +514,24 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
           for (const insertedEx of insertedExercises || []) {
             const match = validExercises.find((ve) => ve.originalIndex === insertedEx.order_index);
             if (!match) continue;
-            const { exercise } = match;
+            const { exercise, originalIndex } = match;
             const exId = nameToExId[exercise.name];
             if (!exId) continue;
 
-            const weight =
-              exercise.weight !== null && exercise.weight !== ''
-                ? parseFloat(exercise.weight as string)
-                : null;
+            // Reuse the canonical kg value from the precompute map so the PR
+            // upsert is kg-consistent with session_sets.weight_kg above.
+            // personal_records .value (max_weight) is stored in kilograms.
+            const weightKg = weightKgByIndex.get(originalIndex) ?? null;
             const setId = seIdToFirstSetId[insertedEx.id];
             if (!setId) continue;
 
-            // max_weight — only upsert if new weight exceeds current personal record
-            if (weight !== null && weight > 0 && weight > (prWeightMap[exId] || 0)) {
+            // max_weight — only upsert if new kg weight exceeds current personal record
+            if (weightKg !== null && weightKg > 0 && weightKg > (prWeightMap[exId] || 0)) {
               prUpsertRows.push({
                 user_id: user.id,
                 exercise_id: exId,
                 record_type: 'max_weight',
-                value: weight,
+                value: weightKg,
                 session_set_id: setId,
                 achieved_at: new Date().toISOString(),
               });
@@ -659,20 +685,20 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
 
       scheduleInactivityReminder(user.id);
 
-      // Build PR names for alert — completed exercises only, deduplicated
+      // Build PR names for alert — completed exercises only, deduplicated.
+      // Uses the canonical kg value (weightKgByIndex) vs the kg baseline from
+      // personal_records (maxWeightMap), mirroring the session_sets/PR-upsert
+      // comparisons above so a lbs-entered weight is never compared raw.
       const prNames: string[] = [
         ...new Set(
           validExercises
             .filter(({ exercise, originalIndex }) => {
-              const weight =
-                exercise.weight !== null && exercise.weight !== ''
-                  ? parseFloat(exercise.weight as string)
-                  : null;
+              const weightKg = weightKgByIndex.get(originalIndex) ?? null;
               const prevMax = maxWeightMap[exercise.name] || 0;
               return (
-                weight !== null &&
-                weight > 0 &&
-                weight > prevMax &&
+                weightKg !== null &&
+                weightKg > 0 &&
+                weightKg > prevMax &&
                 completedExercises.has(originalIndex)
               );
             })

@@ -48,6 +48,21 @@ function formatShortDate(dateString: string): string {
   });
 }
 
+const KG_TO_LBS = 2.20462;
+
+function formatWeightForDisplay(weightKg: number | null | undefined, unit: string): string {
+  if (weightKg === null || weightKg === undefined) return '—';
+  if (unit === 'lbs') {
+    return `${(weightKg * KG_TO_LBS).toFixed(1)} ${unit}`;
+  }
+  return `${weightKg} ${unit}`;
+}
+
+function convertWeightForChart(weightKg: number, unit: string): number {
+  const displayWeight = unit === 'lbs' ? weightKg * KG_TO_LBS : weightKg;
+  return Math.round(displayWeight * 10) / 10;
+}
+
 function SkeletonBlock({
   width,
   height = 14,
@@ -285,12 +300,12 @@ export function ExerciseDetailScreen({ route, navigation }: any) {
           labels: weightChartPoints.map((item) => formatShortDate(item.date)),
           datasets: [
             {
-              data: weightChartPoints.map((item) =>
-                Math.max(...item.sets
-                  .filter(s => s.weightKg != null && s.weightKg > 0)
-                  .map(s => s.weightKg as number)
-                )
-              ),
+              data: weightChartPoints.map((item) => {
+                const weightedSets = item.sets.filter(s => s.weightKg != null && s.weightKg > 0);
+                if (weightedSets.length === 0) return 0;
+                const maxKg = Math.max(...weightedSets.map(s => s.weightKg as number));
+                return convertWeightForChart(maxKg, weightUnit);
+              }),
               color: (opacity = 1) => `rgba(37, 99, 235, ${opacity})`,
               strokeWidth: 2,
             },
@@ -326,7 +341,7 @@ export function ExerciseDetailScreen({ route, navigation }: any) {
                 <Text style={styles.prEmoji}>🏆</Text>
                 <View>
                   <Text style={styles.prValue}>
-                    {currentPRs.maxWeight} {weightUnit}
+                    {formatWeightForDisplay(currentPRs.maxWeight, weightUnit)}
                   </Text>
                   <Text style={styles.prType}>Max weight</Text>
                 </View>
@@ -392,9 +407,7 @@ export function ExerciseDetailScreen({ route, navigation }: any) {
                         {formatShortDate(item.date)}
                       </Text>
                       <Text style={styles.progressionDetail}>
-                        {weight !== null && weight !== undefined
-                          ? `${weight} ${weightUnit}`
-                          : '—'}{' '}
+                        {formatWeightForDisplay(weight, weightUnit)}{' '}
                         × {reps ?? '—'} reps
                       </Text>
                       {item.hasPr && (
