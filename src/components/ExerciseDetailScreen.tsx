@@ -87,6 +87,7 @@ export function ExerciseDetailScreen({ route, navigation }: any) {
   const [sessionHistory, setSessionHistory] = useState<SessionHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [noHistory, setNoHistory] = useState(false);
 
   useEffect(() => {
     if (user) fetchAll();
@@ -96,6 +97,7 @@ export function ExerciseDetailScreen({ route, navigation }: any) {
     if (!user) return;
     setLoading(true);
     setError('');
+    setNoHistory(false);
     try {
       // Q1 + Q2 in parallel — current PRs and primary muscle group
       const [prRes, mgRes] = await Promise.all([
@@ -113,7 +115,11 @@ export function ExerciseDetailScreen({ route, navigation }: any) {
       ]);
 
       if (prRes.error) throw prRes.error;
-      if (mgRes.error) throw mgRes.error;
+      // Muscle-group lookup is informational — a missing mapping or PostgREST
+      // PGRST116 (multiple rows) must not block the PR/history view.
+      if (mgRes.error && __DEV__) {
+        console.warn('[ExerciseDetailScreen] muscle group lookup failed:', mgRes.error.message);
+      }
 
       const prs: CurrentPRs = {
         maxWeight: null,
@@ -131,6 +137,7 @@ export function ExerciseDetailScreen({ route, navigation }: any) {
           prs.maxRepsDate = row.achieved_at;
         }
       }
+      const hasPRData = prs.maxWeight !== null || prs.maxReps !== null;
       setCurrentPRs(prs);
       setBodyPart((mgRes.data as any)?.muscle_groups?.name ?? '');
 
@@ -185,6 +192,10 @@ export function ExerciseDetailScreen({ route, navigation }: any) {
           .slice(0, 20);
 
         setSessionHistory(items);
+        if (!hasPRData && items.length === 0) setNoHistory(true);
+      } else {
+        // No completed sessions at all for this user
+        if (!hasPRData) setNoHistory(true);
       }
     } catch (err: any) {
       setError('Something went wrong. Check your connection and try again.');
@@ -230,6 +241,17 @@ export function ExerciseDetailScreen({ route, navigation }: any) {
         >
           <Text style={styles.retryButtonText}>Try Again</Text>
         </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (noHistory) {
+    return (
+      <View style={[styles.container, styles.centerWrap]}>
+        <Text style={styles.emptyStateTitle}>Not enough history yet</Text>
+        <Text style={styles.emptyStateSub}>
+          Complete this exercise a few more times to see your progress and personal records.
+        </Text>
       </View>
     );
   }
@@ -628,6 +650,21 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: '#1d4ed8',
+  },
+
+  // ── No-history empty state ──
+  emptyStateTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  emptyStateSub: {
+    fontSize: 14,
+    color: '#64748b',
+    textAlign: 'center',
+    lineHeight: 22,
   },
 
   // ── Error ──

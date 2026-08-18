@@ -143,7 +143,7 @@ export function EditExerciseModal({
               onPress={handleSave}
               activeOpacity={0.8}
             >
-              <Text style={styles.saveText}>Save</Text>
+              <Text style={styles.saveText}>Save Changes</Text>
             </TouchableOpacity>
           </View>
         </View>

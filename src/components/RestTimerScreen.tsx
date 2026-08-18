@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 
-export function RestTimerScreen({ route }: any) {
+export function RestTimerScreen({ route, navigation }: any) {
   const initialSeconds: number = (route?.params as any)?.initialSeconds ?? 60;
   const [timeLeft, setTimeLeft] = useState(initialSeconds);
   const [isRunning, setIsRunning] = useState(true); // auto-start when navigated from checklist
+  const [isComplete, setIsComplete] = useState(false);
   const [initialTime, setInitialTime] = useState(initialSeconds);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -15,6 +16,7 @@ export function RestTimerScreen({ route }: any) {
         setTimeLeft((prev) => {
           if (prev <= 1) {
             setIsRunning(false);
+            setIsComplete(true);
             triggerVibration();
             return 0;
           }
@@ -53,11 +55,13 @@ export function RestTimerScreen({ route }: any) {
 
   const handleReset = () => {
     setIsRunning(false);
+    setIsComplete(false);
     setTimeLeft(initialTime);
   };
 
   const setPresetTime = (seconds: number) => {
     setIsRunning(false);
+    setIsComplete(false);
     setTimeLeft(seconds);
     setInitialTime(seconds);
   };
@@ -85,7 +89,19 @@ export function RestTimerScreen({ route }: any) {
       </View>
 
       <View style={styles.controlsContainer}>
-        {!isRunning ? (
+        {isComplete ? (
+          <View style={styles.completeBlock}>
+            <Text style={styles.completeMessage}>
+              Rest complete — ready for your next set?
+            </Text>
+            <TouchableOpacity
+              style={[styles.button, styles.continueButton]}
+              onPress={() => navigation.goBack()}
+            >
+              <Text style={styles.buttonText}>Continue Workout</Text>
+            </TouchableOpacity>
+          </View>
+        ) : !isRunning ? (
           <TouchableOpacity style={[styles.button, styles.startButton]} onPress={handleStart}>
             <Text style={styles.buttonText}>Start</Text>
           </TouchableOpacity>
@@ -112,7 +128,7 @@ export function RestTimerScreen({ route }: any) {
                 initialTime === 30 && styles.presetButtonTextActive,
               ]}
             >
-              30s
+              30 sec
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -125,7 +141,7 @@ export function RestTimerScreen({ route }: any) {
                 initialTime === 60 && styles.presetButtonTextActive,
               ]}
             >
-              60s
+              60 sec
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -138,7 +154,7 @@ export function RestTimerScreen({ route }: any) {
                 initialTime === 90 && styles.presetButtonTextActive,
               ]}
             >
-              90s
+              90 sec
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -151,7 +167,7 @@ export function RestTimerScreen({ route }: any) {
                 initialTime === 120 && styles.presetButtonTextActive,
               ]}
             >
-              2min
+              2 min
             </Text>
           </TouchableOpacity>
         </View>
@@ -194,6 +210,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 20,
     marginVertical: 20,
+    alignItems: 'center',
+  },
+  completeBlock: {
+    alignItems: 'center',
+    gap: 12,
+  },
+  completeMessage: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#10b981',
+    textAlign: 'center',
   },
   button: {
     paddingHorizontal: 32,
@@ -210,6 +237,9 @@ const styles = StyleSheet.create({
   },
   resetButton: {
     backgroundColor: '#6b7280',
+  },
+  continueButton: {
+    backgroundColor: '#10b981',
   },
   buttonText: {
     color: '#fff',
