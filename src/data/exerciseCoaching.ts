@@ -105,6 +105,30 @@ export const COACHING_NAME_TO_KEY: Record<string, string> = {
   'Kettlebell Curl': 'kettlebell-curl',
   'Kettlebell Tricep Extension': 'kettlebell-tricep-extension',
   'Kettlebell Hammer Curl': 'kettlebell-hammer-curl',
+  // ── Legs batch ───────────────────────────────────────────────────────────
+  'Front Squat': 'front-squat',
+  'Leg Press': 'leg-press',
+  'Leg Extension': 'leg-extension',
+  'Leg Curl': 'leg-curl',
+  'Romanian Deadlift': 'romanian-deadlift',
+  'Lunges': 'lunges',
+  'Bulgarian Split Squat': 'bulgarian-split-squat',
+  'Calf Raises': 'calf-raises',
+  'Leg Abduction': 'leg-abduction',
+  'Kettlebell Goblet Squat': 'kettlebell-goblet-squat',
+  'Kettlebell Swing': 'kettlebell-swing',
+  'Kettlebell Romanian Deadlift': 'kettlebell-romanian-deadlift',
+  'Kettlebell Lunge': 'kettlebell-lunge',
+  'Kettlebell Sumo Deadlift': 'kettlebell-sumo-deadlift',
+  'Kettlebell Single-Leg Deadlift': 'kettlebell-single-leg-deadlift',
+  'Pistol Squat': 'pistol-squat',
+  'Jump Squat': 'jump-squat',
+  'Box Jumps': 'box-jumps',
+  'Broad Jumps': 'broad-jumps',
+  'Nordic Curl': 'nordic-curl',
+  'Step-ups': 'step-ups',
+  'Tuck Jump': 'tuck-jump',
+  'Lateral Bound': 'lateral-bound',
 };
 
 export const EXERCISE_COACHING: Record<string, ExerciseCoaching> = {
@@ -4794,6 +4818,1411 @@ export const EXERCISE_COACHING: Record<string, ExerciseCoaching> = {
       'Wrist or forearm discomfort is a signal to reduce the load or switch to a dumbbell hammer curl.',
       'Do not force the elbow into a position that feels uncomfortable at any point in the range.',
       'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── LEGS ──────────────────────────────────────────────────────────────────────
+
+  // ── Front Squat ───────────────────────────────────────────────────────────────
+  'front-squat': {
+    exerciseKey: 'front-squat',
+    displayName: 'Front Squat',
+    summary: 'A squat variation with the barbell held across the front of the shoulders, requiring an upright torso and strong upper-back position. It places relatively more emphasis on the quads and demands good thoracic mobility.',
+    setup: [
+      'Set the bar at upper-chest height in a rack.',
+      'Step under the bar and position it across the front of the shoulders — a front-rack grip (elbows high, fingertips or full hand under the bar) is common. A cross-arm grip or wrist-strap alternative can work if the front rack is uncomfortable.',
+      'Brace your core and unrack the bar, stepping back with control.',
+      'A useful starting stance is roughly shoulder-width with toes turned slightly out — adjust to your hip mobility.',
+    ],
+    execution: [
+      'Keep the elbows high and chest tall throughout the descent.',
+      'Inhale and brace, then initiate the squat by sitting the hips back and down.',
+      'Choose a depth you can reach while keeping the torso upright and the lower back neutral.',
+      'Drive evenly through the feet to return to standing, keeping the elbows up as you rise.',
+      'Exhale at or near the top.',
+    ],
+    breathing: ['Inhale and brace before descending. Exhale after passing the sticking point on the way up, or at the top.'],
+    cues: [
+      '"Elbows up and forward."',
+      '"Keep the chest tall."',
+      '"Brace before you descend."',
+      '"Drive the floor away."',
+    ],
+    commonMistakes: [
+      'Letting the elbows drop, which rounds the upper back and shifts the bar forward.',
+      'Losing the brace at the bottom, causing the lower back to round.',
+      'Forcing depth beyond what your mobility currently allows.',
+      'Looking sharply up or down — a neutral gaze tends to support a neutral spine.',
+    ],
+    variations: [
+      {
+        name: 'Goblet Squat',
+        purpose: 'A useful regression that teaches the upright-torso squat pattern with a dumbbell or kettlebell held at the chest.',
+        formChange: 'Hold a dumbbell or kettlebell at chest height with both hands instead of using a barbell.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Cross-arm Front Squat',
+        purpose: 'Removes wrist and shoulder mobility demands while keeping the front-loaded pattern.',
+        formChange: 'Cross the arms over the bar with hands resting on the opposite shoulder to hold it in place.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Paused Front Squat',
+        purpose: 'Increases time under tension and reinforces position at the bottom.',
+        formChange: 'Pause for 2–3 seconds at the bottom before driving back up.',
+        difficulty: 'harder',
+      },
+      {
+        name: 'Front Squat with Wrist Straps',
+        purpose: 'Allows a front-rack-like position for those with limited wrist mobility.',
+        formChange: 'Loop wrist straps around the bar and hold them while keeping the elbows high.',
+        difficulty: 'similar',
+      },
+    ],
+    safetyNotes: [
+      'Use a load and depth you can control with an upright torso — excessive forward lean with heavy loads increases spinal stress.',
+      'If the wrists or shoulders are uncomfortable in the front rack, try the cross-arm or strap alternative before progressing load.',
+      'Use collars and a spotter or safety bars when working with heavier loads.',
+      'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Leg Press ─────────────────────────────────────────────────────────────────
+  'leg-press': {
+    exerciseKey: 'leg-press',
+    displayName: 'Leg Press',
+    summary: 'A machine exercise that loads the quads, glutes, and hamstrings in a stable, seated position. Foot placement influences which muscles are relatively more emphasised.',
+    setup: [
+      'Adjust the seat and back pad so that when the feet are on the platform, the knees are bent to a comfortable starting angle — typically around 90 degrees, but adjust for your proportions.',
+      'Place the feet roughly hip- to shoulder-width on the platform. Higher placements tend to increase glute and hamstring contribution; lower placements emphasise the quads more.',
+      'Disengage the safety handles before beginning the movement.',
+    ],
+    execution: [
+      'Inhale and brace, then lower the platform toward you in a controlled manner.',
+      'Stop at a depth where the lower back remains in contact with the pad — avoid letting the pelvis tuck under.',
+      'Drive evenly through the feet to extend the legs.',
+      'Avoid forcefully locking out the knees at the top — stop just short of full extension to keep tension on the muscles.',
+      'Exhale as you press.',
+    ],
+    breathing: ['Inhale before lowering. Exhale as you press the platform away.'],
+    cues: [
+      '"Keep the lower back against the pad."',
+      '"Drive through the whole foot."',
+      '"Control the descent — don\'t let it drop."',
+    ],
+    commonMistakes: [
+      'Allowing the pelvis to lose contact with the pad at the bottom, which can stress the lower back.',
+      'Letting the knees cave inward — guide them to track over the toes.',
+      'Using a range of motion that causes the back to round.',
+      'Snapping or forcefully locking out the knees.',
+    ],
+    variations: [
+      {
+        name: 'Single-leg Press',
+        purpose: 'Addresses side-to-side strength differences and increases the demand per leg.',
+        formChange: 'Place one foot on the platform and keep the other off. Use a lighter load.',
+        difficulty: 'harder',
+      },
+      {
+        name: 'High-foot Leg Press',
+        purpose: 'Shifts relatively more emphasis to the glutes and hamstrings.',
+        formChange: 'Place the feet higher on the platform while keeping the same controlled range.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Reduced-load Leg Press',
+        purpose: 'Useful for learning the movement pattern or returning after a break.',
+        formChange: 'Use a lighter load and focus on controlled movement through the full comfortable range.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Slow-tempo Leg Press',
+        purpose: 'Increases time under tension and reduces momentum.',
+        formChange: 'Lower for 3–4 seconds and press for 2 seconds.',
+        difficulty: 'similar',
+      },
+    ],
+    safetyNotes: [
+      'Always re-engage the safety handles before leaving the machine.',
+      'Choose a range of motion that keeps your lower back in contact with the pad.',
+      'Avoid loading the machine so heavily that you cannot control the descent.',
+      'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Leg Extension ─────────────────────────────────────────────────────────────
+  'leg-extension': {
+    exerciseKey: 'leg-extension',
+    displayName: 'Leg Extension',
+    summary: 'An isolation machine exercise for the quadriceps. The seated position and lever arm provide direct loading of the quads through knee extension.',
+    setup: [
+      'Sit with the back against the pad and adjust the seat so the knees align with the machine\'s pivot point.',
+      'Position the shin pad against the lower shins, just above the ankles — not on the foot or too high on the shin.',
+      'Grip the handles or sides of the seat lightly for stability.',
+    ],
+    execution: [
+      'Inhale and brace lightly, then extend the knees to raise the pad in a controlled arc.',
+      'Choose a range of motion that feels comfortable — full extension is common but not mandatory if it causes discomfort.',
+      'Pause briefly at the top if useful, then lower the pad in a controlled manner.',
+      'Avoid swinging or using momentum to lift the weight.',
+      'Exhale as you extend.',
+    ],
+    breathing: ['Exhale as you extend. Inhale as you lower.'],
+    cues: [
+      '"Control the movement — especially the lowering phase."',
+      '"Keep the back against the pad."',
+      '"No swinging — let the quads do the work."',
+    ],
+    commonMistakes: [
+      'Using momentum or jerking the weight up instead of a smooth extension.',
+      'Allowing the hips to lift off the seat.',
+      'Placing the shin pad too high, which shifts stress to the knee joint.',
+      'Lowering too quickly and losing the eccentric benefit.',
+    ],
+    variations: [
+      {
+        name: 'Single-leg Extension',
+        purpose: 'Addresses side-to-side differences and reduces total load per session.',
+        formChange: 'Extend one leg at a time with a lighter load.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Slow-tempo Extension',
+        purpose: 'Increases time under tension and reduces the temptation to use momentum.',
+        formChange: 'Extend over 2 seconds, pause at the top, lower over 3–4 seconds.',
+        difficulty: 'harder',
+      },
+      {
+        name: 'Partial-range Extension',
+        purpose: 'Useful if full extension is uncomfortable at the top of the range.',
+        formChange: 'Extend to a comfortable end point rather than forcing full knee extension.',
+        difficulty: 'easier',
+      },
+    ],
+    safetyNotes: [
+      'Choose a range of motion you can control comfortably — individuals vary in how full extension feels.',
+      'If this exercise consistently causes knee discomfort, adjust the shin-pad position, reduce the load, or consult a professional.',
+      'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Leg Curl ──────────────────────────────────────────────────────────────────
+  'leg-curl': {
+    exerciseKey: 'leg-curl',
+    displayName: 'Leg Curl',
+    summary: 'A machine exercise targeting the hamstrings through knee flexion. Available in lying, seated, and standing variations; each places the hamstrings in a slightly different position.',
+    setup: [
+      'For a lying leg curl: lie face down with the pad positioned against the lower leg, just above the ankles. Align the knees with the machine\'s pivot point.',
+      'For a seated leg curl: sit upright with the pad against the lower shins and thighs under the upper pad.',
+      'Grip the handles to stabilise the upper body.',
+    ],
+    execution: [
+      'Inhale and brace, then curl the lower leg toward the glutes in a controlled arc.',
+      'Pause briefly at the top of the curl.',
+      'Lower with control — do not let the weight drop.',
+      'Avoid lifting the hips (lying) or excessive momentum to complete the rep.',
+      'Exhale as you curl.',
+    ],
+    breathing: ['Exhale as you curl. Inhale as you lower.'],
+    cues: [
+      '"Control the return — don\'t let it slam."',
+      '"Keep the hips down on the pad."',
+      '"Curl through the full range you can comfortably reach."',
+    ],
+    commonMistakes: [
+      'Letting the hips lift off the pad to assist the movement (lying variation).',
+      'Using momentum or swinging to initiate the curl.',
+      'Lowering too quickly, losing the eccentric stimulus.',
+      'Pad positioned too far up the shin, creating an uncomfortable lever.',
+    ],
+    variations: [
+      {
+        name: 'Seated Leg Curl',
+        purpose: 'Trains the hamstrings in a more lengthened position, which may produce a different stimulus.',
+        formChange: 'Use a seated leg-curl machine rather than a lying one.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Single-leg Curl',
+        purpose: 'Addresses left-right differences and reduces total load.',
+        formChange: 'Curl one leg at a time with a lighter load.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Slow-tempo Curl',
+        purpose: 'Increases time under tension and reduces momentum.',
+        formChange: 'Curl for 2 seconds, pause at the top, lower for 3–4 seconds.',
+        difficulty: 'harder',
+      },
+      {
+        name: 'Partial-range Curl',
+        purpose: 'Useful when the full range of motion is restricted by flexibility or comfort.',
+        formChange: 'Curl to the comfortable end point rather than forcing full range.',
+        difficulty: 'easier',
+      },
+    ],
+    safetyNotes: [
+      'Choose a load and range of motion you can control without lifting the hips or using momentum.',
+      'If the knee or the back of the thigh is consistently uncomfortable, check pad placement and load.',
+      'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Romanian Deadlift ─────────────────────────────────────────────────────────
+  'romanian-deadlift': {
+    exerciseKey: 'romanian-deadlift',
+    displayName: 'Romanian Deadlift',
+    summary: 'A hip-hinge movement that trains the hamstrings and glutes through a controlled lowering and return. The knees stay softly bent throughout, and the bar stays close to the legs.',
+    setup: [
+      'Stand with the bar (or dumbbells) at hip height. Use a hip-width stance.',
+      'Hold the bar with a double-overhand grip just outside the legs.',
+      'Set the shoulders back and down, brace the core, and establish a neutral spine before moving.',
+    ],
+    execution: [
+      'Initiate by pushing the hips back — not by bending the knees.',
+      'Let the bar travel close to the legs as you hinge, keeping the back straight.',
+      'Lower until you feel a comfortable stretch in the hamstrings, or until the lower back begins to round — whichever comes first.',
+      'Drive the hips forward to return to standing, squeezing the glutes at the top.',
+      'Exhale as you stand.',
+    ],
+    breathing: ['Inhale and brace before hinging. Exhale as you return to standing.'],
+    cues: [
+      '"Push the hips back — don\'t squat down."',
+      '"Keep the bar close — it should almost brush the legs."',
+      '"Feel the hamstrings load — don\'t chase depth."',
+      '"Drive the hips through to finish."',
+    ],
+    commonMistakes: [
+      'Squatting instead of hinging — the knees should not bend significantly.',
+      'Letting the bar drift away from the legs, increasing lower-back stress.',
+      'Rounding the lower back to reach greater depth.',
+      'Hyperextending at the top instead of a neutral hip position.',
+    ],
+    variations: [
+      {
+        name: 'Dumbbell Romanian Deadlift',
+        purpose: 'A useful starting point — easier to keep the load close and adjust positioning.',
+        formChange: 'Use dumbbells instead of a barbell, holding one in each hand.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Single-leg Romanian Deadlift',
+        purpose: 'Increases balance demand and addresses side-to-side differences.',
+        formChange: 'Hinge on one leg, allowing the other to extend back for counterbalance. Use a lighter load.',
+        difficulty: 'harder',
+      },
+      {
+        name: 'Kettlebell Romanian Deadlift',
+        purpose: 'Portable variation with similar mechanics.',
+        formChange: 'Hold a kettlebell in each hand and hinge as normal.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Stiff-leg Deadlift',
+        purpose: 'Emphasises the hamstrings through a greater range by allowing more knee extension.',
+        formChange: 'Straighten the knees more than in a standard RDL — only go as far as comfortable.',
+        difficulty: 'similar',
+      },
+    ],
+    safetyNotes: [
+      'Do not force depth beyond what your hamstring flexibility and lower-back control allow.',
+      'Keep the load close to the body — a drifting bar multiplies stress on the lower back.',
+      'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Lunges ────────────────────────────────────────────────────────────────────
+  'lunges': {
+    exerciseKey: 'lunges',
+    displayName: 'Lunges',
+    summary: 'A single-leg step pattern that trains the quads, glutes, and hamstrings while challenging balance and hip stability. Forward, reverse, and walking variations each place slightly different demands on the body.',
+    setup: [
+      'Stand tall with feet hip-width apart.',
+      'Bodyweight lunges require no equipment. For loaded lunges, hold dumbbells at the sides, a barbell on the back, or a kettlebell in a goblet or rack position.',
+    ],
+    execution: [
+      'Step forward (or back for a reverse lunge) to a length where the front foot is flat and the torso stays upright.',
+      'Lower the rear knee toward the floor in a controlled manner — a comfortable range is one where the front shin is roughly vertical or angled slightly forward.',
+      'Press through the front foot to return to the starting position.',
+      'Guide the front knee to track over the toes — avoid it collapsing inward.',
+      'Exhale as you press back to standing.',
+    ],
+    breathing: ['Inhale as you step and lower. Exhale as you return.'],
+    cues: [
+      '"Step to a length that feels stable before you lower."',
+      '"Keep the torso upright — don\'t lean forward excessively."',
+      '"Drive through the front foot."',
+      '"Guide the knee over the toes."',
+    ],
+    commonMistakes: [
+      'Step too short or too long, making balance and knee position difficult.',
+      'Letting the front knee collapse inward.',
+      'Leaning excessively forward with the torso.',
+      'Dropping the rear knee to the floor instead of stopping just above it.',
+    ],
+    variations: [
+      {
+        name: 'Reverse Lunge',
+        purpose: 'Reduces shear force on the front knee and is often easier to balance for beginners.',
+        formChange: 'Step backward instead of forward.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Walking Lunge',
+        purpose: 'Adds a continuous movement pattern and increases overall volume.',
+        formChange: 'Step forward with one foot, descend, then bring the other foot forward into the next step rather than returning to start.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Supported Lunge',
+        purpose: 'Reduces balance demand, useful when learning the movement.',
+        formChange: 'Hold a wall or rack with one hand for support while performing the lunge.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Loaded Forward Lunge',
+        purpose: 'Increases total load on the legs and upper body.',
+        formChange: 'Hold dumbbells or a barbell while performing forward lunges.',
+        difficulty: 'harder',
+      },
+    ],
+    safetyNotes: [
+      'Choose a step length and range of motion you can control with a stable knee and upright torso.',
+      'If knee discomfort is consistent, try the reverse lunge variation and reduce the range of motion.',
+      'Modify or stop for sharp pain, numbness, dizziness, loss of balance, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Bulgarian Split Squat ─────────────────────────────────────────────────────
+  'bulgarian-split-squat': {
+    exerciseKey: 'bulgarian-split-squat',
+    displayName: 'Bulgarian Split Squat',
+    summary: 'A single-leg squat with the rear foot elevated on a bench or box. It places relatively more emphasis on the front leg and challenges balance, hip flexibility, and quad and glute strength.',
+    setup: [
+      'Stand roughly 2–3 feet in front of a bench, box, or elevated surface.',
+      'Place the top of one foot (or the shin) on the surface behind you — adjust the distance until the front knee tracks comfortably when you descend.',
+      'A useful starting position is to find the distance that keeps the front shin roughly vertical at the bottom.',
+    ],
+    execution: [
+      'Hold the torso upright or with a slight forward lean, depending on your goal and mobility.',
+      'Inhale and brace, then lower the rear knee toward the floor in a controlled manner.',
+      'Stop at a depth you can reach while maintaining balance and a neutral spine.',
+      'Drive through the front foot to return to the top position.',
+      'Exhale as you drive up.',
+    ],
+    breathing: ['Inhale before descending. Exhale as you drive back up.'],
+    cues: [
+      '"The front leg does the work — the rear leg is just for balance."',
+      '"Control the descent — don\'t let your hips drop suddenly."',
+      '"Keep the torso stable throughout."',
+    ],
+    commonMistakes: [
+      'Front foot too close to the bench, causing the knee to travel far forward.',
+      'Front foot too far, causing a pronounced forward lean.',
+      'Letting the front knee collapse inward.',
+      'Forcing the rear leg into a deep stretch before the movement is controlled.',
+    ],
+    variations: [
+      {
+        name: 'Supported Bulgarian Split Squat',
+        purpose: 'Reduces balance demand while learning the movement.',
+        formChange: 'Hold a rack or wall with one hand for additional stability.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Reduced-range Bulgarian Split Squat',
+        purpose: 'Useful when hip flexor tightness or balance limits comfortable depth.',
+        formChange: 'Lower only partway and gradually increase range over time.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Dumbbell Bulgarian Split Squat',
+        purpose: 'Adds external load to increase strength stimulus.',
+        formChange: 'Hold dumbbells at the sides while performing the movement.',
+        difficulty: 'harder',
+      },
+      {
+        name: 'Barbell Bulgarian Split Squat',
+        purpose: 'Higher-load variation for more advanced trainees.',
+        formChange: 'Hold a barbell on the upper back instead of dumbbells.',
+        difficulty: 'harder',
+      },
+    ],
+    safetyNotes: [
+      'Use a rear-foot height and depth that allows comfortable balance and hip position — a very high surface can force the hip flexor into a stretched range that is uncomfortable.',
+      'Avoid aggressively loading this exercise until the movement pattern is stable.',
+      'Modify or stop for sharp pain, numbness, dizziness, loss of balance, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Calf Raises ───────────────────────────────────────────────────────────────
+  'calf-raises': {
+    exerciseKey: 'calf-raises',
+    displayName: 'Calf Raises',
+    summary: 'A focused ankle plantarflexion exercise targeting the gastrocnemius and soleus. Performed standing or seated, with or without load, across a range of surfaces.',
+    setup: [
+      'A useful starting position is to stand with the balls of the feet on the edge of a step or a raised surface, or flat on the floor.',
+      'Stand tall with feet hip-width or slightly closer. Hold a support lightly for balance if needed.',
+      'For loaded variations, hold dumbbells at the sides or use a calf-raise machine.',
+    ],
+    execution: [
+      'Inhale, then rise onto the balls of the feet through a controlled range.',
+      'Pause briefly at the top if useful — this can increase the stimulus at the peak contraction.',
+      'Lower the heels back down in a controlled manner, allowing a stretch at the bottom if on an elevated surface.',
+      'Avoid bouncing at the bottom.',
+      'Exhale as you rise.',
+    ],
+    breathing: ['Exhale as you rise. Inhale as you lower.'],
+    cues: [
+      '"Rise through the full range you can control."',
+      '"Pause at the top."',
+      '"Lower slowly — don\'t let the heel drop."',
+    ],
+    commonMistakes: [
+      'Bouncing at the bottom instead of controlling the eccentric.',
+      'Not rising through a full controllable range.',
+      'Leaning forward or gripping support too tightly to assist the lift.',
+    ],
+    variations: [
+      {
+        name: 'Seated Calf Raise',
+        purpose: 'Shifts relatively more emphasis to the soleus by training with the knee bent.',
+        formChange: 'Sit on a bench with feet flat or on a raised surface and perform the raise from a seated position.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Single-leg Calf Raise',
+        purpose: 'Increases the demand per leg and addresses side-to-side differences.',
+        formChange: 'Perform on one foot at a time, holding support for balance.',
+        difficulty: 'harder',
+      },
+      {
+        name: 'Supported Calf Raise',
+        purpose: 'Useful when balance limits the movement or as a starting point.',
+        formChange: 'Perform with both hands on a wall or rail for full balance support.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Machine Calf Raise',
+        purpose: 'Allows heavier loading with back support.',
+        formChange: 'Use a standing or donkey calf-raise machine with the appropriate pad placement.',
+        difficulty: 'similar',
+      },
+    ],
+    safetyNotes: [
+      'Achilles or ankle discomfort is a signal to reduce the depth of the lowering phase or the load.',
+      'Avoid excessive ballistic bouncing at the bottom of the range.',
+      'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Leg Abduction ─────────────────────────────────────────────────────────────
+  'leg-abduction': {
+    exerciseKey: 'leg-abduction',
+    displayName: 'Leg Abduction',
+    summary: 'An exercise targeting the hip abductors — primarily the glute medius — through controlled outward movement of the leg. Can be performed on a machine, with a resistance band, standing, or lying on the side.',
+    setup: [
+      'Machine: sit with the outer thighs against the pads. Adjust the starting angle to a comfortable position.',
+      'Side-lying: lie on one side with the body in a straight line, lower arm supporting the head.',
+      'Standing with band: loop a band around both ankles or above the knees and stand beside a support.',
+    ],
+    execution: [
+      'Brace lightly and keep the pelvis stable throughout the movement.',
+      'Move the leg outward through a range of motion you can control without the pelvis tilting or the trunk leaning.',
+      'Pause briefly at the end of the range, then return with control.',
+      'Avoid using trunk lean or hip hiking to increase the range.',
+      'Exhale as you abduct.',
+    ],
+    breathing: ['Exhale as you move the leg outward. Inhale as you return.'],
+    cues: [
+      '"Keep the pelvis level."',
+      '"Control the return — don\'t let the leg drop."',
+      '"The movement comes from the hip, not the waist."',
+    ],
+    commonMistakes: [
+      'Tilting the trunk sideways to increase apparent range of motion.',
+      'Letting the pelvis rotate or hike on the working side.',
+      'Using momentum rather than a controlled contraction.',
+      'Placing the band too low on the ankle when more proximal placement is more appropriate for the goal.',
+    ],
+    variations: [
+      {
+        name: 'Standing Band Abduction',
+        purpose: 'A portable, accessible variation requiring only a resistance band.',
+        formChange: 'Loop a band around the ankles and lift one leg out to the side while standing beside a support.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Side-lying Abduction',
+        purpose: 'Reduces the balance demand and isolates the hip abductors.',
+        formChange: 'Lie on one side and lift the top leg to a comfortable height, keeping the body aligned.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Machine Hip Abduction',
+        purpose: 'Allows progressive loading with controlled resistance.',
+        formChange: 'Use a seated abduction machine and press the pads outward through the comfortable range.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Clamshell',
+        purpose: 'A low-load variation that can be performed with a band and targets the hip abductors in a different plane.',
+        formChange: 'Lie on the side with knees bent and rotate the top knee upward like a clamshell, keeping the feet together.',
+        difficulty: 'easier',
+      },
+    ],
+    safetyNotes: [
+      'Keep the pelvis stable — avoid compensating with trunk lean to achieve a wider range.',
+      'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Kettlebell Goblet Squat ────────────────────────────────────────────────────
+  'kettlebell-goblet-squat': {
+    exerciseKey: 'kettlebell-goblet-squat',
+    displayName: 'Kettlebell Goblet Squat',
+    summary: 'A front-loaded squat holding a kettlebell at the chest. The counterbalance supports an upright torso and makes it a useful teaching tool and a standalone leg exercise.',
+    setup: [
+      'Hold the kettlebell by the horns (the handles on either side of the bell) at chest height, close to the sternum.',
+      'Stand with feet roughly shoulder-width and toes turned slightly out — adjust to your hip mobility.',
+      'Brace the core before descending.',
+    ],
+    execution: [
+      'Inhale and brace, then sit the hips back and down between the knees.',
+      'Keep the chest tall and the elbows inside or slightly inside the knees at the bottom.',
+      'Choose a depth you can reach while keeping the heels down and the torso upright.',
+      'Drive through the feet to return to standing.',
+      'Exhale at or near the top.',
+    ],
+    breathing: ['Inhale and brace before descending. Exhale as you drive back up.'],
+    cues: [
+      '"Keep the kettlebell close to the chest."',
+      '"Sit down between the heels — not just back."',
+      '"Chest tall throughout."',
+    ],
+    commonMistakes: [
+      'Letting the kettlebell drift away from the chest, which shifts load forward.',
+      'Heels rising off the floor.',
+      'Forcing depth beyond what mobility allows.',
+      'Elbows flaring wide rather than staying near or inside the knees.',
+    ],
+    variations: [
+      {
+        name: 'Box Goblet Squat',
+        purpose: 'Provides a depth target and reduces the fear of going too deep.',
+        formChange: 'Place a box or bench behind you and lower until you lightly touch it before standing.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Paused Goblet Squat',
+        purpose: 'Increases time under tension and reinforces the bottom position.',
+        formChange: 'Pause for 2–3 seconds at the bottom before standing.',
+        difficulty: 'harder',
+      },
+      {
+        name: 'Tempo Goblet Squat',
+        purpose: 'Builds control and reduces momentum.',
+        formChange: 'Lower for 3–4 seconds, then drive up in 1–2 seconds.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Heels-elevated Goblet Squat',
+        purpose: 'Reduces ankle mobility demand and can increase quad emphasis.',
+        formChange: 'Place small plates or a wedge under the heels.',
+        difficulty: 'similar',
+      },
+    ],
+    safetyNotes: [
+      'Choose a load you can hold comfortably at chest height for the full set — grip fatigue should not compromise control.',
+      'Adjust depth and stance to suit your hip mobility and comfort.',
+      'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Kettlebell Swing ──────────────────────────────────────────────────────────
+  'kettlebell-swing': {
+    exerciseKey: 'kettlebell-swing',
+    displayName: 'Kettlebell Swing',
+    summary: 'A ballistic hip-hinge movement driving a kettlebell from between the legs to roughly chest or eye height. Power comes from the hips and glutes, not from the shoulders or arms. A foundational kettlebell exercise with high demands on hip-hinge technique.',
+    setup: [
+      'Place the kettlebell on the floor a few inches in front of you.',
+      'Stand with feet shoulder-width or slightly wider, toes slightly out.',
+      'Hinge at the hips to reach the handle — keep the back flat and shoulders over or slightly in front of the bell.',
+      'Take a firm grip with both hands.',
+    ],
+    execution: [
+      'Hike the bell back between the legs with a hinge — not a squat.',
+      'At the back of the hike, feel the hamstrings load, then drive the hips forward explosively.',
+      'Let the hip extension propel the bell forward and upward — the arms guide the bell but do not lift it.',
+      'At the top, the body is tall and braced; the bell floats momentarily.',
+      'Let the bell swing back down under control, hinging again to absorb the load.',
+      'Maintain the hinge pattern throughout — do not let the swing become squat-dominant.',
+    ],
+    breathing: ['Exhale sharply as the hips extend at the top. Inhale as the bell swings back down.'],
+    cues: [
+      '"Hinge, don\'t squat."',
+      '"The hips drive — the arms just follow."',
+      '"Let the bell float — don\'t muscle it up."',
+      '"Brace and squeeze at the top."',
+    ],
+    commonMistakes: [
+      'Squatting instead of hinging — knees bend too much and the swing loses its hip power.',
+      'Lifting with the shoulders rather than letting the hips generate the power.',
+      'Letting the lower back round at the hike.',
+      'Letting the bell drift too far from the body at the hike.',
+      'Bending the elbows to pull the bell higher instead of letting it float.',
+    ],
+    variations: [
+      {
+        name: 'Russian Swing',
+        purpose: 'A chest-height variation — easier to learn and reduces shoulder stress.',
+        formChange: 'Let the bell float to chest height rather than overhead. This is the standard starting point.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'American Swing',
+        purpose: 'Drives the bell overhead — increases range but demands more shoulder mobility and control.',
+        formChange: 'Drive the bell all the way overhead to full arm extension at the top.',
+        difficulty: 'harder',
+      },
+      {
+        name: 'Dead-stop Swing',
+        purpose: 'Removes momentum build-up between reps — useful for reinforcing technique.',
+        formChange: 'Park the bell on the floor after each rep, reset the hinge, and hike again.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Single-arm Swing',
+        purpose: 'Increases rotational demand and addresses grip and hip-stability differences.',
+        formChange: 'Hold the bell with one hand and alternate sides between sets or reps.',
+        difficulty: 'harder',
+      },
+    ],
+    safetyNotes: [
+      'Stop if you cannot maintain a flat back at the hike or a controlled finish position — technique deterioration signals fatigue.',
+      'Clear the space around and behind you before swinging.',
+      'Use a load that allows clean hip-hinge mechanics — overloading the swing before the pattern is solid is a common source of lower-back strain.',
+      'Modify or stop for sharp pain, numbness, dizziness, loss of balance, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Kettlebell Romanian Deadlift ──────────────────────────────────────────────
+  'kettlebell-romanian-deadlift': {
+    exerciseKey: 'kettlebell-romanian-deadlift',
+    displayName: 'Kettlebell Romanian Deadlift',
+    summary: 'A hip-hinge movement using a kettlebell (or two), targeting the hamstrings and glutes. Mechanics are similar to a barbell RDL — the bell stays close to the legs throughout.',
+    setup: [
+      'Stand with feet hip-width, holding one or two kettlebells in front of the thighs.',
+      'Set the shoulders back and down, brace lightly, and establish a neutral spine.',
+    ],
+    execution: [
+      'Push the hips back and allow the kettlebells to travel close to the legs.',
+      'Maintain a flat back and soft knees throughout.',
+      'Lower to the point where you feel a comfortable hamstring stretch, then drive the hips forward to stand.',
+      'Squeeze the glutes briefly at the top.',
+      'Exhale as you return to standing.',
+    ],
+    breathing: ['Inhale and brace before hinging. Exhale as you drive back to standing.'],
+    cues: [
+      '"Push the hips back — not down."',
+      '"Keep the bells close to the legs."',
+      '"Feel the hamstrings stretch, then drive."',
+    ],
+    commonMistakes: [
+      'Letting the bells drift forward away from the body.',
+      'Bending the knees too much, turning it into a squat.',
+      'Rounding the lower back to reach a greater depth.',
+    ],
+    variations: [
+      {
+        name: 'Two-kettlebell RDL',
+        purpose: 'Allows greater load and a balanced bilateral feel.',
+        formChange: 'Hold one kettlebell in each hand and hinge as normal.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Staggered-stance Kettlebell RDL',
+        purpose: 'Adds unilateral challenge while keeping a base of support.',
+        formChange: 'Step one foot slightly back, shift more weight to the front leg, and hinge.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Single-leg Kettlebell RDL',
+        purpose: 'Full single-leg balance and hip-hinge challenge.',
+        formChange: 'Hinge on one leg, allowing the other to extend back as a counterbalance. Use a lighter load.',
+        difficulty: 'harder',
+      },
+    ],
+    safetyNotes: [
+      'Keep the load close to the body — a drifting bell increases lower-back stress.',
+      'Do not force depth beyond your current hamstring flexibility and lower-back control.',
+      'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Kettlebell Lunge ──────────────────────────────────────────────────────────
+  'kettlebell-lunge': {
+    exerciseKey: 'kettlebell-lunge',
+    displayName: 'Kettlebell Lunge',
+    summary: 'A lunge performed while holding one or two kettlebells. The load can be carried in a rack, suitcase, goblet, or farmer position, each changing the stability and muscular demand.',
+    setup: [
+      'Choose a carry position suited to your goal and load:',
+      'Rack (one or two bells at shoulder): higher stability demand, good for strength.',
+      'Suitcase (one bell at the side): adds lateral stability challenge.',
+      'Goblet (one bell at chest): supports an upright torso, familiar from goblet squats.',
+      'Stand tall with a controlled brace before stepping.',
+    ],
+    execution: [
+      'Step forward or backward into a lunge, keeping the torso upright and the load stable.',
+      'Lower the rear knee toward the floor in a controlled manner.',
+      'Drive through the front foot to return, maintaining control of the kettlebell throughout.',
+      'Guide the front knee to track over the toes.',
+      'Exhale as you drive back to standing.',
+    ],
+    breathing: ['Inhale as you step and lower. Exhale as you return to standing.'],
+    cues: [
+      '"Stable load — don\'t let it sway."',
+      '"Step to a controlled length before lowering."',
+      '"Drive through the front heel."',
+    ],
+    commonMistakes: [
+      'Letting the kettlebell pull the torso sideways (suitcase carry).',
+      'Stepping too short, forcing the knee far forward.',
+      'Losing the brace mid-lunge.',
+    ],
+    variations: [
+      {
+        name: 'Reverse Kettlebell Lunge',
+        purpose: 'Reduces shear on the front knee and is often easier to balance.',
+        formChange: 'Step backward instead of forward.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Walking Kettlebell Lunge',
+        purpose: 'Adds continuous movement and cardiovascular demand.',
+        formChange: 'Step forward continuously rather than returning to the start each rep.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Supported Kettlebell Lunge',
+        purpose: 'Reduces balance demand when learning the loaded pattern.',
+        formChange: 'Hold one kettlebell and touch a wall or rack with the free hand.',
+        difficulty: 'easier',
+      },
+    ],
+    safetyNotes: [
+      'Choose a carry position and load that allow full control of the bell and the lunge pattern.',
+      'Modify or stop for sharp pain, numbness, dizziness, loss of balance, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Kettlebell Sumo Deadlift ──────────────────────────────────────────────────
+  'kettlebell-sumo-deadlift': {
+    exerciseKey: 'kettlebell-sumo-deadlift',
+    displayName: 'Kettlebell Sumo Deadlift',
+    summary: 'A wide-stance deadlift with a kettlebell held between the legs. The wider stance shifts the hip angle and makes the bell path more vertical, with relatively more inner-thigh and glute involvement.',
+    setup: [
+      'Stand with feet wider than shoulder-width and toes turned out enough that the knees track over them when you sit into the hinge.',
+      'Place the kettlebell between the feet.',
+      'Hinge and grip the handle with both hands, keeping the back flat and the shoulders above or just ahead of the bell.',
+    ],
+    execution: [
+      'Brace the core, then drive through the legs and hips to stand, keeping the bell close and the back neutral.',
+      'Finish tall with hips fully extended and the bell hanging between the legs.',
+      'Hinge to lower the bell with control, keeping the back flat throughout.',
+      'Exhale as you stand.',
+    ],
+    breathing: ['Inhale and brace before lifting. Exhale as you stand.'],
+    cues: [
+      '"Knees and toes track in the same direction."',
+      '"Drive the floor away."',
+      '"Bell stays close — don\'t let it swing forward."',
+    ],
+    commonMistakes: [
+      'Knees caving inward — guide them out over the toes.',
+      'Rounding the lower back.',
+      'Letting the bell swing forward as you stand.',
+      'Stance too narrow to allow the bell to clear the floor comfortably.',
+    ],
+    variations: [
+      {
+        name: 'Elevated-start Sumo Deadlift',
+        purpose: 'Reduces the range of motion — useful when flexibility limits the floor setup.',
+        formChange: 'Place the kettlebell on a low box or riser so the starting position is more accessible.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Light-load Sumo Deadlift',
+        purpose: 'Useful for learning the wide-stance hinge pattern.',
+        formChange: 'Use a lighter kettlebell and focus on stance, brace, and bell path.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Double Kettlebell Sumo Deadlift',
+        purpose: 'Increases load without requiring a barbell.',
+        formChange: 'Hold two kettlebells side by side between the feet.',
+        difficulty: 'harder',
+      },
+    ],
+    safetyNotes: [
+      'Choose a stance width that allows the knees to track comfortably over the toes without forcing the hips.',
+      'Do not force the range of motion if the hips cannot reach a comfortable starting position — use an elevated start.',
+      'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Kettlebell Single-Leg Deadlift ────────────────────────────────────────────
+  'kettlebell-single-leg-deadlift': {
+    exerciseKey: 'kettlebell-single-leg-deadlift',
+    displayName: 'Kettlebell Single-Leg Deadlift',
+    summary: 'A unilateral hip-hinge on one leg while holding a kettlebell. It challenges balance, hip stability, and hamstring control simultaneously. Starting with a small range of motion is a valid and sensible approach.',
+    setup: [
+      'Stand on one foot with a soft bend in the knee.',
+      'Hold a kettlebell in the opposite hand (contralateral) or in both hands — contralateral tends to help balance for most people.',
+      'Find a stable position before hinging.',
+    ],
+    execution: [
+      'Hinge at the hip of the standing leg, allowing the torso to lower and the free leg to rise behind as a counterbalance.',
+      'Keep the back flat and the hips as level as possible.',
+      'Lower to the point you can reach with control — a small range is fine when learning.',
+      'Drive the hip of the standing leg through to return to upright.',
+      'Exhale as you return to standing.',
+    ],
+    breathing: ['Inhale before hinging. Exhale as you return to standing.'],
+    cues: [
+      '"Hinge at the hip — don\'t just bend forward."',
+      '"Keep the hips level."',
+      '"Control is more important than range."',
+    ],
+    commonMistakes: [
+      'Letting the non-standing hip rotate or drop significantly.',
+      'Rounding the back to reach a greater depth.',
+      'Losing balance by hinging too quickly.',
+    ],
+    variations: [
+      {
+        name: 'Kickstand Deadlift',
+        purpose: 'Provides a base of support while learning the single-leg hinge.',
+        formChange: 'Place the toe of the rear foot lightly on the floor for balance rather than lifting it entirely.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Supported Single-leg RDL',
+        purpose: 'Removes balance challenge — useful for focusing on hip-hinge mechanics.',
+        formChange: 'Touch a wall or rack with the free hand throughout the movement.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Double Kettlebell Single-leg RDL',
+        purpose: 'Increases the load for more advanced trainees.',
+        formChange: 'Hold one kettlebell in each hand and hinge on one leg.',
+        difficulty: 'harder',
+      },
+    ],
+    safetyNotes: [
+      'Use a load and range of motion that allow you to maintain balance and a flat back — a small, controlled range is more productive than a large, uncontrolled one.',
+      'Perform near a support surface when learning in case balance is lost.',
+      'Modify or stop for sharp pain, numbness, dizziness, loss of balance, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Pistol Squat ──────────────────────────────────────────────────────────────
+  'pistol-squat': {
+    exerciseKey: 'pistol-squat',
+    displayName: 'Pistol Squat',
+    summary: 'An advanced single-leg squat to full depth with the other leg extended forward. It demands significant ankle mobility, hip flexibility, quad strength, and balance. It is not necessary for general fitness and should be treated as a skill to develop progressively.',
+    setup: [
+      'Stand on one foot with the other leg extended forward.',
+      'Arms extended forward help with counterbalance.',
+      'A useful starting position is near a support (rack, TRX, wall) until the movement is reliable.',
+    ],
+    execution: [
+      'Inhale and brace, then sit back and down on the standing leg, keeping the extended leg off the floor.',
+      'Descend through a range of motion you can control — stopping above full depth is a valid approach while developing the pattern.',
+      'Drive through the foot of the standing leg to return to upright.',
+      'Exhale as you press back up.',
+    ],
+    breathing: ['Inhale before descending. Exhale as you stand back up.'],
+    cues: [
+      '"Counterbalance with the arms."',
+      '"Control the descent — don\'t drop."',
+      '"Drive through the whole foot."',
+    ],
+    commonMistakes: [
+      'Dropping to the bottom without the ankle, hip, or strength to control it.',
+      'Letting the standing knee cave inward.',
+      'Losing the torso position or collapsing the chest.',
+    ],
+    variations: [
+      {
+        name: 'Assisted Pistol Squat',
+        purpose: 'Allows the movement pattern with support, reducing the load on the single leg.',
+        formChange: 'Hold a TRX, ring, or doorframe for assistance throughout the descent and ascent.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Box Pistol Squat',
+        purpose: 'Limits the depth and removes the need for full ankle and hip range.',
+        formChange: 'Sit back onto a box or bench at the bottom rather than continuing to full depth.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Counterbalanced Pistol Squat',
+        purpose: 'A small weight held at arm\'s length helps shift the centre of mass and make balance easier.',
+        formChange: 'Hold a light dumbbell or plate at arm\'s length in front as a counterbalance.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Weighted Pistol Squat',
+        purpose: 'Adds external load once the bodyweight version is controlled.',
+        formChange: 'Hold a kettlebell or dumbbell at the chest or in the goblet position.',
+        difficulty: 'harder',
+      },
+    ],
+    safetyNotes: [
+      'Develop the movement progressively — ankle mobility, hip flexibility, and quad strength all need to be sufficient before attempting full depth.',
+      'Practice near a support surface until the movement is reliable.',
+      'Modify or stop for sharp pain, numbness, dizziness, loss of balance, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Jump Squat ────────────────────────────────────────────────────────────────
+  'jump-squat': {
+    exerciseKey: 'jump-squat',
+    displayName: 'Jump Squat',
+    summary: 'A plyometric exercise combining a squat descent with an explosive jump. It develops lower-body power and trains landing mechanics. Controlled landing is the most important element.',
+    setup: [
+      'Stand with feet roughly shoulder-width, toes slightly out.',
+      'Typically performed with bodyweight — if loaded, use a light weight only after landing mechanics are reliable.',
+    ],
+    execution: [
+      'Lower into a squat to a comfortable depth — roughly quarter to half-squat is common.',
+      'Drive explosively through the feet to jump, fully extending the ankles, knees, and hips.',
+      'Land softly on the balls of the feet, then the heels, allowing the knees to bend to absorb the impact.',
+      'Land quietly — the sound of the landing is a useful feedback cue.',
+      'Reset the position before initiating the next rep.',
+    ],
+    breathing: ['Exhale as you jump. Inhale as you reset.'],
+    cues: [
+      '"Land quietly."',
+      '"Bend the knees as you land — absorb the impact."',
+      '"Full extension at the top of the jump."',
+      '"Reset before the next rep."',
+    ],
+    commonMistakes: [
+      'Landing with stiff knees, which increases joint stress.',
+      'Landing heavily or noisily, indicating inadequate eccentric control.',
+      'Not fully extending through the jump.',
+      'Rushing the reset and losing position between reps.',
+    ],
+    variations: [
+      {
+        name: 'Bodyweight Jump Squat',
+        purpose: 'The standard starting point — no load, focused on pattern and landing.',
+        formChange: 'Perform with bodyweight only, focusing on a quiet, controlled landing.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Countermovement Jump Squat',
+        purpose: 'Uses a rapid dip before jumping to generate more power.',
+        formChange: 'Perform a quick squat dip immediately before jumping.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Reduced-depth Jump Squat',
+        purpose: 'Useful when learning or when full-depth causes landing issues.',
+        formChange: 'Lower to a quarter squat only before jumping.',
+        difficulty: 'easier',
+      },
+    ],
+    safetyNotes: [
+      'Stop if landing mechanics deteriorate — a loss of controlled knee bend on landing is a clear signal to rest or reduce volume.',
+      'Use an appropriate surface — avoid concrete or uneven ground.',
+      'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Box Jumps ─────────────────────────────────────────────────────────────────
+  'box-jumps': {
+    exerciseKey: 'box-jumps',
+    displayName: 'Box Jumps',
+    summary: 'A plyometric exercise involving a two-foot takeoff and landing on an elevated box. Box height selection is critical — the goal is a powerful jump and a controlled landing, not a scramble to reach a higher surface.',
+    setup: [
+      'Choose a box height you can land on safely with hips above knee level — a modest height is more productive than one that requires an unsafe scramble or a very deep squat landing.',
+      'Stand facing the box with feet roughly shoulder-width.',
+    ],
+    execution: [
+      'Hinge slightly and swing the arms back, then drive explosively through the feet, swinging the arms forward and up.',
+      'Tuck the knees slightly to clear the box.',
+      'Land on both feet with the knees bent to absorb the impact — aim for a stable, controlled landing.',
+      'Stand tall on the box, then step (not jump) down to reduce impact on the landing.',
+      'Reset before the next rep.',
+    ],
+    breathing: ['Exhale as you jump. Inhale as you reset on top.'],
+    cues: [
+      '"Arm swing generates power."',
+      '"Land softly — bend on landing."',
+      '"Step down — don\'t jump down."',
+      '"Choose a height that lets you land cleanly."',
+    ],
+    commonMistakes: [
+      'Choosing a box so high that the landing becomes a deep squat or requires unsafe scrambling.',
+      'Jumping down from the box instead of stepping — this adds unnecessary impact.',
+      'Landing stiffly without bending the knees.',
+      'Not fully resetting before the next jump.',
+    ],
+    variations: [
+      {
+        name: 'Low-box Jump',
+        purpose: 'Builds landing mechanics and power with a lower risk.',
+        formChange: 'Use a short box (20–30 cm) and focus on powerful takeoff and controlled landing.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Paused Box Jump',
+        purpose: 'Removes the countermovement and requires pure concentric power.',
+        formChange: 'Pause for 2–3 seconds in the squat position before jumping.',
+        difficulty: 'harder',
+      },
+      {
+        name: 'Lateral Box Jump',
+        purpose: 'Trains power in the frontal plane.',
+        formChange: 'Jump onto the box from the side rather than the front.',
+        difficulty: 'similar',
+      },
+    ],
+    safetyNotes: [
+      'Use a stable, non-slip box or platform.',
+      'Always step down from the box rather than jumping down.',
+      'Choose a height that allows a controlled landing with hips above knees — a lower height achieved cleanly is more useful than a high one achieved messily.',
+      'Modify or stop for sharp pain, numbness, dizziness, loss of balance, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Broad Jumps ───────────────────────────────────────────────────────────────
+  'broad-jumps': {
+    exerciseKey: 'broad-jumps',
+    displayName: 'Broad Jumps',
+    summary: 'A horizontal plyometric exercise involving a two-foot takeoff and landing as far forward as possible. It trains explosive power in the horizontal direction and requires good landing control.',
+    setup: [
+      'Stand with feet shoulder-width on a clear, non-slip surface with enough space ahead.',
+      'Bend the knees slightly and hinge at the hips, preparing to swing the arms.',
+    ],
+    execution: [
+      'Swing the arms back, then drive them forward and up as you push through both feet to project the body horizontally.',
+      'Aim for a long, controlled flight path rather than just maximum height.',
+      'Land on both feet simultaneously with knees bent to absorb the impact.',
+      'Stabilise the landing position — "stick" the landing before moving.',
+      'Walk back and reset before the next rep rather than jumping repeatedly without control.',
+    ],
+    breathing: ['Exhale as you jump. Inhale as you reset.'],
+    cues: [
+      '"Drive forward, not just up."',
+      '"Swing the arms for power."',
+      '"Stick the landing — knees bent."',
+      '"Reset between every rep."',
+    ],
+    commonMistakes: [
+      'Jumping for height rather than distance.',
+      'Landing with stiff knees.',
+      'Not stabilising before the next jump, accumulating instability.',
+    ],
+    variations: [
+      {
+        name: 'Shorter-distance Broad Jump',
+        purpose: 'Reduces the landing demand while building the horizontal-power pattern.',
+        formChange: 'Jump for a reduced distance and focus on the landing before progressing.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Stick Landing Broad Jump',
+        purpose: 'Emphasises landing control over distance.',
+        formChange: 'Hold the landing position for 3 seconds before standing.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Bounding',
+        purpose: 'A continuous single-leg version that adds reactive power demand.',
+        formChange: 'Alternate single-leg takeoffs and landings over distance.',
+        difficulty: 'harder',
+      },
+    ],
+    safetyNotes: [
+      'Use an appropriate surface — a sprung floor, grass, or a mat. Avoid concrete.',
+      'Clear the landing zone before jumping.',
+      'Modify or stop for sharp pain, numbness, dizziness, loss of balance, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Nordic Curl ───────────────────────────────────────────────────────────────
+  'nordic-curl': {
+    exerciseKey: 'nordic-curl',
+    displayName: 'Nordic Curl',
+    summary: 'An advanced eccentric hamstring exercise. The knees are anchored and the body lowers toward the floor under hamstring control. Even a partial range provides a significant training stimulus.',
+    setup: [
+      'Anchor the feet securely under a barbell, a partner\'s hands, a machine pad, or a dedicated Nordic-curl device.',
+      'Kneel on a mat or padded surface.',
+      'Keep the hips extended — the body should be in a straight line from knees to shoulders throughout.',
+    ],
+    execution: [
+      'From the kneeling position, slowly lower the torso toward the floor by allowing the knees to extend.',
+      'Control the descent with the hamstrings — do not drop.',
+      'Partial range is a valid and effective starting point — there is no requirement to reach the floor.',
+      'Use the hands to catch and assist the return phase, pushing back up to the start.',
+      'Focus on the controlled lowering phase; the return is assisted.',
+    ],
+    breathing: ['Inhale as you lower. Exhale as you return.'],
+    cues: [
+      '"Lower with control — the slower the better."',
+      '"Keep the hips extended — don\'t let them bend."',
+      '"Even a small range done slowly is effective."',
+    ],
+    commonMistakes: [
+      'Hinging at the hips rather than maintaining a straight body line.',
+      'Dropping uncontrolled when hamstring fatigue occurs.',
+      'Attempting a full range before the eccentric strength is sufficient.',
+    ],
+    variations: [
+      {
+        name: 'Partial Nordic Curl',
+        purpose: 'The standard starting point — a 20–30-degree lowering can still provide significant stimulus.',
+        formChange: 'Lower only as far as can be controlled before returning.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Band-assisted Nordic Curl',
+        purpose: 'A band attached overhead reduces the effective load through the range.',
+        formChange: 'Loop a resistance band over the shoulders from a fixed point above to reduce the load.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Full Nordic Curl',
+        purpose: 'Full eccentric range to the floor with controlled return.',
+        formChange: 'Lower all the way to the floor under control, then push back with the hands.',
+        difficulty: 'harder',
+      },
+    ],
+    safetyNotes: [
+      'Build this exercise progressively — the eccentric load is high and tendon adaptation takes time.',
+      'Do not attempt full range before the partial-range version is well controlled.',
+      'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Step-ups ──────────────────────────────────────────────────────────────────
+  'step-ups': {
+    exerciseKey: 'step-ups',
+    displayName: 'Step-ups',
+    summary: 'A unilateral leg exercise stepping onto and off an elevated surface. It trains the quads, glutes, and hip stabilisers while challenging single-leg balance. Box height and load can be adjusted widely.',
+    setup: [
+      'Stand facing a box, step, or bench at a height where the hip is at or near 90 degrees when the foot is placed on the surface — adjust based on your leg length and goal.',
+      'Bodyweight or loaded with dumbbells, a barbell, or a kettlebell.',
+    ],
+    execution: [
+      'Place the whole foot of the working leg on the box.',
+      'Drive through the working leg to stand on the box, bringing the other foot up.',
+      'Avoid pushing off significantly with the trailing leg — the goal is to drive through the front foot.',
+      'Lower the trailing foot to the floor in a controlled manner.',
+      'Exhale as you step up.',
+    ],
+    breathing: ['Exhale as you step up. Inhale as you step down.'],
+    cues: [
+      '"Drive through the front foot — not the back."',
+      '"Place the whole foot on the box."',
+      '"Control the step down."',
+    ],
+    commonMistakes: [
+      'Pushing off aggressively with the trailing foot, reducing the load on the working leg.',
+      'Placing only the toes on the box.',
+      'Stepping down too quickly or losing control on the descent.',
+      'Box height too high, making trunk control difficult.',
+    ],
+    variations: [
+      {
+        name: 'Low Step-up',
+        purpose: 'Reduces the range of motion demand — useful when learning or when hip mobility is limited.',
+        formChange: 'Use a lower box or step (20–30 cm).',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Supported Step-up',
+        purpose: 'Reduces balance demand while learning the pattern.',
+        formChange: 'Hold a rack or wall lightly with one hand for support.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Loaded Step-up',
+        purpose: 'Increases the strength stimulus.',
+        formChange: 'Hold dumbbells at the sides or a barbell on the back.',
+        difficulty: 'harder',
+      },
+      {
+        name: 'Lateral Step-up',
+        purpose: 'Steps onto the box from the side, adding a frontal-plane challenge.',
+        formChange: 'Stand beside the box and step up sideways with the near foot.',
+        difficulty: 'similar',
+      },
+    ],
+    safetyNotes: [
+      'Use a stable, non-slip surface at an appropriate height.',
+      'Avoid using so much trailing-leg push-off that the working leg is largely unloaded.',
+      'Modify or stop for sharp pain, numbness, dizziness, loss of balance, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Tuck Jump ─────────────────────────────────────────────────────────────────
+  'tuck-jump': {
+    exerciseKey: 'tuck-jump',
+    displayName: 'Tuck Jump',
+    summary: 'A plyometric jump in which the knees are driven toward the chest at the peak of the jump. It combines jump power with a compact tuck phase and requires controlled landing. The knee height during the tuck should be comfortable — do not force an extreme range.',
+    setup: [
+      'Stand with feet shoulder-width on a clear, non-slip surface with enough overhead clearance.',
+      'Bend the knees slightly and prepare to jump.',
+    ],
+    execution: [
+      'Jump explosively, driving through both feet.',
+      'At the peak of the jump, bring the knees toward the chest — compact but not forced.',
+      'Extend the legs before landing.',
+      'Land softly on the balls of the feet, bending the knees to absorb the impact.',
+      'Land quietly and reset before the next rep.',
+    ],
+    breathing: ['Exhale as you jump. Inhale as you reset.'],
+    cues: [
+      '"Jump first, tuck second."',
+      '"Land soft — bend on contact."',
+      '"Reset between reps."',
+    ],
+    commonMistakes: [
+      'Tucking before reaching the peak of the jump, reducing height.',
+      'Landing with stiff knees.',
+      'Not resetting between reps, leading to cumulative instability.',
+      'Forcing an extreme tuck height that disrupts the jump.',
+    ],
+    variations: [
+      {
+        name: 'Lower-height Tuck Jump',
+        purpose: 'Reduces the intensity while maintaining the jump-and-tuck pattern.',
+        formChange: 'Focus on the tuck action from a lower jump height.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Squat Jump',
+        purpose: 'Removes the tuck demand and focuses on jump power and landing.',
+        formChange: 'Jump from a squat position without tucking the knees to the chest.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Continuous Tuck Jumps',
+        purpose: 'Adds cardiovascular and reactive power demand.',
+        formChange: 'Perform repeated tuck jumps with minimal ground contact time.',
+        difficulty: 'harder',
+      },
+    ],
+    safetyNotes: [
+      'Use an appropriate surface and ensure sufficient overhead clearance.',
+      'Stop if landing mechanics deteriorate — stiff or uncontrolled landings are a signal to rest.',
+      'Modify or stop for sharp pain, numbness, dizziness, loss of balance, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Lateral Bound ─────────────────────────────────────────────────────────────
+  'lateral-bound': {
+    exerciseKey: 'lateral-bound',
+    displayName: 'Lateral Bound',
+    summary: 'A lateral plyometric exercise involving a single-leg push to the side and a controlled single-leg landing on the other foot. It develops power and control in the frontal plane and trains single-leg landing mechanics.',
+    setup: [
+      'Stand on one foot with a soft knee bend.',
+      'Clear the space laterally on both sides.',
+    ],
+    execution: [
+      'Push off the standing foot laterally, projecting the body sideways.',
+      'Land on the opposite foot with the knee bent to absorb the impact.',
+      'Stabilise the landing — "stick" the position before bounding back.',
+      'Keep the hip and knee of the landing leg aligned over the foot.',
+      'Bound back in the other direction once stable.',
+    ],
+    breathing: ['Exhale as you push off. Inhale as you stick and reset.'],
+    cues: [
+      '"Stick the landing — one second of stability."',
+      '"Drive off the outside foot."',
+      '"Land with the knee bent and the hip behind the foot."',
+    ],
+    commonMistakes: [
+      'Landing with a stiff knee.',
+      'Bounding back before stabilising the landing.',
+      'Letting the knee cave inward on landing.',
+    ],
+    variations: [
+      {
+        name: 'Shorter-distance Lateral Bound',
+        purpose: 'Reduces the landing force — useful when learning the pattern.',
+        formChange: 'Bound a shorter distance and focus on a controlled, stable landing.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Supported Lateral Bound',
+        purpose: 'Allows learning the push pattern with a hand on a surface for balance.',
+        formChange: 'Touch a wall or rail lightly with one hand on the landing side.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Repeated Lateral Bounds',
+        purpose: 'Adds reactive power demand with minimal ground contact time.',
+        formChange: 'Reduce the stick time and bound continuously side to side.',
+        difficulty: 'harder',
+      },
+    ],
+    safetyNotes: [
+      'Use an appropriate, non-slip surface and clear the lateral space before bounding.',
+      'Always stabilise the landing before bounding back — avoid reactive bouncing before control is established.',
+      'Modify or stop for sharp pain, numbness, dizziness, loss of balance, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
     ],
     contentVersion: 1,
     reviewedAt: '2025-01-01',
