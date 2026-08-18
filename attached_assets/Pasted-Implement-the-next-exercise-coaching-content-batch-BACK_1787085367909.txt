@@ -1,0 +1,363 @@
+Implement the next exercise-coaching content batch: BACK ONLY.
+
+The Chest batch is complete and already committed. Work only on the Back records listed below.
+
+IMAGE SCOPE RESTRICTION:
+
+Do not add, connect, import, rename, move, delete, generate, or reference exercise images or image assets. Leave all existing Form image placeholders and image-related code unchanged.
+
+Do not modify:
+
+- WorkoutChecklistScreen.tsx.
+- ExerciseCoachButton.tsx.
+- ExerciseCoachingSheet.tsx.
+- Workout logic.
+- Weight-unit conversion.
+- Session-set persistence.
+- Personal-record calculations.
+- Navigation.
+- Exercise ordering.
+- Existing Edit, Form, Swap, or completion behavior.
+- Existing coaching records for Bench Press, Squat, Deadlift, Barbell Row, Push-ups, or the completed Chest batch.
+
+## File scope
+
+The only file permitted to change is:
+
+src/data/exerciseCoaching.ts
+
+Do not split the file in this batch.
+
+## Back records to add
+
+Add exactly these 14 new coaching records:
+
+1. Pull-ups
+2. Chin-ups
+3. Lat Pulldown
+4. Dumbbell Row
+5. T-Bar Row
+6. Seated Cable Row
+7. Face Pulls
+8. Hyperextensions
+9. Kettlebell Row
+10. Kettlebell Deadlift
+11. Kettlebell Renegade Row
+12. Kettlebell Good Morning
+13. Typewriter Pull-ups
+14. Australian Pull-ups
+
+Do not add another Muscle-ups record. The existing `muscle-ups` record from the Chest batch is shared with Back and must remain the single record for that name.
+
+## Required mappings
+
+Add exactly these 14 mappings to COACHING_NAME_TO_KEY:
+
+- 'Pull-ups': 'pull-ups'
+- 'Chin-ups': 'chin-ups'
+- 'Lat Pulldown': 'lat-pulldown'
+- 'Dumbbell Row': 'dumbbell-row'
+- 'T-Bar Row': 't-bar-row'
+- 'Seated Cable Row': 'seated-cable-row'
+- 'Face Pulls': 'face-pulls'
+- 'Hyperextensions': 'hyperextensions'
+- 'Kettlebell Row': 'kettlebell-row'
+- 'Kettlebell Deadlift': 'kettlebell-deadlift'
+- 'Kettlebell Renegade Row': 'kettlebell-renegade-row'
+- 'Kettlebell Good Morning': 'kettlebell-good-morning'
+- 'Typewriter Pull-ups': 'typewriter-pull-ups'
+- 'Australian Pull-ups': 'australian-pull-ups'
+
+Preserve all existing mappings, including:
+
+- 'Muscle-ups': 'muscle-ups'
+
+Do not rename any existing stable key.
+
+## Required record structure
+
+Match the exact existing ExerciseCoaching type and record style.
+
+Every new record must have populated:
+
+- exerciseKey
+- summary
+- setup
+- execution
+- breathing
+- cues
+- commonMistakes
+- variations
+- safetyNotes
+- contentVersion
+- reviewedAt
+
+Every variation must include:
+
+- name
+- purpose
+- formChange
+- difficulty: 'easier' | 'similar' | 'harder'
+
+## Content requirements
+
+Use concise, original, practical coaching content.
+
+Avoid:
+
+- “Perfect form” claims.
+- Claims that an exercise completely isolates a muscle.
+- Guaranteed injury-prevention claims.
+- Unsupported medical claims.
+- Copying wording from websites.
+- Treating normal individual variation as automatically incorrect.
+
+Use adaptable language such as:
+
+- “A useful starting position is…”
+- “Choose a range of motion you can control comfortably.”
+- “This version places relatively more emphasis on…”
+- “Adjust the setup to your mobility, equipment, and goal.”
+
+### Pull-ups
+
+Cover:
+
+- Hanging setup.
+- Shoulder control.
+- Pulling the body toward the bar.
+- Controlled lowering.
+- Grip options.
+- Regressions such as assisted pull-ups and pulldowns.
+
+### Chin-ups
+
+Cover:
+
+- Supinated or neutral grip.
+- Shoulder and trunk position.
+- Elbow drive.
+- Controlled descent.
+- How the grip changes the movement demand.
+
+### Lat Pulldown
+
+Cover:
+
+- Seat and thigh-pad setup.
+- Grip selection.
+- Pulling toward the upper chest without excessive swinging.
+- Controlled return.
+- Avoiding pulling the bar behind the neck.
+
+### Dumbbell Row
+
+Cover:
+
+- Supported or hinged setup.
+- Stable shoulder and trunk position.
+- Pulling toward the hip or lower ribs.
+- Avoiding torso rotation.
+- One-arm and chest-supported variations.
+
+### T-Bar Row
+
+Cover:
+
+- Stance and hinge.
+- Bracing.
+- Load path.
+- Elbow path.
+- Controlling the eccentric.
+- Reduced-range or chest-supported alternatives.
+
+### Seated Cable Row
+
+Cover:
+
+- Upright but not rigid posture.
+- Shoulder-blade movement without shrugging.
+- Pulling the handle toward the torso.
+- Controlled reach forward.
+- Different grips and chest-supported alternatives.
+
+### Face Pulls
+
+Cover:
+
+- Cable height and rope setup.
+- Pulling toward the face or forehead.
+- External-rotation-friendly finish.
+- Light, controlled loading.
+- Avoiding lumbar extension and excessive momentum.
+
+### Hyperextensions
+
+Cover:
+
+- Hip hinge rather than forced spinal extension.
+- Neutral or comfortable trunk position.
+- Glute and hamstring contribution.
+- Controlled range.
+- Bodyweight, dumbbell, or reduced-range variations.
+
+### Kettlebell Row
+
+Cover:
+
+- Supported or hinged stance.
+- Keeping the kettlebell close.
+- Pulling toward the hip.
+- Avoiding rotation.
+- Easier supported variation.
+
+### Kettlebell Deadlift
+
+Cover:
+
+- Kettlebell position between or slightly in front of the feet.
+- Hinge mechanics.
+- Creating tension.
+- Coordinated hip and knee extension.
+- Keeping the kettlebell close.
+- Elevated-start and sumo variations.
+
+### Kettlebell Renegade Row
+
+Cover:
+
+- Stable plank or elevated setup.
+- Feet width and anti-rotation.
+- Rowing one kettlebell while maintaining trunk control.
+- Regressions before floor-level execution.
+- Avoiding excessive hip rotation.
+
+### Kettlebell Good Morning
+
+Cover:
+
+- Safe kettlebell placement.
+- Hip hinge.
+- Soft knees.
+- Keeping the spine controlled.
+- Light loading and range limitations.
+- Bodyweight and band alternatives.
+
+### Typewriter Pull-ups
+
+Cover:
+
+- Required pull-up strength.
+- Pulling high enough to move side to side.
+- Controlled lateral travel.
+- Shoulder comfort and range.
+- Assisted, banded, or archer-pull-up regressions.
+
+### Australian Pull-ups
+
+Cover:
+
+- Bar height and body angle.
+- Straight trunk.
+- Pulling chest toward the bar.
+- Scaling difficulty by changing body angle.
+- Feet-supported and elevated-foot variations.
+
+## Variations
+
+Provide three to five variations per exercise.
+
+Each variation must include:
+
+- Name.
+- Purpose.
+- Form change.
+- Difficulty.
+
+For advanced movements such as Typewriter Pull-ups and Renegade Rows, include at least one easier regression.
+
+Do not describe any movement as universally safe or unsafe. Include practical safety guidance and a general educational disclaimer.
+
+## Organization
+
+Add the new records under a clearly labeled Back section.
+
+Do not rewrite or reformat existing content unnecessarily. Keep the diff limited to:
+
+- 14 new mappings.
+- 14 new coaching records.
+
+## Required checks
+
+After editing, run:
+
+npx tsc --noEmit
+
+Zero TypeScript errors are required.
+
+Then run:
+
+git diff --check
+
+No whitespace errors are allowed.
+
+Also verify:
+
+- Exactly 14 new records were added.
+- Exactly 14 new mappings were added.
+- The existing `muscle-ups` record was not duplicated.
+- No duplicate stable keys exist.
+- All 14 new mappings resolve to records.
+- The existing 20 records remain present.
+- The total coaching-record count is now 34.
+- The total mapping count is now 34.
+- No image files or image references changed.
+- No files other than src/data/exerciseCoaching.ts changed.
+
+## Final report
+
+Report:
+
+1. The exact file changed.
+2. The 14 new records.
+3. The 14 new stable keys.
+4. The final coaching-record count.
+5. The final mapping count.
+6. Confirmation that Muscle-ups was reused rather than duplicated.
+7. Confirmation that the existing records were preserved.
+8. Confirmation that images were untouched.
+9. TypeScript result.
+10. git diff --check result.
+11. Remaining exercises for later batches.
+
+EXECUTION ORDER — 1 FILE:
+
+1. Before editing anything, show me the plan for:
+   src/data/exerciseCoaching.ts
+
+   Include the exact target sections, mappings, records, exports, and approximate line numbers that will change. Confirm that only the 14 Back records and 14 corresponding mappings will be added. Do not edit yet.
+
+2. After showing the plan, apply the requested changes to only this one file. Do not edit, delete, rename, generate, or stage any other files.
+
+3. Run the full-project TypeScript check:
+
+   npx tsc --noEmit
+
+   Zero TypeScript errors are required.
+
+4. Run:
+
+   git diff --check
+
+   No whitespace errors are allowed.
+
+5. Show what changed in src/data/exerciseCoaching.ts, including the new mappings and all 14 records.
+
+6. Confirm that existing functionality unrelated to this task was not changed.
+
+7. Confirm explicitly that no image files, image imports, image paths, or image references were added or modified.
+
+8. Do NOT commit.
+9. Do NOT push.
+10. Do NOT run git add.
+11. I will handle Git manually in the shell.
