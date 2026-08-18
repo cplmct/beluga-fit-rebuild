@@ -124,12 +124,12 @@ export function ExerciseCoachingSheet({
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
-            {/* Summary */}
+            {/* What it is */}
+            <Text style={styles.sectionTitle}>What it is</Text>
             <View style={styles.summaryCard}>
               <Text style={styles.summaryText}>{coaching.summary}</Text>
             </View>
 
-            {/* What it is / Setup */}
             <Section title="Setup" items={coaching.setup} />
 
             {/* Perform the movement */}
