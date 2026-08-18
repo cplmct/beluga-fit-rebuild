@@ -1,0 +1,226 @@
+Implement the first exercise-coaching content batch: CHEST ONLY.
+
+The inspection audit is complete. The current source of truth is:
+
+- Built-in catalog: 112 entries across 6 body parts.
+- Unique exercise names: 108.
+- Existing coaching records: 5.
+- Missing coaching records: 103.
+- Existing coaching records and mappings are correct.
+- Exactly one file should change:
+  src/data/exerciseCoaching.ts
+
+IMAGE SCOPE RESTRICTION:
+
+Do not add, connect, import, rename, move, delete, generate, or reference exercise images or image assets. Leave all existing Form image placeholders and image-related code unchanged.
+
+Do not modify:
+
+- WorkoutChecklistScreen.tsx.
+- ExerciseCoachButton.tsx.
+- ExerciseCoachingSheet.tsx.
+- Workout logic.
+- Weight-unit conversion.
+- Session-set persistence.
+- Personal-record calculations.
+- Navigation.
+- Exercise ordering.
+- Existing Edit, Form, Swap, or completion behavior.
+- The existing five coaching records.
+
+## Chest records to add
+
+Add exactly these 15 new coaching records:
+
+1. Incline Bench Press
+2. Decline Bench Press
+3. Dumbbell Press
+4. Incline Dumbbell Press
+5. Chest Fly
+6. Cable Fly
+7. Dips
+8. Pec Deck
+9. Kettlebell Floor Press
+10. Kettlebell Pullover
+11. Pike Push-ups
+12. Archer Push-ups
+13. Diamond Push-ups
+14. Pseudo Planche Push-ups
+15. Muscle-ups
+
+These four names are also used by other body-part categories, but for this batch each receives one shared coaching record and one mapping entry:
+
+- Pike Push-ups → pike-push-ups
+- Diamond Push-ups → diamond-push-ups
+- Muscle-ups → muscle-ups
+
+Do not add Back or Arms records in this batch. The shared records above will be reused when those categories are handled later.
+
+## Data requirements
+
+Use the exact existing ExerciseCoaching type and record shape.
+
+For every new record, populate:
+
+- exerciseKey
+- summary
+- setup
+- execution
+- breathing
+- cues
+- commonMistakes
+- variations
+- safetyNotes
+- contentVersion
+- reviewedAt
+
+Every variation must include:
+
+- name
+- purpose
+- formChange
+- difficulty: 'easier' | 'similar' | 'harder'
+
+Use the same tone, depth, and formatting as the existing five records.
+
+## Content requirements
+
+Write original, concise, practical coaching content.
+
+Avoid:
+
+- Claiming there is one perfect form for every user.
+- Claiming a movement completely isolates a muscle.
+- Guaranteed injury-prevention claims.
+- Unsupported medical claims.
+- Fear-based warnings.
+- Copying wording from external websites.
+
+Use adaptable language such as:
+
+- “A useful starting position is…”
+- “Choose a range of motion you can control comfortably.”
+- “This variation places relatively more emphasis on…”
+- “Adjust the setup to your mobility, equipment, and goal.”
+
+For every exercise, include:
+
+- A plain-language description of the movement.
+- Setup instructions.
+- Step-by-step performance instructions.
+- Breathing guidance.
+- Three to six brief coaching cues.
+- Common mistakes.
+- Three to five variations with purpose, form change, and difficulty.
+- Safety notes, including the general educational disclaimer.
+
+For advanced movements—especially muscle-ups, pseudo-planche push-ups, archer push-ups, and pike push-ups—include easier regressions and prerequisites where appropriate.
+
+For Dips, explain how torso position and bar setup can change relative chest emphasis. Do not treat “Dips” as identical to “Tricep Dips,” which will be handled in the Arms batch later.
+
+## Stable keys and mapping
+
+Add exactly these new display-name mappings:
+
+- 'Incline Bench Press': 'incline-bench-press'
+- 'Decline Bench Press': 'decline-bench-press'
+- 'Dumbbell Press': 'dumbbell-press'
+- 'Incline Dumbbell Press': 'incline-dumbbell-press'
+- 'Chest Fly': 'chest-fly'
+- 'Cable Fly': 'cable-fly'
+- 'Dips': 'dips'
+- 'Pec Deck': 'pec-deck'
+- 'Kettlebell Floor Press': 'kettlebell-floor-press'
+- 'Kettlebell Pullover': 'kettlebell-pullover'
+- 'Pike Push-ups': 'pike-push-ups'
+- 'Archer Push-ups': 'archer-push-ups'
+- 'Diamond Push-ups': 'diamond-push-ups'
+- 'Pseudo Planche Push-ups': 'pseudo-planche-push-ups'
+- 'Muscle-ups': 'muscle-ups'
+
+Preserve all existing mappings exactly. Do not rename existing keys.
+
+## Data organization
+
+Add the records under a clearly labeled Chest section in the existing file.
+
+Do not rewrite or reformat the existing five records unnecessarily. Keep the diff focused on:
+
+- The new mappings.
+- The new Chest records.
+
+Do not split the file in this batch.
+
+## Required checks
+
+After editing, run:
+
+npx tsc --noEmit
+
+Zero TypeScript errors are required.
+
+Then run:
+
+git diff --check
+
+No whitespace errors are allowed.
+
+Also verify:
+
+- Exactly 15 new records were added.
+- Exactly 15 new display-name mappings were added.
+- The total coaching-record count is now 20.
+- The total mapping count is now 20.
+- No duplicate stable keys exist.
+- All 15 mappings resolve to records.
+- The existing five records remain unchanged.
+- No image files or image references changed.
+- No files other than src/data/exerciseCoaching.ts changed.
+- The coaching sheet can render every new record using the existing type.
+
+## Final report
+
+Report:
+
+1. The exact file changed.
+2. The 15 new records.
+3. The 15 new stable keys.
+4. The final record count.
+5. The final mapping count.
+6. Confirmation that the existing five records were preserved.
+7. Confirmation that images were untouched.
+8. TypeScript result.
+9. git diff --check result.
+10. Any remaining exercises for later batches.
+
+EXECUTION ORDER — 1 FILE:
+
+1. Before editing anything, show me the plan for the one file:
+   src/data/exerciseCoaching.ts
+
+   Include the exact target sections, exports, mappings, records, and approximate line numbers that will change. Confirm that only the 15 Chest records and 15 corresponding mappings will be added. Do not edit yet.
+
+2. After showing the plan, apply the requested changes to only this one file. Do not edit, delete, rename, generate, or stage any other files.
+
+3. Run the full-project TypeScript check:
+
+   npx tsc --noEmit
+
+   Zero TypeScript errors are required.
+
+4. Run:
+
+   git diff --check
+
+   No whitespace errors are allowed.
+
+5. Show what changed in src/data/exerciseCoaching.ts, including the new mappings and all 15 records.
+
+6. Confirm that existing functionality unrelated to this task was not changed.
+
+7. Confirm explicitly that no image files, image imports, image paths, or image references were added or modified.
+
+8. Do NOT commit.
+9. Do NOT push.
+10. Do NOT run git add.
+11. I will review the diff and handle Git manually in the shell.
