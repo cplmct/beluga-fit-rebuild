@@ -1,0 +1,333 @@
+Expand the exercise coaching data so that every exercise currently supported by the app has coaching details similar to the existing five records.
+
+IMPORTANT: This task is text coaching content only.
+
+Do not add, connect, import, rename, move, delete, or reference exercise images or image assets. Leave all existing Form image placeholders and image-related code unchanged. Image integration will be handled in a separate future task after I explicitly approve it.
+
+Do not modify:
+
+- WorkoutChecklistScreen workout behavior.
+- ExerciseCoachButton behavior.
+- ExerciseCoachingSheet layout or interaction behavior, except where a strictly necessary data-compatibility change is required.
+- Weight-unit conversion.
+- Session-set persistence.
+- Personal-record calculations.
+- Exercise ordering.
+- Existing Edit, Form, Swap, or completion behavior.
+- Navigation.
+- Database schema.
+- Existing coaching content for the first five exercises unless a TypeScript/data-compatibility issue requires a minimal correction.
+
+## Goal
+
+Generate complete, structured coaching content for every exercise that exists in the app but does not yet have a coaching record.
+
+The existing coaching records are the reference implementation:
+
+- Bench Press
+- Squat
+- Deadlift
+- Barbell Row
+- Push-ups
+
+Inspect the existing data model and preserve its exact conventions. Do not create a second competing coaching format.
+
+## First inventory the exercise library
+
+Before writing any code, inspect the project and determine the complete list of exercise names currently used by the app.
+
+Check all relevant sources, including:
+
+- Exercise seed data.
+- Exercise catalog files.
+- Workout templates.
+- Custom-exercise handling.
+- Exercise replacement or swap lists.
+- Any database exercise-name references.
+- Existing coaching-name mapping.
+
+Do not assume that the five initial exercises are the complete list.
+
+Create an inventory grouped into:
+
+1. Exercises that already have coaching records.
+2. Exercises that are missing coaching records.
+3. Exercises whose names do not map cleanly to a stable coaching key.
+4. Duplicate or alias names that may refer to the same movement.
+
+Show me this inventory before making edits.
+
+## Scope decision
+
+After the inventory:
+
+- Add records for every clearly identified built-in exercise missing coaching.
+- Do not generate records for user-created custom exercises unless the current app architecture explicitly requires a generic custom-exercise fallback.
+- Do not create duplicate coaching records for aliases until the mapping is confirmed.
+- If an exercise name is ambiguous, list it for review instead of inventing highly specific instructions.
+- Preserve the five existing coaching records unchanged.
+
+## Data requirements
+
+Every new coaching record must match the current ExerciseCoaching type and existing record shape.
+
+Each record must contain, as applicable:
+
+- Stable exercise key.
+- Summary or “What it is” content.
+- Setup.
+- Perform-the-movement instructions.
+- Breathing.
+- Coaching cues.
+- Common mistakes.
+- Variations.
+- Safety notes.
+- Content version.
+- Reviewed date, using the project’s existing date format.
+
+Use arrays for bullet content, consistent with the existing records.
+
+Do not use empty arrays merely to satisfy the type. Every supported exercise should have meaningful content in every required section.
+
+## Content quality requirements
+
+Write concise, practical, modern coaching content that is easy to scan inside the existing coaching sheet.
+
+For each exercise include:
+
+### What it is
+
+Explain:
+
+- The general movement pattern.
+- The main muscles or regions involved without claiming complete isolation.
+- The equipment or setup.
+- The kind of user or goal the exercise may suit.
+
+Use wording such as “primarily trains,” “places relatively more emphasis on,” or “requires.”
+
+### Setup
+
+Explain:
+
+- Starting position.
+- Stance, grip, or body alignment.
+- Equipment position.
+- Bracing and stability.
+- A useful default setup while acknowledging individual adjustment.
+
+Do not state that one exact stance, grip, or joint angle is mandatory for everyone.
+
+### Perform the movement
+
+Explain:
+
+- The movement sequence.
+- The intended direction of force.
+- A controlled range of motion.
+- How to finish and return to the starting position.
+- How to maintain control rather than chase range or load.
+
+### Breathing
+
+Explain:
+
+- When to inhale.
+- When to exhale.
+- How bracing may be used for heavier efforts.
+- That users should not hold their breath indefinitely.
+- That breathing can be adjusted for the exercise, load, and individual needs.
+
+### Coaching cues
+
+Provide approximately three to six short cues, such as:
+
+- “Control the lowering.”
+- “Keep the load close.”
+- “Move through the whole foot.”
+- “Stay tall through the crown of the head.”
+
+Avoid excessive cueing that makes the movement confusing.
+
+### Common mistakes
+
+Include realistic errors such as:
+
+- Excessive momentum.
+- Losing a stable position.
+- Using a range of motion the user cannot control.
+- Letting the load drift.
+- Increasing load before technique is repeatable.
+- Forcing a painful position.
+
+Do not describe normal individual differences as automatically incorrect.
+
+### Variations
+
+Include approximately three to five variations per exercise.
+
+For every variation provide:
+
+- Name.
+- Purpose.
+- Form change.
+- Difficulty: easier, similar, or harder.
+
+Use a mixture of:
+
+- Easier or beginner variations.
+- Equipment substitutions.
+- Grip or stance changes.
+- Stability changes.
+- Range-of-motion modifications.
+- Tempo or pause variations.
+- More challenging progressions.
+
+Do not claim a variation completely isolates a muscle. Explain relative emphasis or changed demands.
+
+### Safety notes
+
+Include:
+
+- A controlled-load recommendation.
+- A reminder to use a range of motion the user can control.
+- A reminder to stop or modify for sharp pain, numbness, dizziness, or concerning symptoms.
+- A general educational disclaimer that the content is not medical advice.
+- A recommendation to seek qualified professional guidance where appropriate.
+
+Avoid fear-based language and avoid diagnosing injuries.
+
+## Content consistency
+
+Use the same tone and level of detail as the existing five records.
+
+Avoid:
+
+- Absolute “perfect form” claims.
+- Guaranteed injury-prevention claims.
+- Claims that a movement is inherently dangerous or inherently safe for everyone.
+- Unsupported medical claims.
+- Overly prescriptive body measurements.
+- Copying text from external websites.
+- Copyrighted or unattributed exercise-library wording.
+
+Write original content based on accepted resistance-training principles.
+
+## Stable key and mapping requirements
+
+Use the project’s existing stable-key convention.
+
+For every new exercise:
+
+- Add the coaching record.
+- Add the display-name-to-key mapping if required.
+- Preserve existing mappings.
+- Ensure capitalization, punctuation, hyphenation, and pluralization match the actual app exercise names.
+- Handle aliases deliberately rather than creating accidental duplicates.
+
+Do not silently change the keys of the original five records.
+
+## Custom exercises
+
+Inspect how custom exercises are represented.
+
+Unless the current architecture specifically requires otherwise:
+
+- Do not generate permanent coaching records for arbitrary user-created custom exercise names.
+- Keep the existing unsupported-exercise behavior safe.
+- If useful, add a generic fallback message that says coaching is not available yet.
+- Do not allow unsupported custom names to crash the coaching button or sheet.
+
+## Performance and maintainability
+
+Keep the coaching data centralized.
+
+Do not:
+
+- Put large content blocks inside WorkoutChecklistScreen.
+- Duplicate the same instruction across multiple components.
+- Add a new database query for this content.
+- Add image imports.
+- Change modal state management.
+- Change workout state management.
+
+If the coaching data file becomes large, split it only if the existing project conventions support that and only if the split remains easy to maintain. If splitting files, count and report every file changed.
+
+## Verification
+
+After implementation, run:
+
+npx tsc --noEmit
+
+Zero TypeScript errors are required.
+
+Then run:
+
+git diff --check
+
+No whitespace errors are allowed.
+
+Also verify:
+
+- Every built-in exercise has either a coaching record or an intentional documented reason for exclusion.
+- The five existing coaching records are still present.
+- No duplicate stable keys exist.
+- No duplicate display-name mappings exist unless intentional.
+- Every new record has all required sections populated.
+- Every variation includes name, purpose, formChange, and difficulty.
+- The coaching sheet still renders all sections.
+- Unsupported custom exercises do not crash.
+- No image files or image references were changed.
+- No workout, weight, PR, persistence, or navigation behavior was changed.
+
+Do not run tests that modify the database or seed data unless they are already part of the project’s standard test workflow.
+
+## Final report
+
+Report:
+
+1. The complete exercise inventory discovered.
+2. The number of existing coaching records.
+3. The number of new coaching records added.
+4. Every new stable coaching key.
+5. Any ambiguous names or aliases excluded for review.
+6. Every file changed.
+7. Whether any files were split.
+8. Confirmation that images were not touched.
+9. Confirmation that workout and weight-unit logic were not touched.
+10. Verification results for TypeScript and whitespace.
+11. Any remaining limitations.
+
+Do not commit.
+Do not push.
+Do not run git add.
+I will handle Git manually in the shell.
+
+EXECUTION ORDER — [X] FILES:
+
+1. Before editing anything, inspect the relevant code and show me the plan for all [X] files. Include the exact file paths and the target functions, components, exports, imports, data objects, or approximate line numbers that will change. Also show the complete exercise inventory and identify which records are missing. Do not modify files yet.
+
+2. After showing the plan, apply all requested changes to only those [X] files. Do not edit, delete, rename, generate, or stage any other files.
+
+3. Run the full-project TypeScript check:
+
+   npx tsc --noEmit
+
+   Zero TypeScript errors are required.
+
+4. Run:
+
+   git diff --check
+
+   No whitespace errors are allowed.
+
+5. Show what changed in each of the [X] files, including the relevant records, mappings, functions, or exports.
+
+6. Confirm that existing functionality unrelated to this request was not changed.
+
+7. Confirm explicitly that no image files, image imports, image paths, or image references were added or modified.
+
+8. Do NOT commit.
+9. Do NOT push.
+10. Do NOT run git add.
+11. I will review the diff and handle Git manually in the shell.
