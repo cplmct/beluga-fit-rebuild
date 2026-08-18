@@ -1,0 +1,513 @@
+Implement the next exercise-coaching content batch: LEGS ONLY.
+
+The Chest, Back, Shoulders, and Arms batches are complete.
+
+Current verified state:
+
+- Existing coaching records: 63.
+- Existing display-name mappings: 63.
+- The source file is:
+  src/data/exerciseCoaching.ts
+- Existing records and mappings are preserved.
+- Squat already exists as:
+  'Squat': 'squat'
+- Do not create a duplicate Squat record or mapping.
+- Wall Walk already exists as a shared Shoulders/Core record and must not be duplicated.
+
+IMAGE SCOPE RESTRICTION:
+
+Do not add, connect, import, rename, move, delete, generate, or reference exercise images or image assets. Leave all existing Form image placeholders and image-related code unchanged.
+
+Do not modify:
+
+- WorkoutChecklistScreen.tsx.
+- ExerciseCoachButton.tsx.
+- ExerciseCoachingSheet.tsx.
+- Workout behavior.
+- Weight-unit conversion.
+- Session-set persistence.
+- Personal-record calculations.
+- Navigation.
+- Exercise ordering.
+- Existing Edit, Form, Swap, or completion behavior.
+- Existing coaching records or mappings.
+- Any image files or image references.
+
+## File scope
+
+The only file permitted to change is:
+
+src/data/exerciseCoaching.ts
+
+Do not split the file in this batch.
+
+## Leg records to add
+
+Add exactly these 23 new coaching records:
+
+1. Front Squat
+2. Leg Press
+3. Leg Extension
+4. Leg Curl
+5. Romanian Deadlift
+6. Lunges
+7. Bulgarian Split Squat
+8. Calf Raises
+9. Leg Abduction
+10. Kettlebell Goblet Squat
+11. Kettlebell Swing
+12. Kettlebell Romanian Deadlift
+13. Kettlebell Lunge
+14. Kettlebell Sumo Deadlift
+15. Kettlebell Single-Leg Deadlift
+16. Pistol Squat
+17. Jump Squat
+18. Box Jumps
+19. Broad Jumps
+20. Nordic Curl
+21. Step-ups
+22. Tuck Jump
+23. Lateral Bound
+
+Do not add another Squat record. Reuse:
+
+- Squat → squat
+
+## Required mappings
+
+Add exactly these 23 mappings:
+
+- 'Front Squat': 'front-squat'
+- 'Leg Press': 'leg-press'
+- 'Leg Extension': 'leg-extension'
+- 'Leg Curl': 'leg-curl'
+- 'Romanian Deadlift': 'romanian-deadlift'
+- 'Lunges': 'lunges'
+- 'Bulgarian Split Squat': 'bulgarian-split-squat'
+- 'Calf Raises': 'calf-raises'
+- 'Leg Abduction': 'leg-abduction'
+- 'Kettlebell Goblet Squat': 'kettlebell-goblet-squat'
+- 'Kettlebell Swing': 'kettlebell-swing'
+- 'Kettlebell Romanian Deadlift': 'kettlebell-romanian-deadlift'
+- 'Kettlebell Lunge': 'kettlebell-lunge'
+- 'Kettlebell Sumo Deadlift': 'kettlebell-sumo-deadlift'
+- 'Kettlebell Single-Leg Deadlift': 'kettlebell-single-leg-deadlift'
+- 'Pistol Squat': 'pistol-squat'
+- 'Jump Squat': 'jump-squat'
+- 'Box Jumps': 'box-jumps'
+- 'Broad Jumps': 'broad-jumps'
+- 'Nordic Curl': 'nordic-curl'
+- 'Step-ups': 'step-ups'
+- 'Tuck Jump': 'tuck-jump'
+- 'Lateral Bound': 'lateral-bound'
+
+Preserve all existing mappings exactly.
+
+## Required record structure
+
+Match the exact existing ExerciseCoaching type and record style.
+
+Every new record must contain populated:
+
+- exerciseKey
+- summary
+- setup
+- execution
+- breathing
+- cues
+- commonMistakes
+- variations
+- safetyNotes
+- contentVersion
+- reviewedAt
+
+Every variation must include:
+
+- name
+- purpose
+- formChange
+- difficulty: 'easier' | 'similar' | 'harder'
+
+Write original, concise, practical coaching. Avoid:
+
+- “Perfect form” claims.
+- Claims that an exercise completely isolates one muscle.
+- Guaranteed injury-prevention claims.
+- Unsupported medical statements.
+- Copying wording from external exercise websites.
+- Treating normal individual differences as automatically incorrect.
+
+Use adaptable language such as:
+
+- “A useful starting position is…”
+- “Choose a range of motion you can control comfortably.”
+- “This version places relatively more emphasis on…”
+- “Adjust the setup to your mobility, equipment, and goal.”
+
+## Exercise-specific requirements
+
+### Front Squat
+
+Include:
+
+- Front-rack or suitable alternative grip.
+- Upright trunk.
+- Bracing.
+- Controlled squat depth.
+- Elbows and upper-back position.
+- Cross-arm, goblet, and lighter-load regressions.
+
+### Leg Press
+
+Include:
+
+- Seat and back-pad setup.
+- Foot placement options.
+- Controlled lowering.
+- Avoiding excessive depth that causes the pelvis to lose contact.
+- Avoiding forceful knee lockout.
+- Single-leg and reduced-load variations.
+
+### Leg Extension
+
+Include:
+
+- Machine alignment.
+- Shin-pad position.
+- Controlled knee extension and lowering.
+- Comfortable range.
+- Avoiding momentum.
+- Single-leg and tempo variations.
+
+### Leg Curl
+
+Include:
+
+- Machine alignment.
+- Pad position.
+- Controlled knee flexion and return.
+- Avoiding hip lifting or excessive momentum.
+- Seated, lying, and single-leg options.
+
+### Romanian Deadlift
+
+Include:
+
+- Hip-hinge pattern.
+- Soft knees.
+- Load close to the body.
+- Hamstring tension without forcing depth.
+- Controlled return to standing.
+- Dumbbell, kettlebell, and single-leg progressions.
+
+### Lunges
+
+Include:
+
+- Step length and balance.
+- Front-foot pressure.
+- Controlled descent.
+- Knee tracking.
+- Forward, reverse, walking, and supported variations.
+
+### Bulgarian Split Squat
+
+Include:
+
+- Rear-foot support height.
+- Front-foot position.
+- Balance and trunk control.
+- Comfortable depth.
+- Avoiding forced rear-leg loading.
+- Supported and reduced-range regressions.
+
+### Calf Raises
+
+Include:
+
+- Stable foot position.
+- Full controllable ankle range.
+- Pause at the top if useful.
+- Controlled lowering.
+- Standing, seated, single-leg, and supported variations.
+
+### Leg Abduction
+
+Include:
+
+- Machine or band setup.
+- Pelvis stability.
+- Controlled outward movement.
+- Avoiding trunk leaning.
+- Range based on control and comfort.
+- Standing, side-lying, and band variations.
+
+### Kettlebell Goblet Squat
+
+Include:
+
+- Kettlebell held close.
+- Stance and balance.
+- Bracing.
+- Controlled depth.
+- Elbow and knee relationship without rigid universal rules.
+- Box and tempo variations.
+
+### Kettlebell Swing
+
+Treat this as a ballistic hip-hinge movement.
+
+Include:
+
+- Hinge rather than squat-dominant setup.
+- Bell path close to the body.
+- Powerful hip extension.
+- Relaxed but controlled arms.
+- Letting the bell float rather than lifting it with the shoulders.
+- Russian swing, dead-stop swing, and lighter-hinge regressions.
+- Stop if the user cannot control the hinge or finish position.
+
+### Kettlebell Romanian Deadlift
+
+Include:
+
+- Hinge setup.
+- Bell close to the legs.
+- Hamstring and hip control.
+- Comfortable depth.
+- Two-hand, staggered-stance, and single-leg variations.
+
+### Kettlebell Lunge
+
+Include:
+
+- Stable rack, suitcase, or goblet position.
+- Step control.
+- Knee tracking.
+- Balance.
+- Reverse, walking, and supported variations.
+
+### Kettlebell Sumo Deadlift
+
+Include:
+
+- Wider stance.
+- Toes and knees tracking together.
+- Bell position.
+- Hip hinge and leg drive.
+- Controlled lowering.
+- Elevated-start and lighter-load variations.
+
+### Kettlebell Single-Leg Deadlift
+
+Include:
+
+- Balance and hip hinge.
+- Pelvis control.
+- Load kept close.
+- Small range as a valid starting point.
+- Supported, kickstand, and contralateral variations.
+
+### Pistol Squat
+
+Treat this as advanced.
+
+Include:
+
+- Ankle, hip, strength, and balance demands.
+- Controlled depth.
+- Counterbalance and support regressions.
+- Box pistol and assisted pistol variations.
+- Do not imply it is necessary for general fitness.
+
+### Jump Squat
+
+Include:
+
+- Squat landing mechanics.
+- Quiet, controlled landing.
+- Appropriate jump height.
+- Resetting between repetitions.
+- Bodyweight, countermovement, and reduced-depth variations.
+- Stop if landing control deteriorates.
+
+### Box Jumps
+
+Include:
+
+- Box-height selection.
+- Takeoff and landing.
+- Stable landing position.
+- Stepping down as a lower-impact option.
+- Avoiding a box so high that landing becomes a deep squat or requires unsafe scrambling.
+- Low-box and pause variations.
+
+### Broad Jumps
+
+Include:
+
+- Horizontal projection.
+- Arm swing.
+- Two-foot takeoff and landing.
+- Landing control.
+- Reset between repetitions.
+- Shorter-distance and stick-landing regressions.
+
+### Nordic Curl
+
+Treat this as advanced eccentric hamstring work.
+
+Include:
+
+- Stable kneeling setup.
+- Controlled forward lowering.
+- Use of assistance.
+- Avoiding uncontrolled collapse.
+- Partial-range, band-assisted, and hamstring-curl regressions.
+
+### Step-ups
+
+Include:
+
+- Box or step height.
+- Whole-foot placement.
+- Driving through the working leg.
+- Controlled step-down.
+- Avoiding excessive push from the trailing leg.
+- Lower-step, supported, and loaded variations.
+
+### Tuck Jump
+
+Include:
+
+- Preparation and landing.
+- Compact knee lift without forcing range.
+- Quiet landing.
+- Reset between jumps.
+- Lower-height and squat-jump regressions.
+
+### Lateral Bound
+
+Include:
+
+- Side-to-side projection.
+- Single-leg landing control.
+- Hip and knee alignment.
+- Stick and reset.
+- Shorter-distance, supported, and repeated-bound progressions.
+
+## Variations
+
+Provide three to five variations per exercise.
+
+Every variation must include:
+
+- Name.
+- Purpose.
+- Form change.
+- Difficulty.
+
+For advanced or ballistic exercises such as Kettlebell Swing, Pistol Squat, Box Jumps, Broad Jumps, Nordic Curl, Tuck Jump, and Lateral Bound, include at least one easier regression and explain how to scale the demand.
+
+## Safety notes
+
+Every new record must include:
+
+- Use a load, height, distance, speed, and range of motion you can control.
+- Modify or stop for sharp pain, numbness, dizziness, loss of balance, or concerning symptoms.
+- Use appropriate landing and support surfaces for jumping exercises.
+- General educational disclaimer: the guidance is not medical advice.
+- Seek qualified professional help when appropriate.
+
+## Organization
+
+Add the new mappings in the existing mapping section.
+
+Add the new records under a clearly labeled:
+
+// ── LEGS ──
+
+section.
+
+Do not rewrite or reformat existing content unnecessarily.
+
+## Required checks
+
+After editing, run:
+
+npx tsc --noEmit
+
+Zero TypeScript errors are required.
+
+Then run:
+
+git diff --check
+
+No whitespace errors are allowed.
+
+Also verify:
+
+- Exactly 23 new records were added.
+- Exactly 23 new mappings were added.
+- Squat was reused and not duplicated.
+- No duplicate stable keys exist.
+- All 23 new mappings resolve to records.
+- Existing records remain unchanged.
+- The total coaching-record count is now 86.
+- The total mapping count is now 86.
+- No image files or image references changed.
+- No files other than src/data/exerciseCoaching.ts changed.
+
+## Final report
+
+Report:
+
+1. The exact file changed.
+2. The 23 new records.
+3. The 23 new stable keys.
+4. Final coaching-record count.
+5. Final mapping count.
+6. Confirmation that Squat was reused.
+7. Confirmation that existing records were preserved.
+8. Confirmation that images were untouched.
+9. TypeScript result.
+10. git diff --check result.
+11. Remaining Core exercises for the final batch.
+
+EXECUTION ORDER — 1 FILE:
+
+1. Before editing anything, inspect the current file and show me the plan for:
+   src/data/exerciseCoaching.ts
+
+   Include:
+   - The exact 23 mappings to add.
+   - The exact 23 records to add.
+   - The target insertion points and approximate line numbers.
+   - Confirmation that Squat will be reused.
+   - Confirmation that the final totals will be 86 records and 86 mappings.
+   Do not edit before showing this plan.
+
+2. After showing the plan, apply the requested changes to only this one file. Do not edit, delete, rename, generate, or stage any other files.
+
+3. Run the full-project TypeScript check:
+
+   npx tsc --noEmit
+
+   Zero TypeScript errors are required.
+
+4. Run:
+
+   git diff --check
+
+   No whitespace errors are allowed.
+
+5. Show what changed in src/data/exerciseCoaching.ts, including all new mappings and records.
+
+6. Confirm that existing functionality unrelated to this task was not changed.
+
+7. Confirm explicitly that no image files, image imports, image paths, or image references were added or modified.
+
+8. Do NOT commit.
+9. Do NOT push.
+10. Do NOT run git add.
+11. I will handle Git manually in the shell.
