@@ -1,0 +1,368 @@
+Implement the next exercise-coaching content batch: ARMS ONLY.
+
+The Chest, Back, and Shoulders batches are complete.
+
+Current verified state:
+
+- Existing coaching records: 50.
+- Existing display-name mappings: 50.
+- The source file is:
+  src/data/exerciseCoaching.ts
+- Existing records and mappings are preserved.
+- Diamond Push-ups already exists as:
+  'Diamond Push-ups': 'diamond-push-ups'
+- Do not create a duplicate Diamond Push-ups record.
+
+IMAGE SCOPE RESTRICTION:
+
+Do not add, connect, import, rename, move, delete, generate, or reference exercise images or image assets. Leave all existing Form image placeholders and image-related code unchanged.
+
+Do not modify:
+
+- WorkoutChecklistScreen.tsx.
+- ExerciseCoachButton.tsx.
+- ExerciseCoachingSheet.tsx.
+- Workout behavior.
+- Weight-unit conversion.
+- Session-set persistence.
+- Personal-record calculations.
+- Navigation.
+- Exercise ordering.
+- Existing Edit, Form, Swap, or completion behavior.
+- Existing coaching records or mappings.
+
+## File scope
+
+The only file permitted to change is:
+
+src/data/exerciseCoaching.ts
+
+Do not split the file in this batch.
+
+## Arm records to add
+
+Add exactly these 12 new coaching records:
+
+1. Barbell Curl
+2. Dumbbell Curl
+3. Hammer Curl
+4. Preacher Curl
+5. Cable Curl
+6. Tricep Dips
+7. Close-grip Bench Press
+8. Tricep Pushdown
+9. Overhead Tricep Extension
+10. Skull Crushers
+11. Kettlebell Curl
+12. Kettlebell Tricep Extension
+
+The catalog also lists Kettlebell Hammer Curl, but do not add it in this batch unless the source audit confirms that it is actually missing. If it is missing, stop and report the discrepancy before editing because the planned batch count is 12.
+
+Diamond Push-ups already has a shared record and must not be added again.
+
+## Required mappings
+
+Add exactly these 12 mappings:
+
+- 'Barbell Curl': 'barbell-curl'
+- 'Dumbbell Curl': 'dumbbell-curl'
+- 'Hammer Curl': 'hammer-curl'
+- 'Preacher Curl': 'preacher-curl'
+- 'Cable Curl': 'cable-curl'
+- 'Tricep Dips': 'tricep-dips'
+- 'Close-grip Bench Press': 'close-grip-bench-press'
+- 'Tricep Pushdown': 'tricep-pushdown'
+- 'Overhead Tricep Extension': 'overhead-tricep-extension'
+- 'Skull Crushers': 'skull-crushers'
+- 'Kettlebell Curl': 'kettlebell-curl'
+- 'Kettlebell Tricep Extension': 'kettlebell-tricep-extension'
+
+Preserve all existing mappings exactly.
+
+## Required record structure
+
+Match the exact existing ExerciseCoaching type and record style.
+
+Every new record must have populated:
+
+- exerciseKey
+- summary
+- setup
+- execution
+- breathing
+- cues
+- commonMistakes
+- variations
+- safetyNotes
+- contentVersion
+- reviewedAt
+
+Every variation must include:
+
+- name
+- purpose
+- formChange
+- difficulty: 'easier' | 'similar' | 'harder'
+
+Write original, concise, practical coaching. Avoid:
+
+- “Perfect form” claims.
+- Claims that an exercise completely isolates one muscle.
+- Guaranteed injury-prevention claims.
+- Unsupported medical statements.
+- Copying wording from external exercise websites.
+- Treating normal individual differences as automatically incorrect.
+
+Use adaptable wording such as:
+
+- “A useful starting position is…”
+- “Choose a range of motion you can control comfortably.”
+- “This version places relatively more emphasis on…”
+- “Adjust the setup to your mobility, equipment, and goal.”
+
+## Exercise-specific requirements
+
+### Barbell Curl
+
+Include:
+
+- Stable standing setup.
+- Grip and wrist position.
+- Keeping the upper arm relatively still.
+- Controlled lowering.
+- Avoiding excessive torso swing.
+- EZ-bar and incline dumbbell variations.
+
+### Dumbbell Curl
+
+Include:
+
+- Standing or seated setup.
+- Alternating and simultaneous options.
+- Supination as tolerated.
+- Controlled lowering.
+- Avoiding shoulder movement and momentum.
+
+### Hammer Curl
+
+Include:
+
+- Neutral grip.
+- Elbow position.
+- Brachialis and forearm contribution without overclaiming isolation.
+- Alternating and cross-body versions.
+- Controlled loading.
+
+### Preacher Curl
+
+Include:
+
+- Upper-arm support.
+- Appropriate seat and pad setup.
+- Controlled elbow extension.
+- Avoiding forceful lockout.
+- Dumbbell, EZ-bar, and cable variations.
+
+### Cable Curl
+
+Include:
+
+- Stable cable stance.
+- Handle and pulley-height options.
+- Continuous resistance.
+- Controlled return.
+- Avoiding leaning and momentum.
+
+### Tricep Dips
+
+Treat this as distinct from Chest Dips.
+
+Include:
+
+- Upright torso option.
+- Elbow path.
+- Shoulder comfort.
+- Controlled depth.
+- Bench-dip and assisted-dip regressions.
+- Explain that torso angle and setup change relative emphasis.
+
+### Close-grip Bench Press
+
+Include:
+
+- A narrower but comfortable grip, not an excessively narrow grip.
+- Wrist and elbow alignment.
+- Controlled bar path.
+- Chest, shoulder, and triceps contribution.
+- Dumbbell and push-up variations.
+
+### Tricep Pushdown
+
+Include:
+
+- Cable height and handle selection.
+- Stable upper arms.
+- Elbow extension.
+- Controlled return.
+- Rope and single-arm variations.
+- Avoiding shoulder swinging.
+
+### Overhead Tricep Extension
+
+Include:
+
+- Overhead setup.
+- Rib and trunk control.
+- Comfortable elbow position.
+- Controlled descent.
+- Dumbbell, cable, and unilateral variations.
+- Modifying range if shoulder mobility is limited.
+
+### Skull Crushers
+
+Include:
+
+- Stable bench setup.
+- Elbow position.
+- Controlled lowering toward a comfortable target.
+- Avoiding excessive load.
+- EZ-bar, dumbbell, and cable variations.
+- Stop or modify for elbow discomfort.
+
+### Kettlebell Curl
+
+Include:
+
+- Stable stance.
+- Grip and wrist control.
+- Keeping the upper arm relatively still.
+- Controlled lowering.
+- Alternating and rack-supported variations.
+
+### Kettlebell Tricep Extension
+
+Include:
+
+- Safe overhead position.
+- Two-hand and one-hand options.
+- Trunk control.
+- Comfortable elbow position.
+- Controlled range and lighter loading.
+
+## Variations
+
+Provide three to five variations per exercise.
+
+Every variation must include:
+
+- Name.
+- Purpose.
+- Form change.
+- Difficulty.
+
+Include easier options for users who cannot yet perform the full movement and more challenging options only where appropriate.
+
+## Safety notes
+
+Every new record must include:
+
+- Use a load and range of motion you can control.
+- Modify or stop for sharp pain, numbness, dizziness, or concerning symptoms.
+- Do not force an uncomfortable elbow, wrist, or shoulder position.
+- General educational disclaimer: the guidance is not medical advice.
+- Seek qualified professional help when appropriate.
+
+## Organization
+
+Add the new mappings in the existing mapping section.
+
+Add the new records under a clearly labeled:
+
+// ── ARMS ──
+
+section.
+
+Do not rewrite or reformat existing content unnecessarily.
+
+## Required checks
+
+After editing, run:
+
+npx tsc --noEmit
+
+Zero TypeScript errors are required.
+
+Then run:
+
+git diff --check
+
+No whitespace errors are allowed.
+
+Also verify:
+
+- Exactly 12 new records were added.
+- Exactly 12 new mappings were added.
+- Diamond Push-ups was reused and not duplicated.
+- Kettlebell Hammer Curl was audited and its status reported.
+- No duplicate stable keys exist.
+- All 12 new mappings resolve to records.
+- Existing records remain unchanged.
+- The total coaching-record count is now 62.
+- The total mapping count is now 62.
+- No image files or image references changed.
+- No files other than src/data/exerciseCoaching.ts changed.
+
+## Final report
+
+Report:
+
+1. The exact file changed.
+2. The 12 new records.
+3. The 12 new stable keys.
+4. Kettlebell Hammer Curl audit result.
+5. Final coaching-record count.
+6. Final mapping count.
+7. Confirmation that Diamond Push-ups was reused.
+8. Confirmation that existing records were preserved.
+9. Confirmation that images were untouched.
+10. TypeScript result.
+11. git diff --check result.
+12. Remaining exercises for later batches.
+
+EXECUTION ORDER — 1 FILE:
+
+1. Before editing anything, inspect the current file and show me the plan for:
+   src/data/exerciseCoaching.ts
+
+   Include:
+   - The exact current status of Kettlebell Hammer Curl.
+   - The exact 12 mappings to be added.
+   - The exact 12 records to be added.
+   - The target insertion points and approximate line numbers.
+   - Confirmation that Diamond Push-ups will be reused.
+   Do not edit before showing this plan.
+
+2. After showing the plan, apply the requested changes to only this one file. Do not edit, delete, rename, generate, or stage any other files.
+
+3. Run the full-project TypeScript check:
+
+   npx tsc --noEmit
+
+   Zero TypeScript errors are required.
+
+4. Run:
+
+   git diff --check
+
+   No whitespace errors are allowed.
+
+5. Show what changed in src/data/exerciseCoaching.ts, including all new mappings and records.
+
+6. Confirm that existing functionality unrelated to this task was not changed.
+
+7. Confirm explicitly that no image files, image imports, image paths, or image references were added or modified.
+
+8. Do NOT commit.
+9. Do NOT push.
+10. Do NOT run git add.
+11. I will handle Git manually in the shell.
