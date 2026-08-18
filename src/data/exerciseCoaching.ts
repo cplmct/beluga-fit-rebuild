@@ -91,6 +91,20 @@ export const COACHING_NAME_TO_KEY: Record<string, string> = {
   'Kettlebell Front Raise': 'kettlebell-front-raise',
   'Handstand Push-ups': 'handstand-push-ups',
   'Wall Walk': 'wall-walk',               // shared: Shoulders + Core (added once)
+  // ── Arms batch ───────────────────────────────────────────────────────────────
+  'Barbell Curl': 'barbell-curl',
+  'Dumbbell Curl': 'dumbbell-curl',
+  'Hammer Curl': 'hammer-curl',
+  'Preacher Curl': 'preacher-curl',
+  'Cable Curl': 'cable-curl',
+  'Tricep Dips': 'tricep-dips',
+  'Close-grip Bench Press': 'close-grip-bench-press',
+  'Tricep Pushdown': 'tricep-pushdown',
+  'Overhead Tricep Extension': 'overhead-tricep-extension',
+  'Skull Crushers': 'skull-crushers',
+  'Kettlebell Curl': 'kettlebell-curl',
+  'Kettlebell Tricep Extension': 'kettlebell-tricep-extension',
+  'Kettlebell Hammer Curl': 'kettlebell-hammer-curl',
 };
 
 export const EXERCISE_COACHING: Record<string, ExerciseCoaching> = {
@@ -3799,6 +3813,986 @@ export const EXERCISE_COACHING: Record<string, ExerciseCoaching> = {
       'Wrist discomfort is common in this position — warm up the wrists before attempting wall walks and use push-up handles if needed.',
       'Shoulder fatigue near an inverted position can happen quickly — begin with a limited inversion and build endurance gradually.',
       'Never move to a position you are not confident you can descend from — getting stuck near the top is a fall risk.',
+      'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // ARMS
+  // ════════════════════════════════════════════════════════════════════════════
+
+  // ── Barbell Curl ──────────────────────────────────────────────────────────────
+  'barbell-curl': {
+    exerciseKey: 'barbell-curl',
+    displayName: 'Barbell Curl',
+    summary:
+      'A standing bilateral curl using a barbell that trains the biceps and brachialis. ' +
+      'The fixed bar path keeps both arms working at the same load and cadence.',
+    setup: [
+      'Stand with feet hip-width apart and hold the barbell with an underhand (supinated) grip, hands roughly shoulder-width apart.',
+      'Let the bar hang at hip height with arms fully extended at the start.',
+      'Keep the elbows close to the sides of your torso throughout — they are the pivot point of the movement.',
+      'Stand tall with a natural posture and core lightly braced.',
+      'A straight barbell or an EZ-curl bar are both valid choices; an EZ-bar can feel more comfortable on the wrists.',
+    ],
+    execution: [
+      'Curl the bar upward by bending the elbows, keeping the upper arms relatively still against your sides.',
+      'Continue until the forearms are roughly vertical or the biceps are fully shortened — whichever comes first without the elbows drifting forward.',
+      'Squeeze briefly at the top, then lower the bar under control back to full extension.',
+      'Avoid swinging the torso to help the bar up — the movement comes from the elbows, not the hips.',
+      'Choose a range of motion you can control comfortably; full extension at the bottom maintains the stretch.',
+    ],
+    breathing: [
+      'Breathe in before curling.',
+      'Exhale as you curl up or at the top.',
+      'Breathe in as you lower.',
+      'Keep breathing steadily across the set.',
+    ],
+    cues: [
+      '"Elbows stay pinned" — the upper arm should not swing forward during the curl.',
+      '"Control the descent" — lowering slowly through a full range of motion yields more stimulus than a fast drop.',
+      '"Grip relaxed" — excessive grip tension can fatigue the forearms before the biceps; ease the grip slightly.',
+      '"Full extension at the bottom" — a complete lowering maintains the range of motion and the stretch.',
+    ],
+    commonMistakes: [
+      'Swinging the torso back — this is momentum, not bicep work; reduce the load if it is happening consistently.',
+      'Elbows drifting forward as the bar approaches the top — keep the upper arm fixed beside the torso.',
+      'Shortening the range of motion at the bottom — partial reps limit the bicep\'s time under tension.',
+      'Gripping too tightly — forearm fatigue can limit the set; a firm but relaxed grip is sufficient.',
+      'Wrist discomfort with a straight bar — an EZ-curl bar or dumbbells are practical alternatives.',
+    ],
+    variations: [
+      {
+        name: 'EZ-bar Curl',
+        purpose: 'The angled grip can reduce wrist and elbow discomfort for some people.',
+        formChange: 'Use an EZ-curl bar instead of a straight bar. Grip at the angled sections. Same curl pattern.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Dumbbell Curl',
+        purpose: 'Each arm works independently; useful for identifying left-right differences.',
+        formChange: 'Hold a dumbbell in each hand. Curl with the same upper-arm-fixed technique.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Incline Dumbbell Curl',
+        purpose: 'The inclined position stretches the bicep at the bottom of the curl, increasing the range of motion.',
+        formChange: 'Lie back on an incline bench at 45–60°. Let the dumbbells hang at the sides. Curl from full extension.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Cable Curl',
+        purpose: 'Cable provides constant tension through the full range, including at the top where a barbell loses tension.',
+        formChange: 'Set a cable at floor level. Grip the bar and curl upward with the same elbow-fixed technique.',
+        difficulty: 'similar',
+      },
+    ],
+    safetyNotes: [
+      'Wrist or elbow discomfort with a straight barbell can often be addressed by switching to an EZ-bar or dumbbells.',
+      'Avoid forcing the elbows forward at the top of the rep — this shifts load to the front shoulder rather than the bicep.',
+      'Do not use a load so heavy that torso swinging becomes necessary to complete reps.',
+      'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Dumbbell Curl ─────────────────────────────────────────────────────────────
+  'dumbbell-curl': {
+    exerciseKey: 'dumbbell-curl',
+    displayName: 'Dumbbell Curl',
+    summary:
+      'A unilateral or bilateral curl using dumbbells that trains the biceps and brachialis. ' +
+      'The independent arm movement allows a natural wrist rotation through the curl and ' +
+      'can reveal left-right strength differences.',
+    setup: [
+      'Stand or sit with a dumbbell in each hand, arms hanging at full extension, palms facing inward or forward.',
+      'Keep the elbows close to the sides of the torso throughout.',
+      'A seated position on an upright bench can reduce the temptation to use torso momentum.',
+      'Use a load that allows full control through the complete range of motion.',
+    ],
+    execution: [
+      'Curl the dumbbell upward, rotating the wrist from neutral to supinated (palm up) as the arm rises — if that rotation feels comfortable for your wrist.',
+      'Keep the upper arm relatively still; the elbow is the pivot.',
+      'Lift until the bicep is fully shortened without the elbow swinging forward.',
+      'Lower under control back to full extension, rotating the wrist back to neutral if you supinated during the lift.',
+      'You can curl both arms simultaneously or alternate sides each rep — both are valid approaches.',
+    ],
+    breathing: [
+      'Breathe out as you curl up.',
+      'Breathe in as you lower.',
+      'On alternating curls, breathe once per rep rather than per arm.',
+    ],
+    cues: [
+      '"Supinate as you rise" — the rotation can increase bicep engagement for those whose wrists are comfortable with it.',
+      '"Upper arm stays still" — the forearm should be the only segment moving.',
+      '"Full extension at the bottom" — starting each rep from a complete stretch maintains range of motion.',
+      '"Controlled descent" — the lowering phase contributes to the training stimulus.',
+    ],
+    commonMistakes: [
+      'Swinging the shoulder forward to start the curl — the upper arm should not move; only the forearm rotates.',
+      'Forced supination that causes wrist or elbow discomfort — keep the grip neutral if rotation feels uncomfortable.',
+      'Shortening the bottom of the rep — extend fully at the bottom for a complete range of motion.',
+      'Alternating so quickly that each rep is rushed — deliberate control per rep is more effective than speed.',
+    ],
+    variations: [
+      {
+        name: 'Alternating Dumbbell Curl',
+        purpose: 'One arm at a time; the working arm gets full attention between reps.',
+        formChange: 'Curl one arm at a time, lowering fully before curling the other side.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Seated Dumbbell Curl',
+        purpose: 'Seated position reduces the ability to use torso momentum; useful for strict bicep work.',
+        formChange: 'Sit upright on a bench. Perform the same curl pattern from a seated position.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Incline Dumbbell Curl',
+        purpose: 'The inclined angle stretches the bicep at the bottom, working it through a longer range.',
+        formChange: 'Lie back on an incline bench at roughly 45°. Let the arms hang at the sides. Curl from that stretched position.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Concentration Curl',
+        purpose: 'Bracing the upper arm against the inner thigh removes any possibility of shoulder involvement.',
+        formChange: 'Sit with knees wide. Rest the back of the upper arm on the inner thigh. Curl with the same hand.',
+        difficulty: 'similar',
+      },
+    ],
+    safetyNotes: [
+      'If wrist supination during the curl causes discomfort, keep the grip neutral (hammer position) throughout.',
+      'Avoid loading so heavy that swinging is required — reduce the load rather than compromising the technique.',
+      'Do not force the elbow into a position that feels uncomfortable at the top or bottom of the range.',
+      'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Hammer Curl ───────────────────────────────────────────────────────────────
+  'hammer-curl': {
+    exerciseKey: 'hammer-curl',
+    displayName: 'Hammer Curl',
+    summary:
+      'A curl performed with a neutral (thumbs-up) grip throughout. The neutral grip changes ' +
+      'the forearm position and places relatively more emphasis on the brachialis and brachioradialis ' +
+      'alongside the biceps.',
+    setup: [
+      'Stand or sit with a dumbbell in each hand, palms facing inward (thumbs pointing up) — this is the neutral grip used throughout the entire movement.',
+      'Arms hang at full extension at the start.',
+      'Keep the elbows close to the sides of the torso throughout the curl.',
+      'Use a controlled load; the neutral grip can feel more natural for many wrists than a fully supinated curl.',
+    ],
+    execution: [
+      'Curl both dumbbells upward while maintaining the neutral grip — the palms stay facing inward from start to finish.',
+      'Keep the upper arms relatively still against your sides; only the forearms move.',
+      'Lift until the forearms are roughly vertical or the bicep group is fully shortened.',
+      'Lower under control back to full extension.',
+      'You can curl both arms simultaneously or alternate sides.',
+    ],
+    breathing: [
+      'Breathe out as you curl up.',
+      'Breathe in as you lower.',
+      'Keep breathing steadily throughout the set.',
+    ],
+    cues: [
+      '"Thumbs up throughout" — the neutral grip should not rotate during the movement.',
+      '"Elbows stay fixed" — the upper arm is the anchor; only the forearm moves.',
+      '"Controlled descent" — the lowering phase trains the muscles under load; do not drop the weight.',
+      '"Even grip pressure" — both hands should feel equal throughout the curl.',
+    ],
+    commonMistakes: [
+      'Rotating the wrist into supination during the curl — a hammer curl specifically maintains the neutral position throughout.',
+      'Elbows drifting forward at the top — keep the upper arm beside the torso.',
+      'Swinging the torso — reduce the load if momentum from the hips or back is needed to complete reps.',
+      'Shortening the range at the bottom — lower to a complete extension for maximum benefit.',
+    ],
+    variations: [
+      {
+        name: 'Cross-body Hammer Curl',
+        purpose: 'Curling across the body toward the opposite shoulder slightly changes the angle of pull on the brachialis.',
+        formChange: 'Instead of curling straight up, bring the dumbbell across the body toward the opposite shoulder. Alternate sides.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Alternating Hammer Curl',
+        purpose: 'One arm at a time allows more deliberate attention to each side.',
+        formChange: 'Curl one arm at a time in neutral grip, lowering fully before the other arm curls.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Cable Hammer Curl (rope)',
+        purpose: 'A rope attachment on a low cable allows a neutral grip with consistent cable tension.',
+        formChange: 'Attach a rope to a low cable. Grip the rope ends in neutral position. Curl upward keeping the thumbs up.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Dumbbell Curl (supinated)',
+        purpose: 'A fully supinated curl to compare the feel of pronated-to-supinated rotation against the fixed neutral grip.',
+        formChange: 'Start palms inward, rotate to palms up during the curl. Full supination at the top.',
+        difficulty: 'similar',
+      },
+    ],
+    safetyNotes: [
+      'The neutral grip of the hammer curl is often more comfortable for those who experience wrist or elbow discomfort with a fully supinated curl.',
+      'Avoid gripping so tightly that forearm fatigue limits the set before the biceps and brachialis are worked.',
+      'Do not force the wrist into supination during this exercise — the neutral position is intentional.',
+      'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Preacher Curl ─────────────────────────────────────────────────────────────
+  'preacher-curl': {
+    exerciseKey: 'preacher-curl',
+    displayName: 'Preacher Curl',
+    summary:
+      'A curl performed with the upper arms braced against an angled pad, which limits the ability ' +
+      'to use torso swing or shoulder movement. It trains the biceps through a well-controlled range ' +
+      'with emphasis on the stretch at the bottom.',
+    setup: [
+      'Adjust the seat height so that your armpits rest comfortably on the top edge of the pad when seated.',
+      'The upper arms rest along the angled surface of the pad — this is the fixed position they stay in.',
+      'Grip the bar or dumbbells with an underhand grip at roughly shoulder width.',
+      'Let the arms extend fully at the start to feel the bicep stretch before curling.',
+      'Avoid an overly narrow grip that forces the wrists into an awkward position.',
+    ],
+    execution: [
+      'Curl the weight upward, letting the elbows flex while the upper arms stay in contact with the pad.',
+      'Lift until the forearms are roughly vertical or until you feel the biceps fully shortened.',
+      'Lower under control back to a complete or near-complete extension — this is where the bicep is most stretched on the preacher curl.',
+      'Do not lock out forcefully at the bottom — control the final phase of the descent rather than letting the arms drop to a hard stop.',
+      'Choose a range of motion at the bottom that feels controlled and comfortable for your elbows.',
+    ],
+    breathing: [
+      'Breathe in before curling or at the bottom.',
+      'Exhale as you curl up or at the top.',
+      'Breathe in as you lower.',
+    ],
+    cues: [
+      '"Upper arms on the pad" — the pad is the anchor; the upper arms should not lift off it during the curl.',
+      '"Controlled descent to stretch" — the bottom of the preacher curl is where the stretch is greatest; take it slowly.',
+      '"No hard lockout" — control the bottom of the range rather than allowing the joints to snap into extension.',
+      '"Squeeze at the top" — a brief hold at full flexion reinforces the contraction.',
+    ],
+    commonMistakes: [
+      'Lifting the upper arms off the pad during the curl — this defeats the purpose of the preacher setup.',
+      'Dropping the weight to a hard lockout at the bottom — the bicep tendon is under significant stretch here; control the descent.',
+      'Using a weight so heavy it cannot be lowered slowly — reduce the load rather than risk fast, uncontrolled lowering.',
+      'Seat set too low — if the armpits are well above the pad, the upper arms cannot brace correctly.',
+      'Gripping too narrow — a very close grip can place the wrists in an uncomfortable position under load.',
+    ],
+    variations: [
+      {
+        name: 'EZ-bar Preacher Curl',
+        purpose: 'The angled EZ-bar grip can reduce wrist and elbow discomfort compared to a straight bar.',
+        formChange: 'Use an EZ-curl bar on the preacher bench. Grip at the angled section. Same movement.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Dumbbell Preacher Curl',
+        purpose: 'Each arm works independently; useful for noticing and addressing left-right differences.',
+        formChange: 'Hold a dumbbell in one hand on the preacher pad. Curl and lower with one arm at a time.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Cable Preacher Curl',
+        purpose: 'A cable attachment maintains tension even at the top of the curl where a barbell loses resistance.',
+        formChange: 'Set a low cable behind the preacher bench. Reach back and curl the handle upward over the pad.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Concentration Curl',
+        purpose: 'A seated alternative that braces the upper arm against the inner thigh rather than a pad.',
+        formChange: 'Sit with knees wide. Brace the back of the upper arm on the inner thigh. Curl a dumbbell upward.',
+        difficulty: 'similar',
+      },
+    ],
+    safetyNotes: [
+      'The bottom of the preacher curl places the bicep tendon under significant load and stretch — control the descent and avoid hard lockout.',
+      'Elbow discomfort at or near full extension is a signal to limit the range of motion at the bottom.',
+      'Do not force the elbows into a position that feels uncomfortable against the pad.',
+      'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Cable Curl ────────────────────────────────────────────────────────────────
+  'cable-curl': {
+    exerciseKey: 'cable-curl',
+    displayName: 'Cable Curl',
+    summary:
+      'A curl using a cable machine that provides continuous tension through the entire range of ' +
+      'motion, including the top where a barbell loses resistance. Adjustable pulley height and ' +
+      'handle options make it a versatile bicep exercise.',
+    setup: [
+      'Set the cable pulley at the lowest position for a standard upright curl.',
+      'Grip the straight bar or EZ-bar attachment with an underhand grip at roughly shoulder width.',
+      'Stand facing the machine, a small step back so the cable is already under tension at the start.',
+      'Let the arms hang at full extension before beginning.',
+      'Keep the elbows close to the sides throughout.',
+    ],
+    execution: [
+      'Curl the handle upward by bending the elbows, keeping the upper arms relatively still.',
+      'Continue until the forearms are roughly vertical or the biceps are fully shortened.',
+      'Hold briefly at the top — the cable maintains tension here where a barbell would not.',
+      'Lower under control back to full extension, resisting the cable pull on the way down.',
+      'Avoid leaning back or swinging the torso to complete the curl.',
+    ],
+    breathing: [
+      'Breathe out as you curl up.',
+      'Breathe in as you lower.',
+      'Keep breathing steadily throughout the set.',
+    ],
+    cues: [
+      '"Resist the cable down" — the lowering phase has consistent tension; use it.',
+      '"Elbows fixed" — only the forearms move; the upper arms stay beside the torso.',
+      '"Squeeze at the top" — the cable keeps the muscle loaded here, making the pause more productive.',
+      '"Stand upright" — leaning away from the cable to lift more is momentum, not muscle.',
+    ],
+    commonMistakes: [
+      'Leaning backward to assist the curl — step closer to the machine and reduce the load if this happens.',
+      'Elbows drifting forward at the top — keep the upper arm fixed against the side of the torso.',
+      'Letting the cable pull the arms down quickly — control the descent for the full eccentric benefit.',
+      'Pulley set too high — a standard curl uses a low pulley; high pulleys change the exercise significantly.',
+    ],
+    variations: [
+      {
+        name: 'Single-arm Cable Curl',
+        purpose: 'Trains one arm at a time; useful for addressing left-right differences.',
+        formChange: 'Use a single handle. Stand beside the cable and curl with one arm.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Cable Hammer Curl (rope)',
+        purpose: 'A rope attachment with a neutral grip changes the forearm position and emphasis.',
+        formChange: 'Attach a rope to the low cable. Grip the rope ends in neutral. Curl upward keeping thumbs up.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'High-cable Curl',
+        purpose: 'Cable set at face or head height; curling pulls the arm toward the head — a different arc and emphasis.',
+        formChange: 'Set the pulley at face height. Stand back and curl the handle toward your head in a horizontal arc.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Barbell Curl',
+        purpose: 'A free-weight alternative; heavier loading potential but less tension at the top.',
+        formChange: 'Grip a barbell with an underhand hold at shoulder width. Curl in the same pattern standing freely.',
+        difficulty: 'similar',
+      },
+    ],
+    safetyNotes: [
+      'Avoid positioning yourself so far from the machine that the cable pulls you off balance — stay within a controlled stance.',
+      'Wrist discomfort with a straight bar can often be addressed by switching to an EZ-bar or rope attachment.',
+      'Do not force the elbow position if curling causes discomfort at the joint.',
+      'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Tricep Dips ───────────────────────────────────────────────────────────────
+  'tricep-dips': {
+    exerciseKey: 'tricep-dips',
+    displayName: 'Tricep Dips',
+    summary:
+      'A pressing movement that trains the triceps with relatively more emphasis than a chest-focused ' +
+      'parallel-bar dip. Keeping the torso more upright and the elbows tracking closer to the body ' +
+      'shifts the demand toward the triceps. Can be performed on parallel bars or a bench.',
+    setup: [
+      'For parallel bars: grip both bars and support yourself at arm\'s length. Keep the torso upright — less forward lean than a chest dip.',
+      'For a bench dip: sit on the edge of a bench, place hands beside your hips, and walk the feet forward. The more the feet are extended, the harder the movement.',
+      'Brace the core before lowering.',
+      'Keep the elbows tracking close to the body rather than flaring wide — this is the key setup distinction from a chest-focused dip.',
+    ],
+    execution: [
+      'Lower the body by bending the elbows, keeping them relatively close to the sides throughout.',
+      'Descend to a comfortable depth — roughly when the upper arms are parallel to the floor, or to where the shoulder feels stable.',
+      'Press back up to full elbow extension without allowing the torso to lean forward significantly.',
+      'Avoid locking the elbows with a snap at the top — reach full extension under control.',
+      'Choose a depth you can control; build range gradually rather than forcing depth before shoulder and elbow are ready.',
+    ],
+    breathing: [
+      'Breathe in as you lower.',
+      'Breathe out as you press back up.',
+      'Keep breathing steadily across the set.',
+    ],
+    cues: [
+      '"Upright torso" — less forward lean keeps the triceps as the primary mover rather than the chest.',
+      '"Elbows close" — tracking the elbows inward increases tricep emphasis.',
+      '"Control the descent" — a rushed lowering reduces muscle tension and can stress the shoulder.',
+      '"Full extension at the top" — reaching full lockout completes the tricep\'s range of motion.',
+    ],
+    commonMistakes: [
+      'Leaning far forward — this shifts emphasis toward the chest and front shoulder; stay more upright for tricep emphasis.',
+      'Elbows flaring wide — an elbows-out position loads the front shoulder more than the triceps.',
+      'Descending so deep the shoulder rolls forward — build depth gradually.',
+      'Swinging the hips or legs to generate momentum — keep the movement controlled and from the elbows.',
+      'Bench dip with shoulders rounding forward — sit taller and keep the shoulder blades slightly back.',
+    ],
+    variations: [
+      {
+        name: 'Bench Dip',
+        purpose: 'A supported version using a bench behind you; reduces the overall bodyweight demand.',
+        formChange: 'Hands on bench edge behind you, feet on the floor or an elevated surface. Bend elbows and lower, then press back up.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Assisted Dip (band or machine)',
+        purpose: 'Reduces the effective bodyweight; useful when building toward full unassisted dips.',
+        formChange: 'Loop a band under your knees on the bars, or use an assisted dip machine. Same movement pattern.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Weighted Dip',
+        purpose: 'Adds external load beyond bodyweight; a progression once unassisted dips are well-controlled.',
+        formChange: 'Attach a weight via a dip belt. Maintain the upright torso and close-elbow technique.',
+        difficulty: 'harder',
+      },
+      {
+        name: 'Close-grip Bench Press',
+        purpose: 'A horizontal alternative that trains the triceps with adjustable barbell load.',
+        formChange: 'Lie on a flat bench. Grip the bar slightly inside shoulder width. Press with elbows tracking close.',
+        difficulty: 'similar',
+      },
+    ],
+    safetyNotes: [
+      'Shoulder discomfort at the bottom of a dip is a signal to limit range of motion and build depth gradually.',
+      'Bench dips with hands turned outward can place the shoulder in a less comfortable position — try turning hands forward or using parallel bars.',
+      'Do not force the elbow or shoulder into a position that feels unstable or painful.',
+      'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Close-grip Bench Press ────────────────────────────────────────────────────
+  'close-grip-bench-press': {
+    exerciseKey: 'close-grip-bench-press',
+    displayName: 'Close-grip Bench Press',
+    summary:
+      'A flat bench press variation using a narrower grip that places relatively more emphasis on ' +
+      'the triceps compared to a standard-width press. The chest and front shoulder still contribute; ' +
+      'this is a compound movement, not a pure isolation exercise.',
+    setup: [
+      'Set up on a flat bench the same way you would for a standard bench press.',
+      'Grip the bar with hands slightly inside shoulder width — a grip too narrow (e.g. hands touching) tends to strain the wrists and reduce stability.',
+      'A grip roughly 10–15 cm inside your standard bench press grip is a common starting point.',
+      'Retract and depress the shoulder blades before unracking.',
+      'Wrists should be stacked over the forearms — avoid letting the wrists bend back under the bar.',
+    ],
+    execution: [
+      'Unrack and lower the bar toward the lower chest or sternum with elbows tracking closer to the body than a wide-grip press.',
+      'Elbows should angle roughly 45–60° from the torso rather than flaring wide.',
+      'Touch or lightly graze the chest, then press back up to full elbow extension.',
+      'Keep the shoulder-blade position throughout — avoid shrugging at the top.',
+      'Choose a range of motion you can control comfortably.',
+    ],
+    breathing: [
+      'Breathe in and brace before lowering.',
+      'Hold the brace through the descent.',
+      'Exhale at the top or just past the sticking point.',
+    ],
+    cues: [
+      '"Elbows toward the hips" — tracking the elbows inward on the descent is the key change from a standard press.',
+      '"Wrists over forearms" — a stacked wrist position keeps the load on the muscles rather than the joint.',
+      '"Not too narrow" — a grip that is slightly inside shoulder width is close enough; very narrow grips add wrist stress without additional benefit.',
+      '"Full extension at the top" — lockout completes the tricep\'s range of motion.',
+    ],
+    commonMistakes: [
+      'Gripping too narrow — hands almost touching causes wrist strain and reduces stability; slightly inside shoulder width is sufficient.',
+      'Elbows flaring out — a close-grip press works best with elbows tracking toward the body; flaring reduces tricep emphasis.',
+      'Letting the wrists collapse backward — maintain a stacked wrist throughout the press.',
+      'Bouncing the bar off the chest — use a controlled touch, not a bounce.',
+    ],
+    variations: [
+      {
+        name: 'Standard Bench Press',
+        purpose: 'A wider grip shifts emphasis more toward the chest; useful as a comparison or primary compound lift.',
+        formChange: 'Move the hands out to a standard shoulder-width or slightly wider position. Same press pattern.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Close-grip Dumbbell Press',
+        purpose: 'Dumbbells allow a neutral or angled grip; can feel more comfortable on the wrists.',
+        formChange: 'Hold dumbbells in a neutral or slightly inward grip. Press with elbows tracking close to the body.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Diamond Push-up',
+        purpose: 'A bodyweight version with a similar close-hand emphasis on the triceps.',
+        formChange: 'Place hands together in a diamond shape under the lower chest. Lower toward the hands with elbows tracking close.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Tricep Pushdown',
+        purpose: 'An isolation tricep alternative using a cable; removes the chest and shoulder involvement.',
+        formChange: 'Set a cable at head height. Push the handle downward with the elbows pinned to the sides.',
+        difficulty: 'easier',
+      },
+    ],
+    safetyNotes: [
+      'Use a rack with safeties or a spotter — failing on the bench press with no backup is difficult to bail from safely.',
+      'Wrist discomfort with the close grip is a signal to widen the grip slightly.',
+      'Do not force the elbows into a position that feels unstable or painful under load.',
+      'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Tricep Pushdown ───────────────────────────────────────────────────────────
+  'tricep-pushdown': {
+    exerciseKey: 'tricep-pushdown',
+    displayName: 'Tricep Pushdown',
+    summary:
+      'A cable exercise where the triceps extend the elbow against cable resistance. ' +
+      'The cable is set at a high anchor point and the movement is a downward push from ' +
+      'roughly chest or elbow height to full extension at the sides.',
+    setup: [
+      'Set the cable pulley at a high position — roughly head or above-head height.',
+      'Attach a straight bar, angled bar, rope, or single handle — the choice affects grip and wrist position.',
+      'Stand facing the cable machine and step close enough that the cable tension is immediate at the start.',
+      'Begin with the elbows bent at roughly 90° or slightly less, upper arms hanging at the sides.',
+      'Keep the upper arms pinned close to the torso — they should not swing or move during the pushdown.',
+    ],
+    execution: [
+      'Extend the elbows downward until the arms are fully straight — pushing the handle toward the floor.',
+      'At full extension, squeeze the triceps briefly before allowing the arms to return.',
+      'Return under control until the forearms are back at roughly the starting angle — do not let the elbows flare back with the cable.',
+      'Keep the torso relatively upright; a slight forward lean is common and acceptable, but avoid bowing forward to push the weight.',
+      'Choose a load that allows full elbow extension without recruiting the shoulder.',
+    ],
+    breathing: [
+      'Breathe out as you push downward.',
+      'Breathe in as you return.',
+      'Keep breathing steadily across the set.',
+    ],
+    cues: [
+      '"Upper arms stay still" — only the forearms move; the upper arm is pinned to the side of the torso.',
+      '"Full extension at the bottom" — lock the elbows out fully to complete the tricep\'s range of motion.',
+      '"Control the return" — resist the cable as the arms come back up.',
+      '"No shoulder swing" — if the shoulders are moving to assist the push, reduce the load.',
+    ],
+    commonMistakes: [
+      'Upper arms swinging forward and back — the upper arms should be stationary throughout.',
+      'Using torso momentum to push the weight — lean slightly, but do not bow forward or use body swing.',
+      'Stopping short of full extension — partial reps limit tricep engagement at the end range.',
+      'Allowing the elbows to flare out during the push — keep them close to the body for consistent tricep loading.',
+    ],
+    variations: [
+      {
+        name: 'Rope Pushdown',
+        purpose: 'The rope allows a neutral grip and a slightly wider finishing position that can increase the tricep squeeze.',
+        formChange: 'Attach a rope. Grip both ends with neutral grip. At the bottom, spread the ends outward slightly.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Single-arm Pushdown',
+        purpose: 'Trains one arm at a time; useful for identifying and addressing left-right differences.',
+        formChange: 'Use a single handle. Push down with one arm, keeping the same upper-arm-fixed technique.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Reverse-grip Pushdown',
+        purpose: 'An underhand (supinated) grip changes the wrist position and slightly alters muscle emphasis.',
+        formChange: 'Grip the bar or handle with palms facing up. Push downward in the same motion.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Close-grip Bench Press',
+        purpose: 'A compound pressing alternative that trains the triceps with greater loading potential.',
+        formChange: 'Lie on a flat bench. Use a slightly inside-shoulder-width grip and press with elbows close.',
+        difficulty: 'harder',
+      },
+    ],
+    safetyNotes: [
+      'Elbow pain during pushdowns can sometimes be reduced by widening the grip slightly or switching from a straight bar to a rope.',
+      'Avoid loading so heavy that the shoulders must swing to push the weight down.',
+      'Do not force the elbows into a position that feels uncomfortable at the start or end of the range.',
+      'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Overhead Tricep Extension ─────────────────────────────────────────────────
+  'overhead-tricep-extension': {
+    exerciseKey: 'overhead-tricep-extension',
+    displayName: 'Overhead Tricep Extension',
+    summary:
+      'A tricep exercise performed with the arms overhead, placing the long head of the tricep ' +
+      'in a stretched position before extending. It can be performed seated or standing with a ' +
+      'dumbbell, cable, EZ-bar, or kettlebell.',
+    setup: [
+      'Hold a dumbbell (or cable rope / EZ-bar) overhead with both hands, or one hand for a unilateral version.',
+      'For the two-handed dumbbell version: grip the inner plate with both hands, elbows pointing upward.',
+      'Upper arms should be roughly vertical beside or slightly behind the head throughout the movement.',
+      'Sit or stand — seated provides a more stable base; standing adds a balance and trunk-stability demand.',
+      'Brace the core and keep the ribs down to prevent the lower back from arching excessively.',
+    ],
+    execution: [
+      'Lower the weight behind your head by bending the elbows, keeping the upper arms as still as possible.',
+      'Descend until you feel a comfortable tricep stretch — roughly when the forearms are parallel to the floor or slightly lower.',
+      'Extend the elbows to return the weight overhead, squeezing the triceps at the top.',
+      'Choose a depth that is comfortable for your shoulder and elbow — do not force depth if the position feels strained.',
+      'Keep the elbows from flaring excessively wide during the movement.',
+    ],
+    breathing: [
+      'Breathe in as you lower the weight behind your head.',
+      'Breathe out as you extend back to overhead.',
+      'Keep the core braced and breathe steadily throughout.',
+    ],
+    cues: [
+      '"Upper arms stay vertical" — only the forearms should move; the upper arms are the anchor.',
+      '"Ribs down" — prevents the lower back from arching to compensate for limited shoulder mobility.',
+      '"Comfortable elbow position" — elbows can be slightly bent outward; do not force them together.',
+      '"Squeeze at the top" — a brief hold at full extension reinforces the tricep contraction.',
+    ],
+    commonMistakes: [
+      'Upper arms drifting forward — the elbows should stay beside or slightly behind the head throughout.',
+      'Rib flare or lower-back arch — a common compensation for limited shoulder flexibility; keep the ribs neutral.',
+      'Forcing the elbows together — elbows that are slightly apart is normal and less stressful on the joint.',
+      'Using too heavy a load — the overhead position demands shoulder stability; start lighter than you expect.',
+      'Partial range of motion at the bottom — descend until you feel the stretch; stopping early reduces the long-head stimulus.',
+    ],
+    variations: [
+      {
+        name: 'Single-arm Overhead Tricep Extension',
+        purpose: 'One arm at a time; reveals left-right differences and allows more focus per side.',
+        formChange: 'Hold a dumbbell in one hand overhead, opposite hand on your hip or supporting the working upper arm. Same lowering and extension.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Cable Overhead Tricep Extension',
+        purpose: 'Cable provides constant tension through the full range, including at the top where a dumbbell loses tension.',
+        formChange: 'Set a cable at floor level behind you. Hold the rope overhead and extend against cable tension.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Seated Overhead Tricep Extension',
+        purpose: 'Seated position reduces balance demand and keeps the focus on the triceps.',
+        formChange: 'Sit on an upright bench. Perform the same two-handed or one-handed overhead extension.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Tricep Pushdown',
+        purpose: 'A cable alternative that trains the triceps without the overhead shoulder demand.',
+        formChange: 'Set a cable high. Push the handle downward from chest height to full elbow extension.',
+        difficulty: 'easier',
+      },
+    ],
+    safetyNotes: [
+      'Shoulder flexibility affects how comfortable the overhead position feels — reduce the range of motion rather than forcing the arms fully vertical if the position is uncomfortable.',
+      'Elbow discomfort at the bottom of the extension is a signal to reduce the range of motion or load.',
+      'Do not force the elbows into a position that feels uncomfortable or unstable overhead.',
+      'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Skull Crushers ────────────────────────────────────────────────────────────
+  'skull-crushers': {
+    exerciseKey: 'skull-crushers',
+    displayName: 'Skull Crushers',
+    summary:
+      'A lying tricep extension using an EZ-bar, straight bar, or dumbbells, where the weight ' +
+      'is lowered toward the forehead or just behind the head. It places the tricep under load ' +
+      'through a long range of motion with the arms overhead.',
+    setup: [
+      'Lie on a flat bench and press the bar or dumbbells to a position above your chest, arms extended.',
+      'An EZ-curl bar is commonly used because the angled grip can feel more comfortable on the wrists and elbows than a straight bar.',
+      'Grip slightly inside shoulder width for a bar; hold dumbbells with a neutral or slightly angled grip.',
+      'Upper arms should angle slightly past vertical — pointing a little toward your head — rather than straight up.',
+      'Use a moderate load; this exercise places significant load on the elbow joint.',
+    ],
+    execution: [
+      'Lower the weight by bending the elbows, keeping the upper arms at the same fixed angle throughout.',
+      'A useful target is to lower toward the forehead, the top of the head, or just behind the head — experiment to find what feels most natural for your shoulder and elbow.',
+      'Once you reach your comfortable depth, extend the elbows to return to the starting position.',
+      'Avoid swinging the upper arms to generate momentum — the upper arm angle should remain stable throughout.',
+      'Choose a range of motion that does not cause elbow discomfort.',
+    ],
+    breathing: [
+      'Breathe in as you lower.',
+      'Breathe out as you extend back up.',
+      'Keep a light core brace throughout to stabilise the trunk.',
+    ],
+    cues: [
+      '"Upper arms stay fixed" — only the forearms move; the upper arm angle should not change.',
+      '"Lower to comfort" — forehead, crown, or slightly behind — choose what feels controlled.',
+      '"Elbows don\'t flare" — keep the elbows tracking roughly parallel to each other rather than splaying wide.',
+      '"Control the descent" — a slow, deliberate lowering phase is safer and more productive.',
+    ],
+    commonMistakes: [
+      'Upper arms swinging — the upper arm should remain at the same angle; only the forearm moves.',
+      'Elbow flaring wide — keeping the elbows closer together maintains consistent load on the tricep.',
+      'Using too much weight — skull crushers under heavy load with poor elbow control can cause discomfort or injury over time.',
+      'Lowering only partway — find your comfortable depth and use it consistently rather than cutting reps short arbitrarily.',
+    ],
+    variations: [
+      {
+        name: 'Dumbbell Skull Crushers',
+        purpose: 'Each arm moves independently; can feel more comfortable on the wrists and elbows for some people.',
+        formChange: 'Hold a dumbbell in each hand. Lower toward the temples or beside the head. Same fixed-upper-arm technique.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Cable Skull Crusher',
+        purpose: 'A cable from the floor or low pulley maintains tension at the top of the movement where a bar loses it.',
+        formChange: 'Lie with your head toward a low cable. Pull the bar to the starting overhead position, then lower toward the forehead.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Overhead Tricep Extension',
+        purpose: 'A seated or standing variation that stretches the long head of the tricep through a similar overhead range.',
+        formChange: 'Hold a dumbbell overhead with both hands. Lower behind the head by bending the elbows.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Tricep Pushdown',
+        purpose: 'A standing cable alternative that trains the triceps without the lying-down overhead position.',
+        formChange: 'Set a cable high. Push the handle from chest height to full elbow extension.',
+        difficulty: 'easier',
+      },
+    ],
+    safetyNotes: [
+      'Elbow discomfort during skull crushers is a signal to reduce the load, adjust the lowering target, or switch to a dumbbell variation.',
+      'The exercise name is dramatic; use a weight and range of motion that you can control precisely — do not overload this movement.',
+      'Always use a rack or have a spotter available when using a barbell.',
+      'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Kettlebell Curl ───────────────────────────────────────────────────────────
+  'kettlebell-curl': {
+    exerciseKey: 'kettlebell-curl',
+    displayName: 'Kettlebell Curl',
+    summary:
+      'A bicep curl using a kettlebell, where the offset weight distribution means the bell ' +
+      'shifts as it is curled. This requires slightly more wrist and grip stability than a ' +
+      'dumbbell curl and can make lighter loads feel more demanding.',
+    setup: [
+      'Stand with feet hip-width apart, holding a kettlebell by the handle in one or both hands.',
+      'Grip the handle firmly — the bell will try to rotate as you curl it; maintain a controlled wrist position.',
+      'Let the arm hang at full extension, kettlebell resting below the hand.',
+      'Keep the upper arm close to the side of the torso throughout.',
+      'Start with a lighter load than your usual dumbbell curl until you are familiar with the shifting bell weight.',
+    ],
+    execution: [
+      'Curl the kettlebell upward by bending the elbow, keeping the upper arm fixed.',
+      'The bell will naturally shift as you curl — control this movement rather than letting it swing freely.',
+      'Continue until the forearm is roughly vertical or the bicep is fully shortened.',
+      'Lower under control back to full extension.',
+      'Avoid swinging the torso to assist the curl — use a weight that allows a strict arm movement.',
+    ],
+    breathing: [
+      'Breathe out as you curl up.',
+      'Breathe in as you lower.',
+      'Keep breathing steadily across the set.',
+    ],
+    cues: [
+      '"Control the bell shift" — the kettlebell\'s offset weight is what makes this different from a dumbbell curl.',
+      '"Upper arm stays still" — only the forearm moves; the elbow is the pivot.',
+      '"Firm wrist" — a controlled wrist position keeps the bell from swinging unpredictably.',
+      '"Full extension at the bottom" — lower fully between reps for a complete range of motion.',
+    ],
+    commonMistakes: [
+      'Using a load that causes the bell to swing uncontrollably — start lighter and build familiarity with the shifting weight.',
+      'Wrist bending backward under the bell weight — maintain a firm, relatively neutral wrist throughout.',
+      'Torso swinging to assist the curl — reduce the load if this occurs.',
+      'Rushing the descent — control the lowering just as deliberately as the lift.',
+    ],
+    variations: [
+      {
+        name: 'Alternating Kettlebell Curl',
+        purpose: 'Trains one arm at a time, giving each side full attention between reps.',
+        formChange: 'Curl one kettlebell at a time, lowering fully before curling the other side.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Two-hand Kettlebell Curl',
+        purpose: 'Both arms curl simultaneously; heavier effective load than a single bell.',
+        formChange: 'Hold one kettlebell by the horns (both hands gripping the sides of the handle). Curl upward with both hands.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Dumbbell Curl',
+        purpose: 'A more stable implement if the kettlebell\'s shifting weight is uncomfortable or unfamiliar.',
+        formChange: 'Hold a dumbbell instead of a kettlebell. The weight is centred under the grip throughout the curl.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Slow-eccentric Kettlebell Curl',
+        purpose: 'A four-to-five second lowering phase increases time under tension and muscle demand.',
+        formChange: 'Curl upward at normal pace, then lower very slowly over four to five seconds.',
+        difficulty: 'harder',
+      },
+    ],
+    safetyNotes: [
+      'The shifting weight of the kettlebell places more demand on wrist control — use a lighter starting weight than you expect.',
+      'Wrist or forearm discomfort during kettlebell curls is a signal to reduce the load or switch to dumbbells.',
+      'Do not force the elbow into a position that feels uncomfortable at any point in the range.',
+      'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Kettlebell Tricep Extension ───────────────────────────────────────────────
+  'kettlebell-tricep-extension': {
+    exerciseKey: 'kettlebell-tricep-extension',
+    displayName: 'Kettlebell Tricep Extension',
+    summary:
+      'An overhead tricep extension using a kettlebell held by the horns or the base. ' +
+      'The grip on the horns creates a comfortable two-hand hold, and the hanging bell ' +
+      'requires slightly more wrist and grip awareness than a dumbbell.',
+    setup: [
+      'Sit or stand and hold the kettlebell by the horns (sides of the handle) with both hands, bell hanging downward.',
+      'Press or lift the bell to an overhead position, arms extended, elbows pointing upward.',
+      'Upper arms remain roughly vertical beside or slightly behind the head throughout.',
+      'Core braced, ribs down to prevent excessive lower-back arch.',
+      'Start with a lighter kettlebell than you expect — the overhead position and bell-weight shifting demand extra control.',
+    ],
+    execution: [
+      'Lower the kettlebell behind your head by bending the elbows, keeping the upper arms stationary.',
+      'Descend until you feel a comfortable tricep stretch, then extend the elbows to return overhead.',
+      'Choose a depth that feels comfortable for your shoulder and elbow — do not force the bell further than is stable.',
+      'Avoid letting the bell swing or tilt — maintain a firm grip on the horns throughout.',
+      'Lower and raise at a controlled, deliberate pace.',
+    ],
+    breathing: [
+      'Breathe in as you lower behind the head.',
+      'Breathe out as you extend back overhead.',
+      'Keep the core braced and breathe steadily throughout.',
+    ],
+    cues: [
+      '"Upper arms stay vertical" — only the forearms move; the elbows are the pivot.',
+      '"Grip the horns firmly" — a secure grip prevents the bell from tipping or swinging.',
+      '"Ribs down" — prevents lower-back arch as the weight travels overhead.',
+      '"Comfortable depth" — find the depth where you feel the stretch without shoulder or elbow strain.',
+    ],
+    commonMistakes: [
+      'Upper arms drifting forward — the elbows should stay beside or slightly behind the head throughout.',
+      'Bell tilting or swinging — a firm grip on both horns keeps the bell stable.',
+      'Forcing range of motion that the shoulder does not comfortably allow — reduce depth rather than forcing the overhead position.',
+      'Too heavy a load — the overhead position with a kettlebell demands significant control; start conservatively.',
+    ],
+    variations: [
+      {
+        name: 'Dumbbell Overhead Tricep Extension',
+        purpose: 'A more stable implement if the kettlebell\'s bell-shifting weight is unfamiliar.',
+        formChange: 'Hold one dumbbell with both hands by the inner plate overhead. Lower behind the head and extend.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Single-arm Kettlebell Tricep Extension',
+        purpose: 'One arm at a time; trains left-right differences and may feel more stable than the two-hand version for some.',
+        formChange: 'Hold the kettlebell handle in one hand overhead. Lower behind the head and extend. Repeat on the other side.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Cable Overhead Tricep Extension',
+        purpose: 'Cable provides continuous tension including at the top where a kettlebell has minimal load.',
+        formChange: 'Set a cable low behind you. Hold the rope overhead and extend against the cable tension.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Tricep Pushdown',
+        purpose: 'A standing cable alternative that removes the overhead shoulder demand entirely.',
+        formChange: 'Set a cable high. Push the handle downward from chest height to full elbow extension.',
+        difficulty: 'easier',
+      },
+    ],
+    safetyNotes: [
+      'The overhead position places demand on shoulder flexibility — reduce the range of motion rather than forcing the arms fully vertical if it is uncomfortable.',
+      'Elbow discomfort at the bottom of the extension is a signal to reduce depth or load.',
+      'Do not force a wrist or elbow position that feels uncomfortable — adjust the grip or switch implements.',
+      'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Kettlebell Hammer Curl ────────────────────────────────────────────────────
+  'kettlebell-hammer-curl': {
+    exerciseKey: 'kettlebell-hammer-curl',
+    displayName: 'Kettlebell Hammer Curl',
+    summary:
+      'A bicep curl performed with the kettlebell handle gripped in a neutral (thumbs-up) position ' +
+      'throughout, similar to a dumbbell hammer curl. The offset weight of the kettlebell adds a ' +
+      'wrist and grip stability challenge compared to a dumbbell.',
+    setup: [
+      'Stand with feet hip-width apart, holding a kettlebell by the handle in one hand, thumb pointing upward.',
+      'The neutral grip is maintained throughout the entire movement — the wrist does not rotate during the curl.',
+      'Let the arm hang at full extension with the bell below the hand at the start.',
+      'Keep the upper arm close to the side of the torso throughout.',
+      'Start lighter than your usual dumbbell hammer curl — the kettlebell\'s offset weight adds a stability demand.',
+    ],
+    execution: [
+      'Curl the kettlebell upward by bending the elbow, maintaining the neutral grip throughout.',
+      'Keep the upper arm stationary — only the forearm moves.',
+      'Continue until the forearm is roughly vertical or the arm is fully flexed.',
+      'Lower under control back to full arm extension, maintaining the neutral wrist throughout.',
+      'Avoid swinging the torso or shoulder to help complete the rep.',
+    ],
+    breathing: [
+      'Breathe out as you curl up.',
+      'Breathe in as you lower.',
+      'Keep breathing steadily across the set.',
+    ],
+    cues: [
+      '"Thumbs up throughout" — the neutral grip does not rotate at any point in the movement.',
+      '"Control the bell" — the shifting weight of the kettlebell requires deliberate wrist stability.',
+      '"Upper arm stays still" — the elbow is the pivot; the shoulder does not assist.',
+      '"Full extension at the bottom" — lower completely between reps for the full range of motion.',
+    ],
+    commonMistakes: [
+      'Rotating the wrist toward supination during the curl — a hammer curl maintains neutral grip from start to finish.',
+      'Bell swinging due to insufficient wrist control — reduce the load and focus on stabilising the grip.',
+      'Swinging the torso — use a load that allows strict elbow-driven curling.',
+      'Shortening the range at the bottom — lower to a complete extension for the full bicep and brachialis stretch.',
+    ],
+    variations: [
+      {
+        name: 'Dumbbell Hammer Curl',
+        purpose: 'A more stable neutral-grip curl if the kettlebell\'s offset weight is difficult to control.',
+        formChange: 'Hold a dumbbell in neutral grip. Curl with the thumbs-up position maintained throughout.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Alternating Kettlebell Hammer Curl',
+        purpose: 'One arm at a time; each side gets full attention and a brief rest between reps.',
+        formChange: 'Curl one kettlebell at a time in neutral grip, lowering fully before the other side curls.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Two-hand Kettlebell Hammer Curl',
+        purpose: 'Both arms curl simultaneously; increases effective load and symmetry demand.',
+        formChange: 'Hold a kettlebell in each hand in neutral grip. Curl both simultaneously.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Slow-eccentric Kettlebell Hammer Curl',
+        purpose: 'A deliberate four-to-five second lowering phase increases time under tension.',
+        formChange: 'Curl upward at a normal pace, then lower very slowly over four to five seconds.',
+        difficulty: 'harder',
+      },
+    ],
+    safetyNotes: [
+      'The offset weight of the kettlebell demands more wrist and grip stability than a dumbbell — start lighter than expected.',
+      'Wrist or forearm discomfort is a signal to reduce the load or switch to a dumbbell hammer curl.',
+      'Do not force the elbow into a position that feels uncomfortable at any point in the range.',
       'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
     ],
     contentVersion: 1,
