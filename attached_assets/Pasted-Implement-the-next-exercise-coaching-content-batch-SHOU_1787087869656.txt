@@ -1,0 +1,401 @@
+Implement the next exercise-coaching content batch: SHOULDERS ONLY.
+
+The Chest and Back batches are already complete.
+
+Current verified state:
+
+- Existing coaching records: 34.
+- Existing display-name mappings: 34.
+- The source file is:
+  src/data/exerciseCoaching.ts
+- The existing five foundational records are preserved.
+- The Chest batch is present.
+- The Back batch is present.
+- Pike Push-ups already exists as:
+  'Pike Push-ups': 'pike-push-ups'
+- Do not create a duplicate Pike Push-ups record.
+
+IMAGE SCOPE RESTRICTION:
+
+Do not add, connect, import, rename, move, delete, generate, or reference exercise images or image assets. Leave all existing Form image placeholders and image-related code unchanged.
+
+Do not modify:
+
+- WorkoutChecklistScreen.tsx.
+- ExerciseCoachButton.tsx.
+- ExerciseCoachingSheet.tsx.
+- Workout behavior.
+- Weight-unit conversion.
+- Session-set persistence.
+- Personal-record calculations.
+- Navigation.
+- Exercise ordering.
+- Existing Edit, Form, Swap, or completion behavior.
+- Existing coaching records or mappings.
+
+## File scope
+
+The only file permitted to change is:
+
+src/data/exerciseCoaching.ts
+
+Do not split the file in this batch.
+
+## Shoulder records to add
+
+Add exactly these 15 new coaching records:
+
+1. Overhead Press
+2. Military Press
+3. Dumbbell Shoulder Press
+4. Arnold Press
+5. Lateral Raises
+6. Front Raises
+7. Rear Delt Fly
+8. Upright Row
+9. Shrugs
+10. Cable Lateral Raises
+11. Kettlebell Press
+12. Kettlebell Halo
+13. Kettlebell Clean and Press
+14. Kettlebell Front Raise
+15. Handstand Push-ups
+
+The catalog also lists Pike Push-ups under Shoulders, but it already has the shared record:
+
+- Pike Push-ups → pike-push-ups
+
+Do not add another Pike Push-ups record or mapping.
+
+Wall Walk is listed under Shoulders and Core, but do not add it in this batch unless it is not already present. Before editing, verify whether `wall-walk` exists. If it is absent, report that as a separate discrepancy and stop for review rather than silently expanding the batch.
+
+## Required mappings
+
+Add exactly these 15 mappings:
+
+- 'Overhead Press': 'overhead-press'
+- 'Military Press': 'military-press'
+- 'Dumbbell Shoulder Press': 'dumbbell-shoulder-press'
+- 'Arnold Press': 'arnold-press'
+- 'Lateral Raises': 'lateral-raises'
+- 'Front Raises': 'front-raises'
+- 'Rear Delt Fly': 'rear-delt-fly'
+- 'Upright Row': 'upright-row'
+- 'Shrugs': 'shrugs'
+- 'Cable Lateral Raises': 'cable-lateral-raises'
+- 'Kettlebell Press': 'kettlebell-press'
+- 'Kettlebell Halo': 'kettlebell-halo'
+- 'Kettlebell Clean and Press': 'kettlebell-clean-and-press'
+- 'Kettlebell Front Raise': 'kettlebell-front-raise'
+- 'Handstand Push-ups': 'handstand-push-ups'
+
+Preserve all existing mappings exactly.
+
+## Content requirements
+
+Use the exact existing ExerciseCoaching type and record style.
+
+Every new record must contain populated:
+
+- exerciseKey
+- summary
+- setup
+- execution
+- breathing
+- cues
+- commonMistakes
+- variations
+- safetyNotes
+- contentVersion
+- reviewedAt
+
+Every variation must include:
+
+- name
+- purpose
+- formChange
+- difficulty: 'easier' | 'similar' | 'harder'
+
+Write original, concise, practical coaching. Avoid “perfect form” claims, guaranteed injury-prevention claims, unsupported medical statements, and claims that any movement completely isolates a muscle.
+
+Use adaptable language such as:
+
+- “A useful starting position is…”
+- “Choose a range of motion you can control comfortably.”
+- “This version places relatively more emphasis on…”
+- “Adjust the setup to your mobility, equipment, and goal.”
+
+## Exercise-specific requirements
+
+### Overhead Press
+
+Include:
+
+- Standing setup.
+- Grip and wrist position.
+- Trunk bracing.
+- Pressing path around the head.
+- Controlled lowering.
+- Seated, dumbbell, and landmine alternatives.
+
+### Military Press
+
+Treat this as a distinct, stricter barbell overhead-press variation.
+
+Include:
+
+- More constrained stance.
+- Minimal leg drive.
+- Braced trunk.
+- Controlled bar path.
+- Clear distinction from a push press.
+- Appropriate regressions and dumbbell alternatives.
+
+### Dumbbell Shoulder Press
+
+Include:
+
+- Seated or standing setup.
+- Independent arm movement.
+- Neutral and pronated grip options.
+- Controlled lowering.
+- Avoiding forced range or excessive back arch.
+
+### Arnold Press
+
+Include:
+
+- Starting position with palms facing inward.
+- Controlled rotation during the press.
+- Avoiding forced shoulder rotation.
+- Lighter loading and controlled tempo.
+- Standard dumbbell press and landmine alternatives.
+
+### Lateral Raises
+
+Include:
+
+- Light-to-moderate loading.
+- Raising in a comfortable plane.
+- Controlled top position.
+- Avoiding momentum and excessive shrugging.
+- Cable and leaning variations.
+
+### Front Raises
+
+Include:
+
+- Controlled shoulder flexion.
+- Dumbbell, plate, and cable options.
+- Avoiding excessive trunk lean.
+- Recognition that pressing movements may already train the front delts substantially.
+- Range of motion based on comfort and control.
+
+### Rear Delt Fly
+
+Include:
+
+- Supported or hinged setup.
+- Scapular control.
+- Moving the arms without turning it into a shrug or row.
+- Dumbbell, cable, and reverse-pec-deck variations.
+
+### Upright Row
+
+Use cautious, non-absolute language.
+
+Include:
+
+- Comfortable grip width.
+- Raising only through a pain-free, controlled range.
+- No requirement to pull the elbows to a fixed height.
+- Alternatives such as lateral raises and cable high pulls.
+- Guidance to stop or modify if shoulder discomfort occurs.
+
+### Shrugs
+
+Include:
+
+- Vertical shoulder elevation.
+- Controlled pause and lowering.
+- Avoiding shoulder rolling as a required technique.
+- Barbell, dumbbell, and cable variations.
+- Neck relaxation.
+
+### Cable Lateral Raises
+
+Include:
+
+- Cable position.
+- Stable stance.
+- Smooth tension through the range.
+- Avoiding trunk leaning and momentum.
+- Single-arm and behind-the-body cable variations.
+
+### Kettlebell Press
+
+Include:
+
+- Rack position.
+- Wrist and forearm alignment.
+- Bracing.
+- Press path.
+- Single-arm balance demands.
+- Bottom-up or half-kneeling regressions where appropriate.
+
+### Kettlebell Halo
+
+Include:
+
+- Light kettlebell selection.
+- Controlled path around the head.
+- Stable ribs and trunk.
+- Comfortable shoulder range.
+- Kneeling and plate alternatives.
+
+### Kettlebell Clean and Press
+
+Include:
+
+- Clean setup.
+- Keeping the kettlebell close.
+- Quiet rack position.
+- Strict press versus push-press distinction.
+- Separate clean and press practice as a regression.
+- Avoiding impact on the forearm.
+
+### Kettlebell Front Raise
+
+Include:
+
+- Light loading.
+- One- or two-arm options.
+- Controlled shoulder flexion.
+- Avoiding momentum and rib flare.
+- Plate or cable alternatives.
+
+### Handstand Push-ups
+
+Treat this as an advanced movement.
+
+Include:
+
+- Prerequisite overhead and handstand control.
+- Wall-assisted setup.
+- Stable hand position.
+- Controlled descent.
+- Appropriate depth and range.
+- Elevated pike push-up, partial-range, and dumbbell-press regressions.
+- Do not imply that unsupported handstand push-ups are suitable for every user.
+
+## Variations
+
+Provide three to five variations per exercise.
+
+For every variation include:
+
+- Name.
+- Purpose.
+- Form change.
+- Difficulty.
+
+Use easier regressions for Handstand Push-ups, Kettlebell Clean and Press, and Arnold Press where appropriate.
+
+## Safety notes
+
+Every new record must include:
+
+- Use a load and range of motion you can control.
+- Modify or stop for sharp pain, numbness, dizziness, or concerning symptoms.
+- Do not force a shoulder position that feels unstable or painful.
+- General educational disclaimer: the guidance is not medical advice.
+- Seek qualified professional help when appropriate.
+
+## Organization
+
+Add the new mappings in the existing mapping section.
+
+Add the new records under a clearly labeled:
+
+// ── SHOULDERS ──
+
+section.
+
+Do not rewrite or reformat existing content unnecessarily.
+
+## Required checks
+
+After editing, run:
+
+npx tsc --noEmit
+
+Zero TypeScript errors are required.
+
+Then run:
+
+git diff --check
+
+No whitespace errors are allowed.
+
+Also verify:
+
+- Exactly 15 new records were added.
+- Exactly 15 new mappings were added.
+- The existing `pike-push-ups` record was reused.
+- No duplicate stable keys exist.
+- All 15 new mappings resolve to records.
+- Existing records remain unchanged.
+- The total coaching-record count is now 49.
+- The total mapping count is now 49.
+- No image files or image references changed.
+- No files other than `src/data/exerciseCoaching.ts` changed.
+- `wall-walk` was checked and reported separately if absent.
+
+## Final report
+
+Report:
+
+1. The exact file changed.
+2. The 15 new records.
+3. The 15 new stable keys.
+4. Final coaching-record count.
+5. Final mapping count.
+6. Confirmation that Pike Push-ups was reused.
+7. Wall Walk status.
+8. Confirmation that existing records were preserved.
+9. Confirmation that images were untouched.
+10. TypeScript result.
+11. git diff --check result.
+12. Remaining exercises for later batches.
+
+EXECUTION ORDER — 1 FILE:
+
+1. Before editing anything, show me the plan for:
+   src/data/exerciseCoaching.ts
+
+   Include the exact target sections, mappings, records, exports, and approximate line numbers that will change. Confirm that only the 15 Shoulder records and 15 corresponding mappings will be added. Also report whether `wall-walk` already exists. Do not edit yet.
+
+2. After showing the plan, apply the requested changes to only this one file. Do not edit, delete, rename, generate, or stage any other files.
+
+3. Run the full-project TypeScript check:
+
+   npx tsc --noEmit
+
+   Zero TypeScript errors are required.
+
+4. Run:
+
+   git diff --check
+
+   No whitespace errors are allowed.
+
+5. Show what changed in `src/data/exerciseCoaching.ts`, including all new mappings and records.
+
+6. Confirm that existing functionality unrelated to this task was not changed.
+
+7. Confirm explicitly that no image files, image imports, image paths, or image references were added or modified.
+
+8. Do NOT commit.
+9. Do NOT push.
+10. Do NOT run git add.
+11. I will review the diff and handle Git manually in the shell.
