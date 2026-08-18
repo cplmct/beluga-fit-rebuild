@@ -1,0 +1,298 @@
+Build the first version of an exercise coaching feature for my Beluga Fit React Native/Expo app.
+
+Before editing anything, inspect the existing project structure and identify:
+
+- The screen that renders exercise rows during an active workout.
+- The screen that renders exercise details.
+- Existing navigation and modal patterns.
+- Existing theme, colors, typography, spacing, and icon libraries.
+- Existing exercise identifiers, names, and data structures.
+- Existing exercise image-loading conventions.
+- Whether the project already has reusable Button, Card, Modal, BottomSheet, or Icon components.
+
+Do not modify the existing weight-unit storage or display-conversion logic. Do not change database schemas, queries, workout-set saving, PR calculations, or navigation behavior unless required for the coaching UI. Preserve all existing functionality.
+
+## Feature goal
+
+Add a small coaching/help icon beside each exercise. When the user taps the icon, open a scrollable coaching panel containing modern, practical, evidence-informed instructions for performing that exercise.
+
+The feature must be designed so that exercise instructions can be updated independently from the UI and exercise images can be added later without redesigning the feature.
+
+## Initial implementation scope
+
+Implement the feature for these five exercises first:
+
+- Bench press
+- Squat
+- Deadlift
+- Barbell row
+- Push-up
+
+If the project uses different internal exercise names or IDs, map those names to stable coaching keys rather than relying only on display text.
+
+## Required files or equivalent structure
+
+Use the project’s existing conventions, but preferably create a structure similar to:
+
+src/data/exerciseCoaching.ts
+src/components/ExerciseCoachButton.tsx
+src/components/ExerciseCoachingSheet.tsx
+
+If the project already has a more appropriate data or component directory, use that instead.
+
+## Data model
+
+Create TypeScript types similar to the following:
+
+type ExerciseVariation = {
+  name: string;
+  purpose: string;
+  formChange: string;
+  difficulty: 'easier' | 'similar' | 'harder';
+};
+
+type ExerciseCoaching = {
+  exerciseKey: string;
+  summary: string;
+  setup: string[];
+  execution: string[];
+  breathing: string[];
+  cues: string[];
+  commonMistakes: string[];
+  variations: ExerciseVariation[];
+  safetyNotes: string[];
+  images?: {
+    start?: number | string;
+    midpoint?: number | string;
+    finish?: number | string;
+  };
+  contentVersion: number;
+  reviewedAt: string;
+};
+
+Use a centralized coaching-data file with one structured record per exercise. Do not put large instruction strings directly inside the exercise-row component.
+
+## Required coaching sections
+
+The coaching panel must include these sections, in this order where applicable:
+
+1. What it is
+2. Setup
+3. Perform the movement
+4. Breathing
+5. Coaching cues
+6. Common mistakes
+7. Variations
+8. Safety notes
+
+Use concise bullets that are easy to scan between sets. Do not use absolute claims such as “there is only one correct form” or “this exercise isolates a muscle completely.” Prefer language such as:
+
+- “A useful starting position is…”
+- “Choose the range of motion you can control comfortably.”
+- “This variation places relatively more emphasis on…”
+- “Adjust the setup to your mobility, equipment, and goal.”
+
+## Content requirements
+
+Write complete initial coaching content for all five exercises:
+
+### Bench press
+
+Include setup, controlled lowering, bar path, wrist and elbow alignment, foot stability, breathing/bracing, common mistakes, and these variations:
+
+- Close-grip bench press
+- Incline bench press
+- Dumbbell bench press
+- Elevated push-up
+
+### Squat
+
+Include stance, balance over the middle of the foot, bracing, knee tracking, controlled depth, common mistakes, and these variations:
+
+- Box squat
+- Goblet squat
+- Front squat
+- Split squat
+
+### Deadlift
+
+Include load position, hip hinge, creating tension before lifting, keeping the load close, coordinated hip/knee extension, controlled lowering, common mistakes, and these variations:
+
+- Romanian deadlift
+- Trap-bar deadlift
+- Block pull
+- Kettlebell deadlift
+
+### Barbell row
+
+Include torso position, bracing, pulling toward the lower chest or upper abdomen, elbow path, control, avoiding excessive momentum, common mistakes, and these variations:
+
+- Chest-supported row
+- One-arm dumbbell row
+- Pendlay row
+- Cable row
+
+### Push-up
+
+Include hand position, body alignment, trunk control, elbow position, controlled depth, breathing, common mistakes, and these variations:
+
+- Wall push-up
+- Incline push-up
+- Knee push-up
+- Close-grip push-up
+
+Add a general educational disclaimer in the safety section. The content is coaching guidance, not medical advice. Tell users to stop or modify the movement for sharp pain, numbness, dizziness, or other concerning symptoms and to seek qualified professional help when appropriate.
+
+## Coaching button
+
+Create a reusable ExerciseCoachButton component.
+
+Requirements:
+
+- Use the existing icon library if one exists.
+- Otherwise use a simple text/icon fallback that fits the current design.
+- Keep the visual icon small but give it a comfortable touch target.
+- Use Pressable or the project’s existing touchable component.
+- Add hitSlop or an equivalent touch-target expansion.
+- Add accessibilityRole="button".
+- Add an accessibilityLabel such as:
+  “Open coaching for Bench Press”
+- Do not make the entire exercise row open coaching because the row may already have another action.
+
+Example behavior:
+
+<Pressable
+  onPress={onPress}
+  hitSlop={10}
+  accessibilityRole="button"
+  accessibilityLabel={`Open coaching for ${exerciseName}`}
+>
+  {/* Existing icon system or fallback */}
+</Pressable>
+
+## Coaching sheet
+
+Create a reusable ExerciseCoachingSheet component.
+
+Props should be similar to:
+
+type ExerciseCoachingSheetProps = {
+  visible: boolean;
+  exerciseKey: string | null;
+  onClose: () => void;
+};
+
+Requirements:
+
+- Use the project’s existing bottom-sheet or modal component if available.
+- Otherwise use React Native Modal.
+- Present the sheet above the current workout screen.
+- Add a visible close button.
+- Support dismissal by tapping the backdrop if consistent with existing app behavior.
+- Support Android back-button dismissal.
+- Use a ScrollView so all sections are accessible on smaller screens.
+- Preserve workout input and screen state when the sheet closes.
+- Avoid nesting virtualized lists unnecessarily.
+- Keep the sheet visually consistent with the existing app theme.
+- Use safe-area handling if the project already supports it.
+- Add accessibility labels to the close button and important interactive elements.
+- Do not show a blank panel for unsupported exercises.
+
+For an unsupported exercise, either:
+
+- Hide the coaching icon; or
+- Show a short fallback panel saying coaching guidance is not available yet.
+
+Prefer showing the icon only when a coaching record exists.
+
+## Images
+
+Do not block this first implementation on images.
+
+Prepare the data model for future image references, but only attach an image if the project already has a reliable local asset mapping. Do not invent file paths.
+
+If images are already integrated, display them in a future-ready media section with labels such as:
+
+- Start position
+- Midpoint
+- Finish position
+
+Do not use files with names suggesting they are rejected or incorrect, such as bench-press-finishbad.png.
+
+## Integration
+
+Find the existing component that renders each exercise during an active workout and add the coaching button beside the exercise name.
+
+When the button is tapped:
+
+1. Store the selected exercise key in local component state.
+2. Set the coaching sheet to visible.
+3. Render the selected coaching record.
+4. Close the sheet without changing workout data.
+5. Clear the selected exercise key after closing if appropriate.
+
+If the exercise row is rendered inside a list, ensure the coaching state is managed at a level where opening the sheet does not cause input fields or set values to reset.
+
+Do not change:
+
+- Weight-unit conversion behavior.
+- Weight storage units.
+- PR logic.
+- Session-set persistence.
+- Exercise ordering.
+- Existing row press behavior.
+- Existing navigation routes.
+- Existing workout completion behavior.
+
+## UI quality
+
+Make the panel easy to read:
+
+- Strong exercise title.
+- Brief summary near the top.
+- Clear section headings.
+- Bullets with comfortable line spacing.
+- Variation cards or rows showing variation name, purpose, form change, and difficulty.
+- Visually distinct safety section.
+- Consistent dark/light theme behavior if supported.
+- Avoid excessive decoration.
+- Keep the primary coaching content visible without requiring many taps.
+
+Use existing design tokens wherever possible. Do not introduce a new color system or unrelated visual redesign.
+
+## Testing and verification
+
+After implementation, run the project’s available checks. At minimum run:
+
+- npx tsc --noEmit
+- git diff --check
+
+If a test suite exists, run the relevant tests.
+
+Manually verify:
+
+1. The coaching icon appears only for supported exercises.
+2. Each of the five supported exercises opens the correct content.
+3. The sheet scrolls on a small screen.
+4. The close button works.
+5. Backdrop dismissal works if implemented.
+6. Android back-button dismissal works.
+7. Opening and closing coaching does not erase entered reps, weight, or completion state.
+8. Existing row actions still work.
+9. Unsupported exercises do not crash.
+10. Screen-reader labels identify each coaching button and close control.
+11. Existing weight-unit behavior remains unchanged.
+
+## Final response format
+
+When finished, report:
+
+1. Files created or modified.
+2. How the coaching button was integrated.
+3. How the coaching sheet opens and closes.
+4. Which five exercises are supported.
+5. Whether images were connected or only prepared for later.
+6. Verification results.
+7. Any remaining limitations or follow-up work.
+
+Do not commit or push changes automatically. Leave the working tree available for review.

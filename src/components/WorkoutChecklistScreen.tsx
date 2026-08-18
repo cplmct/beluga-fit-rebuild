@@ -15,7 +15,10 @@ import { ExerciseSelection, Exercise, EXERCISES } from '../data/exercises';
 import { SwapExerciseModal } from './SwapExerciseModal';
 import { EditExerciseModal } from './EditExerciseModal';
 import { ExerciseFormModal } from './ExerciseFormModal';
+import { ExerciseCoachButton } from './ExerciseCoachButton';
+import { ExerciseCoachingSheet } from './ExerciseCoachingSheet';
 import { EXERCISE_GUIDANCE } from '../data/exerciseGuidance';
+import { COACHING_NAME_TO_KEY } from '../data/exerciseCoaching';
 import { supabase } from '../lib/supabase';
 import { safeQuery } from '../lib/safeSupabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -59,6 +62,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
   const [lastTimeMap, setLastTimeMap] = useState<Record<string, LastTimeData>>({});
   const [lastTimeLoading, setLastTimeLoading] = useState(true);
   const [restDuration] = useState(90);
+  const [coachingKey, setCoachingKey] = useState<string | null>(null);
 
   const startTimeRef = useRef(Date.now());
   // Latched to true the moment a workout is successfully saved.
@@ -879,6 +883,13 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
                     </TouchableOpacity>
                   )}
 
+                  {!!COACHING_NAME_TO_KEY[exercise.name] && (
+                    <ExerciseCoachButton
+                      exerciseName={exercise.name}
+                      onPress={() => setCoachingKey(COACHING_NAME_TO_KEY[exercise.name])}
+                    />
+                  )}
+
                   {!completedExercises.has(index) && (
                     <TouchableOpacity
                       style={styles.swapButton}
@@ -921,6 +932,12 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
         exerciseName={formIndex !== null ? exercises[formIndex].name : ''}
         bodyPart={formIndex !== null ? exercises[formIndex].bodyPart : ''}
         onClose={() => setFormIndex(null)}
+      />
+
+      <ExerciseCoachingSheet
+        visible={coachingKey !== null}
+        exerciseKey={coachingKey}
+        onClose={() => setCoachingKey(null)}
       />
 
       {/* Save confidence indicator — visible only while saving or if an error occurred */}
