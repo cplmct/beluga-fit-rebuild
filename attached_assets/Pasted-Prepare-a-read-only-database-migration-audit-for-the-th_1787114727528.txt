@@ -1,0 +1,94 @@
+Prepare a read-only database migration audit for the three existing exercise-name mismatches.
+
+Do not modify source files.
+Do not create a migration file.
+Do not modify database rows.
+Do not run any write operation.
+Do not run git add, commit, or push.
+
+Target table:
+
+public.exercises
+
+Known existing rows from the prior read-only audit:
+
+- id f0de8974-b5b4-423f-a550-53c8a71866d7
+  current name: jumping jacks
+  desired canonical name: Jumping Jacks
+
+- id fd7296df-9f56-4f38-b7ed-671ba71c8e5e
+  current name: burpees
+  desired canonical name: Burpees
+
+- id 2c6d5dcf-8384-46c1-bbc8-8d3897a52fc3
+  current name: high knees
+  desired canonical name: High Knees
+
+## Read-only checks
+
+Using the project’s existing Supabase connection:
+
+1. Read the three rows by exact ID.
+2. Confirm each current name is still the expected lowercase value.
+3. Search for exact title-case duplicates:
+   - Jumping Jacks
+   - Burpees
+   - High Knees
+4. Search case-insensitively for all variants of each name.
+5. Inspect available columns on public.exercises through the permitted API/schema path.
+6. Determine whether name has a unique constraint or unique index if discoverable.
+7. Identify foreign keys or dependent tables referencing public.exercises.id if discoverable.
+8. Inspect the checked-in Supabase migration history.
+9. Determine whether the current public.exercises table is represented by checked-in migrations.
+10. Determine whether the project is linked to the intended Supabase project without exposing credentials.
+11. Report whether the migration can safely update only these three rows.
+
+## Proposed migration shape for review only
+
+Do not execute this SQL. Analyze it and report whether the predicates are safe:
+
+UPDATE public.exercises
+SET name = 'Jumping Jacks'
+WHERE id = 'f0de8974-b5b4-423f-a550-53c8a71866d7'
+  AND name = 'jumping jacks';
+
+UPDATE public.exercises
+SET name = 'Burpees'
+WHERE id = 'fd7296df-9f56-4f38-b7ed-671ba71c8e5e'
+  AND name = 'burpees';
+
+UPDATE public.exercises
+SET name = 'High Knees'
+WHERE id = '2c6d5dcf-8384-46c1-bbc8-8d3897a52fc3'
+  AND name = 'high knees';
+
+For each statement, explain:
+
+- Expected affected-row count.
+- What happens if the row changed.
+- What happens if a duplicate title-case row exists.
+- Whether a uniqueness constraint could reject the update.
+- Whether the migration should explicitly raise an exception when the expected row count is not one.
+
+## Final report
+
+Report:
+
+1. Current state of all three IDs.
+2. Duplicate search results.
+3. Available schema/constraint information.
+4. Migration-history findings.
+5. Whether the three-row update is safe.
+6. Recommended guarded SQL.
+7. Any unresolved limitations.
+
+EXECUTION ORDER — READ-ONLY AUDIT:
+
+1. Show the exact query plan before executing it.
+2. Execute only read-only queries.
+3. Do not create or modify files.
+4. Do not modify database rows.
+5. Do not run git add.
+6. Do not commit.
+7. Do not push.
+8. Stop after the audit and wait for approval.
