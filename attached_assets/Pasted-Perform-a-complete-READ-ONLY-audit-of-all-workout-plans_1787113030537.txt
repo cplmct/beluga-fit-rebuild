@@ -1,0 +1,263 @@
+Perform a complete READ-ONLY audit of all workout plans and their exercise references.
+
+Do not modify any files, database rows, migrations, seed data, image assets, or Git state.
+
+Do not run git add.
+Do not commit.
+Do not push.
+
+## Audit objectives
+
+Reconcile every exercise referenced by every workout plan against:
+
+1. Static workout-plan data.
+2. Built-in exercise catalog.
+3. Exercise coaching mappings.
+4. Exercise coaching records.
+5. Form-guidance mappings.
+6. The exact-name database lookup path.
+7. Persisted workout/session behavior.
+
+The goal is to identify every missing, stale, duplicated, inconsistent, or unsupported exercise reference.
+
+## Files to inspect
+
+First locate and identify the exact files for:
+
+- All workout plans.
+- All workout templates.
+- Built-in exercise catalog.
+- Exercise coaching data.
+- Form-guidance data.
+- Workout-plan selection and conversion.
+- Workout checklist processing.
+- Workout-session persistence.
+- Supabase or database exercise lookup.
+- Any migrations or seed files related to exercises.
+- Any exercise-name normalization or alias logic.
+
+Known files to inspect first:
+
+- src/data/workoutPlans.ts
+- src/data/workoutTemplates.ts
+- src/data/exercises.ts
+- src/data/exerciseCoaching.ts
+- src/data/exerciseGuidance.ts
+- src/components/PlanDetailScreen.tsx
+- src/components/WorkoutChecklistScreen.tsx
+- src/components/ExerciseCoachButton.tsx
+- src/utils/workoutSession.ts
+
+If any known file does not exist, report that and locate the actual equivalent.
+
+## Exact audit checks
+
+### A. Plan inventory
+
+For every workout plan, report:
+
+- Plan ID.
+- Plan name.
+- Day name or day ID.
+- Every exercise name.
+- Body part.
+- Sets.
+- Reps.
+- Equipment.
+- Optional notes.
+- Number of times each exercise appears across all plans.
+
+### B. Name normalization
+
+Normalize names only for comparison, without changing source data.
+
+Compare using:
+
+- Exact display name.
+- Trimmed whitespace.
+- Case-insensitive form.
+- Apostrophe variants.
+- Hyphen variants.
+- Singular/plural differences.
+- Common spelling differences.
+
+Report exact names separately from possible aliases. Do not silently merge names.
+
+### C. Catalog reconciliation
+
+For every plan exercise, classify it as:
+
+- Exact catalog match.
+- Case/whitespace-only mismatch.
+- Possible alias.
+- Missing from catalog.
+- Duplicate or ambiguous catalog entry.
+
+Report every missing or ambiguous exercise with:
+
+- Plan.
+- Day.
+- Exact source name.
+- Suggested canonical name, if any.
+- Reason for the recommendation.
+
+### D. Coaching reconciliation
+
+For every unique plan exercise, check:
+
+- Exact entry in COACHING_NAME_TO_KEY.
+- Stable coaching key.
+- Matching EXERCISE_COACHING record.
+- Required fields.
+- Valid breathing string[].
+- At least three variations.
+- Valid variation difficulty values.
+
+Classify each as:
+
+- Fully covered.
+- Mapping missing.
+- Record missing.
+- Mapping points to missing record.
+- Alias requires review.
+- Content incomplete.
+
+### E. Form-guidance reconciliation
+
+For every plan exercise, check whether the existing Form button/guidance path supports it.
+
+Report:
+
+- Exact guidance entry.
+- Missing guidance.
+- Whether the Form button appears.
+- Whether the exercise relies on placeholder content.
+- Any mismatch between form-guidance name and catalog/plan name.
+
+Do not add images or modify guidance.
+
+### F. Database and persistence path
+
+Trace the code path used when a plan becomes a workout.
+
+Verify:
+
+- How plan exercises become ExerciseSelection objects.
+- Whether IDs or names are stored.
+- Exact database lookup behavior.
+- What happens when an exercise is not found.
+- Whether unmatched exercises are skipped.
+- Whether session history, sets, PRs, and completion state are affected.
+- Whether any plan exercise can display but fail to save.
+
+Do not query or modify production data unless a separate read-only database query is explicitly approved.
+
+If the database lookup is static source only, state that live database coverage cannot be proven from source inspection.
+
+### G. Duplicate and orphan audit
+
+Find:
+
+- Duplicate exercise names within a plan.
+- Duplicate names across plans.
+- Plan exercises missing from the catalog.
+- Catalog exercises never used by any plan.
+- Coaching records never referenced by catalog or plans.
+- Form-guidance records never referenced by catalog or plans.
+- Mapping entries that point to no record.
+- Records with no mapping.
+- Aliases that resolve inconsistently.
+
+### H. Special characters and naming
+
+Explicitly test names containing:
+
+- Apostrophes.
+- Hyphens.
+- Parentheses.
+- Slashes.
+- Ampersands.
+- Plurals.
+- Numbers.
+- Unicode characters.
+
+Pay particular attention to:
+
+- Kettlebell Farmer's Carry.
+- Pause Squat.
+- Push-ups.
+- Muscle-ups.
+- Pike Push-ups.
+- Diamond Push-ups.
+- Wall Walk.
+
+### I. Catalog and coaching totals
+
+Report:
+
+- Total raw catalog entries.
+- Total unique catalog names.
+- Total plan exercise references.
+- Total unique plan exercise names.
+- Total coaching mappings.
+- Total coaching records.
+- Total form-guidance entries.
+- Number of shared exercises.
+- Number of missing or unsupported references.
+
+Do not assume the totals should match; explain why they differ.
+
+## Output format
+
+Return a detailed report with these sections:
+
+1. Files audited.
+2. Workout-plan inventory.
+3. Plan-to-catalog reconciliation.
+4. Plan-to-coaching reconciliation.
+5. Plan-to-form-guidance reconciliation.
+6. Persistence/database risk analysis.
+7. Duplicate and orphan findings.
+8. Special-character/name audit.
+9. Totals.
+10. Prioritized recommendations.
+
+Use severity levels:
+
+- Critical — exercise can appear but cannot be saved or resolved.
+- High — exercise lacks required coaching or catalog support.
+- Medium — inconsistent naming or alias behavior.
+- Low — unused/orphaned content or documentation cleanup.
+
+For every finding, include:
+
+- Exact file.
+- Line number or function.
+- Exact exercise name.
+- Impact.
+- Recommended fix.
+- Whether the fix requires source code, database work, or content work.
+
+## Required final safeguards
+
+Confirm explicitly:
+
+- No files were modified.
+- No images were modified.
+- No database rows were modified.
+- No Git state was changed.
+- No commits or pushes occurred.
+
+EXECUTION ORDER — [X] FILES:
+
+1. Before reading files, identify the exact [X] files that will be audited, including the actual catalog, all plan sources, coaching data, form-guidance data, persistence code, and database lookup code. Show the plan and exact functions or approximate line ranges. Do not edit anything.
+
+2. Read and audit only those [X] files. Do not modify, delete, rename, generate, or stage any files.
+
+3. Produce the complete reconciliation report using the required sections above.
+
+4. Run no write operations.
+5. Do NOT run git add.
+6. Do NOT commit.
+7. Do NOT push.
+8. I will decide which findings to fix after reviewing the report.
