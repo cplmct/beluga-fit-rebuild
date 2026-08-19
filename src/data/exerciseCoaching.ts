@@ -141,6 +141,9 @@ export const COACHING_NAME_TO_KEY: Record<string, string> = {
   'Ab Wheel': 'ab-wheel',
   'Cable Crunches': 'cable-crunches',
   'Mountain Climbers': 'mountain-climbers',
+  'Jumping Jacks': 'jumping-jacks',
+  'Burpees': 'burpees',
+  'High Knees': 'high-knees',
   'Kettlebell Turkish Get-Up': 'kettlebell-turkish-get-up',
   'Kettlebell Windmill': 'kettlebell-windmill',
   'Kettlebell Russian Twist': 'kettlebell-russian-twist',
@@ -7633,6 +7636,229 @@ export const EXERCISE_COACHING: Record<string, ExerciseCoaching> = {
       'Bend the knees as needed — do not force the hamstrings into a range they cannot yet reach.',
       'Use a non-slip surface.',
       'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Jumping Jacks ─────────────────────────────────────────────────────────────
+  'jumping-jacks': {
+    exerciseKey: 'jumping-jacks',
+    displayName: 'Jumping Jacks',
+    summary:
+      'A rhythmic full-body conditioning movement that coordinates an arm sweep with a controlled hop or step. ' +
+      'The goal is consistent timing, quiet landings, and a pace you can maintain with good posture.',
+    setup: [
+      'Stand tall with feet together or comfortably close, arms resting by your sides.',
+      'Keep your chest relaxed, head stacked over your ribs, and knees softly unlocked.',
+      'Choose a stable, non-slip surface with enough room to move your arms and legs freely.',
+      'Start at a pace that lets you coordinate the arm and leg pattern before adding speed.',
+    ],
+    execution: [
+      'Jump or step both feet out as your arms sweep overhead without shrugging toward your ears.',
+      'Return the feet toward the center as the arms lower with control.',
+      'Land softly through the whole foot with knees slightly bent, then immediately prepare for the next repetition.',
+      'Keep the arm and leg timing consistent rather than rushing one part of the movement.',
+      'Use a smaller range of motion if fatigue makes the landings loud or the posture unstable.',
+    ],
+    breathing: [
+      'Breathe continuously instead of holding your breath.',
+      'Exhale naturally as the arms sweep overhead and inhale as they return.',
+      'Use shorter, steady breaths when the pace becomes more conditioning-focused.',
+    ],
+    cues: [
+      '"Quiet feet."',
+      '"Reach wide, not just high."',
+      '"Keep the ribs stacked over the hips."',
+      '"Match the arms and legs."',
+    ],
+    commonMistakes: [
+      'Landing with locked knees or heavy, noisy foot contact.',
+      'Shrugging the shoulders and forcing the arms overhead when the range is uncomfortable.',
+      'Letting the trunk bounce excessively or the lower back arch as the arms rise.',
+      'Moving so quickly that the arm and leg pattern becomes uncoordinated.',
+      'Continuing at the same pace after posture and landing control have deteriorated.',
+    ],
+    variations: [
+      {
+        name: 'Step Jack',
+        purpose: 'Provides a lower-impact way to practice the arm and leg coordination.',
+        formChange: 'Step one foot out at a time while sweeping the arms overhead, then step back to center.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Tempo Jack',
+        purpose: 'Builds coordination and conditioning with a deliberate, repeatable rhythm.',
+        formChange: 'Use a steady two-count out and two-count in pattern instead of maximizing speed.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Cross Jack',
+        purpose: 'Adds a coordination challenge and changes the lower-body pattern.',
+        formChange: 'Cross one foot in front of the other on the return, alternating the crossing leg while keeping the arms controlled.',
+        difficulty: 'harder',
+      },
+      {
+        name: 'Low-Range Jack',
+        purpose: 'Reduces the impact while preserving more of the standard jumping-jack rhythm.',
+        formChange: 'Keep the feet closer to the floor and use a smaller arm range, landing softly each time.',
+        difficulty: 'easier',
+      },
+    ],
+    safetyNotes: [
+      'Use a non-slip surface and clear the area around your feet and arms before starting.',
+      'Step instead of jumping if repeated landings are uncomfortable or difficult to control.',
+      'Reduce the range or stop if balance, knee tracking, or landing control deteriorates.',
+      'This content is educational coaching guidance, not medical advice. Stop or modify the movement for sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Burpees ───────────────────────────────────────────────────────────────────
+  'burpees': {
+    exerciseKey: 'burpees',
+    displayName: 'Burpees',
+    summary:
+      'A full-body conditioning movement that links a squat, plank transition, and controlled return to standing. ' +
+      'Good burpees prioritize smooth transitions and safe landings over maximum repetition speed.',
+    setup: [
+      'Stand with feet about hip-width apart and keep a stable, non-slip surface beneath you.',
+      'Brace lightly through the trunk and keep enough space in front of you to place your hands safely.',
+      'Decide whether the repetition will include a push-up and jump before beginning the set.',
+      'Use a step-back version first if jumping transitions or floor changes are new to you.',
+    ],
+    execution: [
+      'Bend the knees and hips to lower into a squat, placing your hands on the floor under your shoulders.',
+      'Jump or step both feet back into a strong plank position without letting the hips sag.',
+      'Perform a controlled push-up only if it is part of your selected variation and you can maintain alignment.',
+      'Jump or step the feet forward toward the hands, using a wide enough stance to make the transition comfortable.',
+      'Stand tall and finish with a small jump only when you can land softly and stay balanced.',
+      'Reset your posture before the next repetition instead of rushing through an unstable transition.',
+    ],
+    breathing: [
+      'Exhale as you stand or jump, then inhale during the return toward the plank.',
+      'Breathe continuously through the plank and push-up rather than holding your breath.',
+      'Use a slower rhythm and deliberate breaths when learning the movement or managing fatigue.',
+    ],
+    cues: [
+      '"Hands down, feet back with control."',
+      '"Strong plank, quiet landing."',
+      '"Step back before form breaks."',
+      '"Finish tall, then reset."',
+    ],
+    commonMistakes: [
+      'Dropping the hips or arching the lower back during the plank transition.',
+      'Landing with stiff knees or feet too narrow to absorb the impact.',
+      'Rushing the feet forward and losing balance before standing.',
+      'Adding a push-up or jump that is not controlled enough for the current fatigue level.',
+      'Placing the hands too far forward, forcing the shoulders and lower back into a poor position.',
+    ],
+    variations: [
+      {
+        name: 'Step-back Burpee',
+        purpose: 'Reduces impact and makes the squat-to-plank transition easier to control.',
+        formChange: 'Place the hands down, step one foot back at a time into plank, then step forward before standing.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'No-push-up Burpee',
+        purpose: 'Keeps the conditioning sequence while reducing upper-body fatigue.',
+        formChange: 'Move through the plank position without lowering the chest, then bring the feet forward and stand.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Tempo Burpee',
+        purpose: 'Builds repeatable technique and conditioning without relying on maximum speed.',
+        formChange: 'Use a deliberate count for the squat, plank transition, return, and stand; omit the jump if needed.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Strict Burpee',
+        purpose: 'Increases the strength and conditioning demand for experienced practitioners.',
+        formChange: 'Include a controlled push-up, jump the feet back and forward, then finish with a vertical jump and soft landing.',
+        difficulty: 'harder',
+      },
+    ],
+    safetyNotes: [
+      'Use a surface that will not slide when your hands and feet contact it.',
+      'Step back and forward instead of jumping when impact, balance, or fatigue becomes difficult to control.',
+      'Remove the push-up or final jump if either reduces plank alignment or landing quality.',
+      'This content is educational coaching guidance, not medical advice. Stop or modify the movement for sharp pain, numbness, dizziness, loss of balance, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── High Knees ────────────────────────────────────────────────────────────────
+  'high-knees': {
+    exerciseKey: 'high-knees',
+    displayName: 'High Knees',
+    summary:
+      'A running-in-place conditioning movement that alternates knee drive with coordinated arm action. ' +
+      'The best version is upright and controlled, with pace increased only after the knee lift and landing pattern are consistent.',
+    setup: [
+      'Stand tall with feet about hip-width apart and arms relaxed at your sides.',
+      'Stack the head, ribs, and pelvis over the feet without leaning backward.',
+      'Keep the knees softly bent so each landing can be absorbed quietly.',
+      'Choose a controlled marching or jogging pace before attempting a fast conditioning pace.',
+    ],
+    execution: [
+      'Drive one knee upward while the opposite arm swings forward naturally.',
+      'Lower the foot under your center of mass and switch sides with the same controlled rhythm.',
+      'Keep the torso upright and let the legs, rather than excessive trunk bouncing, create the movement.',
+      'Raise the knees only as high as you can without leaning back or losing balance.',
+      'Increase cadence gradually while keeping the feet quiet and the alternating pattern consistent.',
+    ],
+    breathing: [
+      'Breathe continuously and avoid holding your breath during the knee drive.',
+      'Use an even inhale-and-exhale rhythm at a controlled pace.',
+      'At a faster pace, keep the breaths short and steady rather than taking a forced breath after every step.',
+    ],
+    cues: [
+      '"Stand tall."',
+      '"Drive the knee, do not throw the chest back."',
+      '"Light feet, quick switch."',
+      '"Arms and legs move together."',
+    ],
+    commonMistakes: [
+      'Leaning backward or arching the lower back to make the knees appear higher.',
+      'Bouncing the entire trunk excessively instead of alternating the legs.',
+      'Landing heavily or locking the knees on each contact.',
+      'Letting the arm swing cross the body and disrupt the upright posture.',
+      'Chasing speed before the knee drive and foot placement are controlled.',
+    ],
+    variations: [
+      {
+        name: 'Marching High Knees',
+        purpose: 'Builds the posture and alternating knee-drive pattern with minimal impact.',
+        formChange: 'Lift one knee at a time while keeping one foot grounded and pause briefly before switching.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Controlled High Knees',
+        purpose: 'Develops consistent coordination and conditioning at a sustainable pace.',
+        formChange: 'Use a light jog in place with moderate knee height, focusing on quiet contacts and even timing.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Sprint High Knees',
+        purpose: 'Raises the conditioning demand and challenges rapid leg turnover.',
+        formChange: 'Increase cadence and arm speed while preserving upright posture, soft landings, and controlled knee tracking.',
+        difficulty: 'harder',
+      },
+      {
+        name: 'Wall-supported High Knees',
+        purpose: 'Provides balance support while practicing knee drive and posture.',
+        formChange: 'Place one or both hands lightly on a wall and alternate knee drives without leaning into the support.',
+        difficulty: 'easier',
+      },
+    ],
+    safetyNotes: [
+      'Use a clear, stable surface and wear footwear that supports the activity.',
+      'Choose marching or a slower pace if repeated landings become uncomfortable or noisy.',
+      'Keep the knee height within a range where you can remain upright and balanced.',
+      'This content is educational coaching guidance, not medical advice. Stop or modify the movement for sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
     ],
     contentVersion: 1,
     reviewedAt: '2025-01-01',
