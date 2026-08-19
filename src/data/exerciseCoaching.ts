@@ -7167,6 +7167,12 @@ export const EXERCISE_COACHING: Record<string, ExerciseCoaching> = {
         formChange: 'Pass the kettlebell through the legs in a figure-8 pattern.',
         difficulty: 'harder',
       },
+      {
+        name: 'Seated Around the World',
+        purpose: 'Reduce the balance demand while learning the hand-to-hand transfer.',
+        formChange: 'Perform the controlled kettlebell pass while seated or in a stable half-kneeling position, using a light load and smaller range as needed.',
+        difficulty: 'easier',
+      },
     ],
     safetyNotes: [
       'Use a light kettlebell — dropping or losing control during the transfer is the main risk.',
