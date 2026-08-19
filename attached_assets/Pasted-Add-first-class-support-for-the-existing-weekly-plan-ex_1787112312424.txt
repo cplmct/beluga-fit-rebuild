@@ -1,0 +1,141 @@
+Add first-class support for the existing weekly-plan exercise “Pause Squat.”
+
+This is not a rename or alias. It is a distinct barbell squat variation prescribed in:
+
+src/data/workoutPlans.ts
+
+The existing plan entry is:
+
+Pause Squat
+Body part: Legs
+Sets: 3
+Reps: 3
+Equipment: Barbell
+Notes: 3-second pause at bottom
+
+The exercise currently appears in the weekly plan but is missing from the built-in catalog and coaching library.
+
+IMAGE SCOPE RESTRICTION:
+
+Do not add, connect, import, rename, move, delete, generate, or reference exercise images or image assets. Leave all existing Form image placeholders and image-related code unchanged.
+
+## Required source changes
+
+Add Pause Squat to the built-in Legs catalog in:
+
+src/data/exercises.ts
+
+Use the exact display name:
+
+'Pause Squat'
+
+Add a coaching mapping in:
+
+src/data/exerciseCoaching.ts
+
+Use:
+
+'Pause Squat': 'pause-squat'
+
+Add exactly one coaching record with:
+
+exerciseKey: 'pause-squat'
+
+Do not modify existing exercise names, mappings, records, or workout-plan prescriptions.
+
+## Coaching content
+
+Create dedicated Pause Squat guidance that includes:
+
+- What it is: a squat variation involving a deliberate pause near the bottom position.
+- Setup: barbell position, stance, bracing, foot stability, and a controlled starting posture.
+- Performance: descend under control, maintain tension during the pause, avoid relaxing or collapsing, then stand deliberately without bouncing.
+- Breathing: inhale and brace before descent; maintain controlled tension during the pause; exhale through or after the ascent as appropriate for the load.
+- Coaching cues:
+  - “Stay tight in the pause.”
+  - “Do not bounce out of the bottom.”
+  - “Keep the whole foot grounded.”
+  - “Stand without losing your trunk position.”
+- Common mistakes:
+  - Turning the pause into a relaxed rest.
+  - Bouncing out of the bottom.
+  - Losing foot pressure.
+  - Choosing a load that cannot be controlled.
+  - Descending below a controllable range.
+- Three to five variations, each with:
+  - name
+  - purpose
+  - formChange
+  - difficulty: easier, similar, or harder
+- Variations should include appropriate options such as:
+  - Bodyweight pause squat.
+  - Goblet pause squat.
+  - Box pause squat.
+  - Longer-pause squat.
+  - Tempo pause squat.
+- Safety notes covering load control, range of motion, sharp pain, numbness, dizziness, and other concerning symptoms.
+- Include the existing educational-not-medical-advice disclaimer style.
+- Set contentVersion and reviewedAt using the existing file conventions.
+- Ensure breathing is a string[].
+
+## Source integrity
+
+After adding the catalog entry, verify:
+
+- Pause Squat appears exactly once in the catalog.
+- Pause Squat appears exactly once in COACHING_NAME_TO_KEY.
+- pause-squat appears exactly once as a coaching record key.
+- pause-squat appears once in the record’s exerciseKey field.
+- No duplicate stable keys exist.
+- The existing Squat record and mapping remain unchanged.
+- The weekly plan entry remains unchanged.
+
+Do not add alias or normalization logic in this task.
+
+## Verification
+
+Run:
+
+npx tsc --noEmit
+git diff --check
+
+Also report:
+
+- Exact files changed.
+- Exact lines or functions changed.
+- Whether Pause Squat now has catalog and coaching coverage.
+- Confirmation that images were untouched.
+- Confirmation that no database files or queries were changed.
+
+Do not modify the database in this task.
+
+EXECUTION ORDER — 2 FILES:
+
+1. Before editing anything, show the plan for exactly these two files:
+   - src/data/exercises.ts
+   - src/data/exerciseCoaching.ts
+
+   Include the exact insertion points, target arrays/objects, approximate line numbers, stable key, and all new content sections. Confirm that src/data/workoutPlans.ts will not be modified. Do not edit yet.
+
+2. Apply the changes to only those two files. Do not edit, delete, rename, generate, or stage any other files.
+
+3. Run the full-project TypeScript check:
+
+   npx tsc --noEmit
+
+   Zero TypeScript errors are required.
+
+4. Run:
+
+   git diff --check
+
+   No whitespace errors are allowed.
+
+5. Show what changed in each file.
+
+6. Confirm that workout-plan data, persistence logic, database queries, image files, and UI components were not changed.
+
+7. Do NOT commit.
+8. Do NOT push.
+9. Do NOT run git add.
+10. I will handle Git manually.
