@@ -106,6 +106,7 @@ export const COACHING_NAME_TO_KEY: Record<string, string> = {
   'Kettlebell Tricep Extension': 'kettlebell-tricep-extension',
   'Kettlebell Hammer Curl': 'kettlebell-hammer-curl',
   // ── Legs batch ───────────────────────────────────────────────────────────
+  'Pause Squat': 'pause-squat',
   'Front Squat': 'front-squat',
   'Leg Press': 'leg-press',
   'Leg Extension': 'leg-extension',
@@ -303,6 +304,89 @@ export const EXERCISE_COACHING: Record<string, ExerciseCoaching> = {
       'Use safety bars or a power rack when squatting alone with heavy loads.',
       'Pain in the knee, hip, or lower back is a signal to reduce load, adjust stance, or seek guidance — it is not something to push through.',
       'Adjust the setup to your mobility, equipment, and goal — there is a wide range of effective squat styles.',
+      'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Pause Squat ─────────────────────────────────────────────────────────────
+  'pause-squat': {
+    exerciseKey: 'pause-squat',
+    displayName: 'Pause Squat',
+    summary:
+      'A barbell squat variation that adds a deliberate pause near the bottom position. ' +
+      'The pause removes momentum and challenges control, bracing, and strength through the bottom of the squat.',
+    setup: [
+      'Set the bar at roughly upper-chest height in the rack and position it securely across your upper traps or rear delts.',
+      'Use a stance that lets you keep your whole foot grounded, with toes turned out as needed for a comfortable, controlled depth.',
+      'Step back from the rack with the minimum number of steps needed, then establish your balance before beginning.',
+      'Take a breath in and brace your trunk as if preparing for mild impact. Keep your ribs and pelvis stacked in a controlled starting posture.',
+      'Before adding load, choose a depth where you can pause without losing foot pressure, spinal control, or confidence.',
+    ],
+    execution: [
+      'Descend under control by bending the knees and hips while keeping the knees tracking with the toes.',
+      'Reach the deepest position you can control, then pause deliberately near the bottom without relaxing your brace.',
+      'Stay tight through the pause: keep the whole foot grounded and maintain your torso position rather than collapsing forward.',
+      'Stand deliberately by driving the floor away. Start the ascent without bouncing or using momentum from the bottom.',
+      'Finish tall without overextending the knees or lower back, then rebrace before the next repetition.',
+    ],
+    breathing: [
+      'Inhale and brace before beginning the descent.',
+      'Maintain controlled trunk tension while holding the pause near the bottom.',
+      'Exhale through or after the ascent as appropriate for the load and your lifting strategy.',
+      'For repeated reps, reset your breath and brace at the top rather than rushing into the next repetition.',
+    ],
+    cues: [
+      '"Stay tight in the pause."',
+      '"Do not bounce out of the bottom."',
+      '"Keep the whole foot grounded."',
+      '"Stand without losing your trunk position."',
+    ],
+    commonMistakes: [
+      'Turning the pause into a relaxed rest — maintain your brace and active muscle tension throughout the hold.',
+      'Bouncing out of the bottom — begin the ascent under control instead of using momentum.',
+      'Losing foot pressure — keep the heel, base of the big toe, and base of the little toe connected to the floor.',
+      'Choosing a load that cannot be controlled — reduce the weight until the descent, pause, and ascent are all deliberate.',
+      'Descending below a controllable range — use a depth where you can keep your foot pressure and trunk position stable.',
+    ],
+    variations: [
+      {
+        name: 'Bodyweight Pause Squat',
+        purpose: 'Builds familiarity with the pause and bottom-position control without the demands of a barbell.',
+        formChange: 'Keep the hands in front of the body or at the sides, pause near the bottom, then stand without bouncing.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Goblet Pause Squat',
+        purpose: 'Provides a manageable front-loaded option that can make an upright torso and controlled pause easier to practice.',
+        formChange: 'Hold a dumbbell or kettlebell at chest height, keep the elbows relaxed, and pause at a controllable depth.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Box Pause Squat',
+        purpose: 'Adds an external depth target for learning consistency while maintaining control at the bottom.',
+        formChange: 'Use a box set to a controllable height, lightly contact it without relaxing, pause, then stand without rocking or bouncing.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Longer-Pause Squat',
+        purpose: 'Increases the time under tension and demands more control and strength from the paused position.',
+        formChange: 'Use the same barbell setup but extend the deliberate pause beyond the programmed duration while keeping the load conservative.',
+        difficulty: 'harder',
+      },
+      {
+        name: 'Tempo Pause Squat',
+        purpose: 'Combines a slow descent with a pause to reinforce positioning and control throughout the full repetition.',
+        formChange: 'Lower over a deliberate count, hold the pause, then stand smoothly without losing your brace.',
+        difficulty: 'harder',
+      },
+    ],
+    safetyNotes: [
+      'Use a load you can lower, pause, and stand with control; a spotter or safety bars are especially useful when training near your limit.',
+      'Choose a range of motion that remains stable and controllable rather than forcing depth after losing foot pressure or trunk position.',
+      'Sharp pain, numbness, dizziness, or other concerning symptoms are reasons to stop or modify the movement and seek appropriate guidance.',
+      'Increase pause duration or load gradually; the pause should not turn a manageable squat into an uncontrolled grind.',
       'This content is coaching guidance, not medical or clinical advice. Stop or modify any movement that causes sharp pain, numbness, dizziness, or other concerning symptoms, and consult a qualified professional when appropriate.',
     ],
     contentVersion: 1,

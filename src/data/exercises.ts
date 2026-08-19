@@ -94,6 +94,7 @@ export const EXERCISES: Record<BodyPart, Exercise[]> = {
   ],
   Legs: [
     { name: 'Squat', category: 'Strength', equipment: 'Barbell' },
+    { name: 'Pause Squat', category: 'Strength', equipment: 'Barbell' },
     { name: 'Front Squat', category: 'Strength', equipment: 'Barbell' },
     { name: 'Leg Press', category: 'Strength', equipment: 'Machine' },
     { name: 'Leg Extension', category: 'Strength', equipment: 'Machine' },
