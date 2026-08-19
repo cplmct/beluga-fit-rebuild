@@ -1,0 +1,76 @@
+Add first-class source and coaching support for these three existing weekly-plan exercises:
+
+- Jumping Jacks
+- Burpees
+- High Knees
+
+Modify only:
+
+- src/data/exercises.ts
+- src/data/exerciseCoaching.ts
+
+Do not modify:
+
+- src/data/workoutPlans.ts
+- src/data/workoutTemplates.ts
+- WorkoutChecklistScreen.tsx
+- PlanDetailScreen.tsx
+- persistence code
+- database files or migrations
+- ExerciseFormModal.tsx
+- exerciseGuidance.ts
+- any image files or image references
+
+For each exercise:
+
+1. Add one exact catalog entry under the appropriate body-part section.
+2. Add one coaching mapping.
+3. Add one complete coaching record.
+4. Use a stable key:
+   - jumping-jacks
+   - burpees
+   - high-knees
+5. Include summary, setup, execution, breathing as string[], cues, commonMistakes, variations, safetyNotes, contentVersion, and reviewedAt.
+6. Include at least three variations with name, purpose, formChange, and valid difficulty.
+7. Include educational/non-medical disclaimer language.
+8. Preserve all existing records and mappings.
+9. Do not alias Burpees to Burpee Pull-up.
+
+Use practical content:
+- Jumping Jacks: stance, arm/leg coordination, landing control, lower-impact step-jack regression.
+- Burpees: squat-to-plank transition, step-back regression, controlled landing, removing the jump or push-up as regressions.
+- High Knees: upright posture, alternating knee drive, controlled versus conditioning pace, marching regression, avoiding excessive trunk bouncing.
+
+Before editing, inspect the current exact catalog structure and coaching conventions.
+
+EXECUTION ORDER — 2 FILES:
+
+1. Before editing, show the plan for exactly:
+   - src/data/exercises.ts
+   - src/data/exerciseCoaching.ts
+
+   Include insertion points, exact mappings, stable keys, record names, and approximate line numbers. Do not edit yet.
+
+2. Apply changes only to those two files.
+
+3. Run:
+
+   npx tsc --noEmit
+   git diff --check
+
+4. Verify:
+   - Three new catalog entries.
+   - Three new mappings.
+   - Three new records.
+   - All three breathing fields are string[].
+   - No duplicate stable keys.
+   - No existing records changed.
+   - No images or UI files changed.
+
+5. Report every changed file and final counts.
+
+6. Do NOT modify database rows or migrations.
+7. Do NOT run git add.
+8. Do NOT commit.
+9. Do NOT push.
+10. I will handle Git manually.
