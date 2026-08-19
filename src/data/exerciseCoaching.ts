@@ -129,6 +129,29 @@ export const COACHING_NAME_TO_KEY: Record<string, string> = {
   'Step-ups': 'step-ups',
   'Tuck Jump': 'tuck-jump',
   'Lateral Bound': 'lateral-bound',
+  // ── Core batch ───────────────────────────────────────────────────────────
+  'Plank': 'plank',
+  'Side Plank': 'side-plank',
+  'Crunches': 'crunches',
+  'Bicycle Crunches': 'bicycle-crunches',
+  'Russian Twists': 'russian-twists',
+  'Leg Raises': 'leg-raises',
+  'Hanging Leg Raises': 'hanging-leg-raises',
+  'Ab Wheel': 'ab-wheel',
+  'Cable Crunches': 'cable-crunches',
+  'Mountain Climbers': 'mountain-climbers',
+  'Kettlebell Turkish Get-Up': 'kettlebell-turkish-get-up',
+  'Kettlebell Windmill': 'kettlebell-windmill',
+  'Kettlebell Russian Twist': 'kettlebell-russian-twist',
+  "Kettlebell Farmer's Carry": 'kettlebell-farmers-carry',
+  'Kettlebell Around the World': 'kettlebell-around-the-world',
+  'L-Sit': 'l-sit',
+  'Dragon Flag': 'dragon-flag',
+  'Hollow Body Hold': 'hollow-body-hold',
+  'Superman Hold': 'superman-hold',
+  'Bear Crawl': 'bear-crawl',
+  'Inchworm': 'inchworm',
+  'Burpee Pull-up': 'burpee-pull-up',
 };
 
 export const EXERCISE_COACHING: Record<string, ExerciseCoaching> = {
@@ -6222,6 +6245,1372 @@ export const EXERCISE_COACHING: Record<string, ExerciseCoaching> = {
     safetyNotes: [
       'Use an appropriate, non-slip surface and clear the lateral space before bounding.',
       'Always stabilise the landing before bounding back — avoid reactive bouncing before control is established.',
+      'Modify or stop for sharp pain, numbness, dizziness, loss of balance, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── CORE ──────────────────────────────────────────────────────────────────────
+
+  // ── Plank ─────────────────────────────────────────────────────────────────────
+  'plank': {
+    exerciseKey: 'plank',
+    displayName: 'Plank',
+    summary: 'An isometric trunk-stability exercise held in a forearm or high-plank position. The goal is to maintain a straight line from head to heels while breathing normally.',
+    setup: [
+      'Forearm plank: place the forearms on the floor, elbows under the shoulders, and extend the legs behind you.',
+      'High plank: place the hands under the shoulders with arms extended, as in the top of a push-up.',
+      'A useful starting position keeps the hips level — not sagging toward the floor or raised toward the ceiling.',
+    ],
+    execution: [
+      'Brace the trunk gently — think about creating mild tension through the core without holding the breath.',
+      'Keep the head in a neutral position, roughly in line with the spine.',
+      'Hold for a duration you can maintain with good position.',
+      'Breathe steadily throughout the hold.',
+      'Release the position with control.',
+    ],
+    breathing: [
+      'Breathe steadily throughout — do not hold the breath.',
+      'Shorter exhales and inhales help maintain the brace without straining.',
+    ],
+    cues: [
+      '"Hips level — not up or down."',
+      '"Breathe steadily."',
+      '"Create tension without holding your breath."',
+    ],
+    commonMistakes: [
+      'Hips sagging, which reduces trunk demand and stresses the lower back.',
+      'Hips too high, which reduces the challenge.',
+      'Holding the breath rather than breathing through the hold.',
+      'Holding longer than control allows — a shorter, well-maintained hold is more useful than a long, collapsed one.',
+    ],
+    variations: [
+      {
+        name: 'Kneeling Plank',
+        purpose: 'Reduces the load by shortening the lever — a useful starting point.',
+        formChange: 'Rest the knees on the floor instead of extending the legs fully.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Elevated Plank',
+        purpose: 'Further reduces the load — useful when the kneeling version is still challenging.',
+        formChange: 'Place the hands or forearms on a bench or box rather than the floor.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'High Plank',
+        purpose: 'Adds shoulder stability demand compared with the forearm plank.',
+        formChange: 'Support on hands with arms extended rather than forearms.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Plank with Leg Lift',
+        purpose: 'Increases the stability demand by reducing the base of support.',
+        formChange: 'Lift one foot a few centimetres off the floor while holding the plank.',
+        difficulty: 'harder',
+      },
+    ],
+    safetyNotes: [
+      'Choose a hold duration and variation that allows steady breathing and a level position throughout.',
+      'Stop if wrist, shoulder, or lower-back discomfort arises — adjust the variation or duration.',
+      'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Side Plank ────────────────────────────────────────────────────────────────
+  'side-plank': {
+    exerciseKey: 'side-plank',
+    displayName: 'Side Plank',
+    summary: 'An isometric lateral trunk exercise held on one forearm or hand with the body in a side-lying position. It challenges the lateral stabilisers of the trunk and hip.',
+    setup: [
+      'Lie on one side with the elbow directly under the shoulder (forearm version) or the hand under the shoulder (extended-arm version).',
+      'Stack the feet on top of each other, or stagger them slightly for more stability.',
+      'The body should form a straight line from head to feet.',
+    ],
+    execution: [
+      'Lift the hips off the floor until the body is in a straight side-on line.',
+      'Brace lightly and hold for a controlled duration.',
+      'Avoid rotating the hips forward or backward.',
+      'Breathe steadily throughout.',
+      'Lower with control and repeat on the other side.',
+    ],
+    breathing: [
+      'Breathe steadily throughout the hold.',
+      'Do not hold the breath — use short, controlled breaths.',
+    ],
+    cues: [
+      '"Shoulder stacked over the elbow."',
+      '"Hips up and level."',
+      '"Breathe — don\'t grip and hold."',
+    ],
+    commonMistakes: [
+      'Shoulder drifting away from the elbow.',
+      'Hips sagging toward the floor.',
+      'Rotating the torso forward, reducing the lateral demand.',
+      'Holding longer than control allows.',
+    ],
+    variations: [
+      {
+        name: 'Kneeling Side Plank',
+        purpose: 'Reduces load by shortening the lever — a practical starting point.',
+        formChange: 'Bend the knees and rest the lower knee on the floor instead of stacking the feet.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Elevated Side Plank',
+        purpose: 'Further reduces load — useful when the kneeling version is challenging.',
+        formChange: 'Place the forearm on a bench or box.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Extended-arm Side Plank',
+        purpose: 'Adds shoulder stability demand.',
+        formChange: 'Support on the hand with the arm extended rather than on the forearm.',
+        difficulty: 'harder',
+      },
+      {
+        name: 'Side Plank with Hip Dip',
+        purpose: 'Adds a dynamic element to the lateral stability challenge.',
+        formChange: 'Lower the hip toward the floor and raise it back up while holding the position.',
+        difficulty: 'harder',
+      },
+    ],
+    safetyNotes: [
+      'Choose a duration and variation that allows steady breathing and a straight body line.',
+      'Wrist or shoulder discomfort in the extended-arm version is a signal to try the forearm version.',
+      'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Crunches ──────────────────────────────────────────────────────────────────
+  'crunches': {
+    exerciseKey: 'crunches',
+    displayName: 'Crunches',
+    summary: 'A trunk-flexion exercise performed lying on the back. The ribcage moves toward the pelvis through a short, controlled range. The lower back typically remains in contact with the floor throughout.',
+    setup: [
+      'Lie on the back with knees bent and feet flat on the floor.',
+      'Place the hands lightly behind the head, crossed over the chest, or at the temples — whichever is comfortable.',
+    ],
+    execution: [
+      'Exhale and curl the ribcage toward the pelvis, lifting the shoulder blades off the floor.',
+      'The range of motion is relatively short — this is not a full sit-up.',
+      'Pause briefly at the top, then lower with control.',
+      'Avoid pulling the neck forward with the hands.',
+    ],
+    breathing: [
+      'Exhale as you curl up.',
+      'Inhale as you lower.',
+    ],
+    cues: [
+      '"Ribcage toward the pelvis."',
+      '"Light hands — the neck should not strain."',
+      '"Control the lowering — don\'t drop."',
+    ],
+    commonMistakes: [
+      'Pulling the neck forward with the hands, causing strain.',
+      'Using momentum rather than a slow, controlled contraction.',
+      'Lifting too high, turning it into a full sit-up and changing the muscle demand.',
+      'Lowering too quickly.',
+    ],
+    variations: [
+      {
+        name: 'Reverse Crunch',
+        purpose: 'Shifts the movement to the lower portion of the rectus abdominis by lifting the hips.',
+        formChange: 'Keep the shoulders on the floor and draw the knees toward the chest, curling the pelvis up.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Stability Ball Crunch',
+        purpose: 'Increases the range of motion by allowing the back to extend over the ball.',
+        formChange: 'Lie with the lower back on a stability ball and curl as normal.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Arms-extended Crunch',
+        purpose: 'Increases the lever and the demand on the trunk flexors.',
+        formChange: 'Extend the arms overhead rather than behind the head.',
+        difficulty: 'harder',
+      },
+      {
+        name: 'Slow-tempo Crunch',
+        purpose: 'Increases time under tension and reduces momentum.',
+        formChange: 'Curl up over 3 seconds, pause, lower over 3 seconds.',
+        difficulty: 'similar',
+      },
+    ],
+    safetyNotes: [
+      'Keep the hands light behind the head — they support, not pull.',
+      'Choose a range of motion you can perform with control and without neck strain.',
+      'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Bicycle Crunches ──────────────────────────────────────────────────────────
+  'bicycle-crunches': {
+    exerciseKey: 'bicycle-crunches',
+    displayName: 'Bicycle Crunches',
+    summary: 'A dynamic trunk exercise combining flexion and rotation, alternating opposite elbow toward opposite knee. The rotation comes from the trunk, not from pulling the neck.',
+    setup: [
+      'Lie on the back with knees bent at roughly 90 degrees and hands lightly behind the head.',
+      'Lift the shoulder blades slightly off the floor to begin.',
+    ],
+    execution: [
+      'Extend one leg while drawing the opposite knee toward the chest.',
+      'Rotate the trunk so the opposite shoulder moves toward the drawn-in knee — focus on the torso rotating, not the elbow pulling.',
+      'Alternate sides in a controlled rhythm.',
+      'Slow, deliberate reps are generally more effective than fast, swinging reps.',
+    ],
+    breathing: [
+      'Exhale as you rotate to each side.',
+      'Inhale as you transition to the other side.',
+    ],
+    cues: [
+      '"Rotate from the trunk — not the neck."',
+      '"Control the pace."',
+      '"Light hands — don\'t pull the head."',
+    ],
+    commonMistakes: [
+      'Pulling the neck and head rather than rotating the trunk.',
+      'Moving too fast and using momentum instead of trunk control.',
+      'Not fully rotating the trunk to each side.',
+      'Lower back arching off the floor during the extension phase.',
+    ],
+    variations: [
+      {
+        name: 'Slow Bicycle Crunch',
+        purpose: 'Reduces momentum and increases trunk muscle demand.',
+        formChange: 'Perform each rotation over 2–3 seconds.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Feet-supported Bicycle Crunch',
+        purpose: 'Reduces hip-flexor demand — useful when the lower back arches during the extension.',
+        formChange: 'Keep both feet on the floor and rotate without extending a leg.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Reduced-range Bicycle Crunch',
+        purpose: 'Useful when full rotation is uncomfortable.',
+        formChange: 'Rotate partway and focus on a controlled, consistent pattern.',
+        difficulty: 'easier',
+      },
+    ],
+    safetyNotes: [
+      'Keep the hands light — neck strain is a signal that the trunk is not doing enough work.',
+      'Reduce speed if the lower back begins to arch off the floor.',
+      'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Russian Twists ────────────────────────────────────────────────────────────
+  'russian-twists': {
+    exerciseKey: 'russian-twists',
+    displayName: 'Russian Twists',
+    summary: 'A seated trunk-rotation exercise performed with the torso leaning slightly back. The rotation should come from the trunk and remain within a comfortable range. High-speed or forced twisting is not recommended.',
+    setup: [
+      'Sit on the floor with knees bent and feet flat or slightly raised.',
+      'Lean the torso back to a comfortable angle — typically 30–45 degrees.',
+      'Hold the hands together, or hold a light weight at chest height.',
+    ],
+    execution: [
+      'Brace lightly, then rotate the trunk to one side through a range of motion you can control.',
+      'Pause briefly, then rotate to the other side.',
+      'Keep the movement deliberate and within a comfortable range — do not force the rotation.',
+      'Avoid high-speed swinging.',
+    ],
+    breathing: [
+      'Exhale as you rotate to each side.',
+      'Inhale as you return to centre.',
+    ],
+    cues: [
+      '"Rotate from the trunk — not just the arms."',
+      '"Control the pace."',
+      '"Stay within a comfortable range."',
+    ],
+    commonMistakes: [
+      'Swinging the arms rapidly without meaningful trunk rotation.',
+      'Forcing the range of motion beyond what is comfortable for the spine.',
+      'Losing the trunk brace and collapsing the torso.',
+    ],
+    variations: [
+      {
+        name: 'Feet-supported Russian Twist',
+        purpose: 'Reduces the balance demand and hip-flexor load.',
+        formChange: 'Keep the feet flat on the floor throughout.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Bodyweight Russian Twist',
+        purpose: 'The baseline version with no added load.',
+        formChange: 'Hold the hands together without any weight.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Light-load Russian Twist',
+        purpose: 'Adds a small amount of resistance to increase the rotational demand.',
+        formChange: 'Hold a light plate or medicine ball at chest height.',
+        difficulty: 'similar',
+      },
+    ],
+    safetyNotes: [
+      'Avoid fast, ballistic twisting — controlled rotation through a comfortable range is more appropriate.',
+      'Individuals with lower-back sensitivity should use a feet-supported setup and a reduced range.',
+      'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Leg Raises ────────────────────────────────────────────────────────────────
+  'leg-raises': {
+    exerciseKey: 'leg-raises',
+    displayName: 'Leg Raises',
+    summary: 'A supine exercise raising the legs from the floor, challenging the lower trunk and hip flexors. Keeping the lower back controlled throughout is the primary technical priority.',
+    setup: [
+      'Lie flat on the back with legs extended and hands under the glutes or beside the hips for support.',
+      'Keep the lower back in contact with or close to the floor throughout the movement.',
+    ],
+    execution: [
+      'Exhale and raise the legs to roughly 90 degrees (or a comfortable angle).',
+      'Lower with control, stopping just before the lower back begins to arch off the floor.',
+      'Avoid letting the legs drop — control the eccentric.',
+    ],
+    breathing: [
+      'Exhale as you raise the legs.',
+      'Inhale as you lower.',
+    ],
+    cues: [
+      '"Lower back stays down."',
+      '"Control the lowering — don\'t drop."',
+      '"Stop before the arch — don\'t force the range."',
+    ],
+    commonMistakes: [
+      'Allowing the lower back to arch significantly as the legs lower.',
+      'Dropping the legs quickly rather than controlling the descent.',
+      'Swinging the legs up using momentum.',
+    ],
+    variations: [
+      {
+        name: 'Bent-knee Leg Raise',
+        purpose: 'Reduces the lever length, making it easier to control the lower back.',
+        formChange: 'Bend the knees to roughly 90 degrees and raise the knees rather than straight legs.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Slow-tempo Leg Raise',
+        purpose: 'Increases the eccentric challenge and reduces momentum.',
+        formChange: 'Lower the legs over 4–5 seconds.',
+        difficulty: 'harder',
+      },
+      {
+        name: 'Partial-range Leg Raise',
+        purpose: 'Useful when the lower back arches before the legs reach the floor.',
+        formChange: 'Lower the legs only as far as lower-back control allows.',
+        difficulty: 'easier',
+      },
+    ],
+    safetyNotes: [
+      'Only lower the legs as far as the lower back can remain controlled — range of motion is secondary to position.',
+      'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Hanging Leg Raises ────────────────────────────────────────────────────────
+  'hanging-leg-raises': {
+    exerciseKey: 'hanging-leg-raises',
+    displayName: 'Hanging Leg Raises',
+    summary: 'An advanced core exercise performed hanging from a pull-up bar, raising the legs through a controlled range. It demands grip endurance, shoulder stability, and trunk control. Swinging should be minimised.',
+    setup: [
+      'Grip a pull-up bar with hands shoulder-width or slightly wider, arms fully extended.',
+      'Allow the shoulders to sit in a stable, engaged position — not passive or shrugged.',
+      'Let the body hang still before starting the movement.',
+    ],
+    execution: [
+      'Exhale and raise the legs — bent knees to start, or straight legs for a greater challenge.',
+      'Use the trunk to control the movement, initiating a posterior pelvic tilt as the legs rise.',
+      'Lower the legs with control to the starting position.',
+      'Avoid swinging — pausing between reps helps manage momentum.',
+    ],
+    breathing: [
+      'Exhale as you raise the legs.',
+      'Inhale as you lower.',
+    ],
+    cues: [
+      '"Engage the shoulders — don\'t just hang passively."',
+      '"Control the swing."',
+      '"Use the trunk — not just the hip flexors."',
+    ],
+    commonMistakes: [
+      'Swinging the legs using momentum rather than controlled trunk engagement.',
+      'Passive shoulder position — the shoulder blades should be lightly engaged, not passive.',
+      'Dropping the legs quickly.',
+      'Gripping too tightly and fatiguing the forearms prematurely.',
+    ],
+    variations: [
+      {
+        name: 'Bent-knee Hanging Raise',
+        purpose: 'Reduces the lever and makes trunk control more accessible.',
+        formChange: 'Raise the knees toward the chest rather than straight legs.',
+        difficulty: 'easier',
+      },
+      {
+        name: "Captain's Chair Leg Raise",
+        purpose: 'Provides elbow support, removing grip and shoulder fatigue as limiting factors.',
+        formChange: "Use a captain's chair or dip station with the forearms supported.",
+        difficulty: 'easier',
+      },
+      {
+        name: 'Straight-leg Hanging Raise',
+        purpose: 'Increases the lever demand on the trunk.',
+        formChange: 'Raise straight legs to horizontal or above.',
+        difficulty: 'harder',
+      },
+      {
+        name: 'Toes-to-bar',
+        purpose: 'Full range — raises straight legs until the toes touch the bar.',
+        formChange: 'Control the full arc from hanging to bar contact.',
+        difficulty: 'harder',
+      },
+    ],
+    safetyNotes: [
+      'Ensure the bar or rig is stable and rated for hanging loads.',
+      'Build grip and shoulder stability before progressing to straight-leg or full-range versions.',
+      'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Ab Wheel ──────────────────────────────────────────────────────────────────
+  'ab-wheel': {
+    exerciseKey: 'ab-wheel',
+    displayName: 'Ab Wheel',
+    summary: 'An advanced anti-extension core exercise using a rolling wheel from a kneeling position. The trunk must resist extension as the wheel rolls out. Even a short rollout distance provides significant demand.',
+    setup: [
+      'Kneel on a mat with the ab wheel directly under the shoulders.',
+      'Grip the wheel handles with both hands.',
+      'Set a neutral spine and brace the trunk before rolling.',
+    ],
+    execution: [
+      'Exhale and brace, then slowly roll the wheel forward, allowing the hips to extend as the arms reach forward.',
+      'Go only as far as you can maintain a braced, flat spine — avoid letting the lower back sag.',
+      'Pull the wheel back toward the knees using the trunk, not just the arms.',
+      'A short, controlled rollout is more effective than a long, collapsed one.',
+    ],
+    breathing: [
+      'Exhale and brace before rolling out.',
+      'Inhale as you return.',
+    ],
+    cues: [
+      '"Brace before you roll."',
+      '"Stop before the back sags."',
+      '"Pull back with the core — not just the arms."',
+    ],
+    commonMistakes: [
+      'Rolling further than the trunk can control, causing the lower back to sag.',
+      'Not bracing before rolling out.',
+      'Using arm strength to pull back rather than trunk engagement.',
+    ],
+    variations: [
+      {
+        name: 'Short-range Ab Wheel',
+        purpose: 'Reduces the anti-extension demand — the standard starting point.',
+        formChange: 'Roll out only 30–40 cm and return, prioritising a flat spine.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Wall-stop Ab Wheel',
+        purpose: 'Places a hard limit on the rollout distance.',
+        formChange: 'Position a wall in front to stop the wheel at a safe distance.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Stability Ball Rollout',
+        purpose: 'A lower-intensity anti-extension exercise using a stability ball.',
+        formChange: 'Kneel and place the forearms on a stability ball, then roll forward.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Full Ab Wheel Rollout',
+        purpose: 'Extends to near-full hip extension — for those with well-developed anti-extension strength.',
+        formChange: 'Roll to a near-flat body position while maintaining a braced spine.',
+        difficulty: 'harder',
+      },
+    ],
+    safetyNotes: [
+      'Only roll as far as the trunk can maintain a controlled, braced position — avoid lower-back sag.',
+      'Build range gradually — this exercise has a high eccentric demand on the trunk.',
+      'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Cable Crunches ────────────────────────────────────────────────────────────
+  'cable-crunches': {
+    exerciseKey: 'cable-crunches',
+    displayName: 'Cable Crunches',
+    summary: 'A weighted trunk-flexion exercise using a cable machine. The load can be progressively increased, making it useful for those who have outgrown bodyweight crunches. The movement is trunk flexion — not a pull with the arms.',
+    setup: [
+      'Attach a rope handle to a high cable pulley.',
+      'Kneel facing the machine, holding the rope at either side of the head or at the temples.',
+      'Sit back slightly onto the heels for a stable kneeling position.',
+    ],
+    execution: [
+      'Exhale and flex the trunk, curling the ribcage toward the pelvis.',
+      'The hips remain relatively fixed — the movement comes from the trunk, not from hip flexion.',
+      'Lower with control, allowing the trunk to extend back to the start.',
+      'Avoid using the arms to pull the rope down — let the trunk do the work.',
+    ],
+    breathing: [
+      'Exhale as you crunch down.',
+      'Inhale as you return.',
+    ],
+    cues: [
+      '"Flex the trunk — ribcage to pelvis."',
+      '"Hips stay still — don\'t rock forward."',
+      '"Hands hold the rope — the trunk does the work."',
+    ],
+    commonMistakes: [
+      'Pulling with the arms instead of flexing the trunk.',
+      'Rocking forward at the hips to add momentum.',
+      'Using more load than trunk control allows.',
+    ],
+    variations: [
+      {
+        name: 'Standing Cable Crunch',
+        purpose: 'Performs the same trunk flexion from a standing position.',
+        formChange: 'Stand facing away from the machine with the rope behind the head and crunch down.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Light-load Cable Crunch',
+        purpose: 'Reduces the load to focus on the movement pattern.',
+        formChange: 'Use a light cable load and focus on controlled trunk flexion.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Slow-tempo Cable Crunch',
+        purpose: 'Increases time under tension and reduces momentum.',
+        formChange: 'Lower over 3 seconds, pause at the bottom, return over 2 seconds.',
+        difficulty: 'similar',
+      },
+    ],
+    safetyNotes: [
+      'Choose a load that allows clean trunk flexion — excessive load leads to arm-pulling and hip rocking.',
+      'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Mountain Climbers ─────────────────────────────────────────────────────────
+  'mountain-climbers': {
+    exerciseKey: 'mountain-climbers',
+    displayName: 'Mountain Climbers',
+    summary: 'A dynamic full-body exercise performed in a high-plank position, alternating knee drives toward the chest. It combines trunk stability with cardiovascular and hip-flexor demand.',
+    setup: [
+      'Start in a high-plank position with hands under the shoulders and arms extended.',
+      'The body should form a straight line from head to heels.',
+      'Engage the trunk before beginning the movement.',
+    ],
+    execution: [
+      'Drive one knee toward the chest, then quickly switch to the other leg.',
+      'Maintain the plank position throughout — the hips should not bounce up or sag down.',
+      'The speed can vary: slow and controlled for a stability emphasis, fast and rhythmic for a cardiovascular emphasis.',
+    ],
+    breathing: [
+      'Breathe rhythmically throughout.',
+      'For fast versions, exhale on each knee drive or breathe continuously.',
+    ],
+    cues: [
+      '"Keep the hips level — don\'t bounce them."',
+      '"Maintain the plank — trunk tight."',
+      '"Drive the knee — don\'t just step it forward."',
+    ],
+    commonMistakes: [
+      'Hips rising too high, reducing the trunk stability demand.',
+      'Hips sagging, stressing the lower back.',
+      'Planting the foot flat instead of driving the knee toward the chest.',
+    ],
+    variations: [
+      {
+        name: 'Slow Mountain Climber',
+        purpose: 'Emphasises trunk stability rather than cardiovascular demand.',
+        formChange: 'Drive one knee in, hold briefly, then switch — no rushing.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Elevated Mountain Climber',
+        purpose: 'Reduces the load on the shoulders and trunk — a useful regression.',
+        formChange: 'Place the hands on a bench or box rather than the floor.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Cross-body Mountain Climber',
+        purpose: 'Adds a rotational element by driving the knee toward the opposite elbow.',
+        formChange: 'Drive the right knee toward the left elbow and vice versa.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Fast Mountain Climber',
+        purpose: 'Increases cardiovascular demand and speed.',
+        formChange: 'Alternate the legs rapidly for a set time.',
+        difficulty: 'harder',
+      },
+    ],
+    safetyNotes: [
+      'Maintain a level hip position throughout — hip bouncing reduces trunk demand and may strain the lower back.',
+      'Use an elevated surface if wrist discomfort arises.',
+      'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Kettlebell Turkish Get-Up ─────────────────────────────────────────────────
+  'kettlebell-turkish-get-up': {
+    exerciseKey: 'kettlebell-turkish-get-up',
+    displayName: 'Kettlebell Turkish Get-Up',
+    summary: 'A complex multi-stage movement taking the body from lying to standing and back, with a kettlebell held overhead throughout. It is a technical skill requiring sequential practice and is best learned in segments. If you are unfamiliar with the movement, instruction from a qualified coach is strongly recommended before adding load.',
+    setup: [
+      'Lie on the back with the kettlebell on the floor beside the working hand.',
+      'Press the kettlebell to a locked-out arm position, stacking the wrist, elbow, and shoulder.',
+      'Bend the knee on the kettlebell side; the opposite leg and arm lie extended on the floor.',
+      'Begin with a very light load or a shoe balanced on the fist to learn the pattern without kettlebell risk.',
+    ],
+    execution: [
+      'Keep the eyes on the kettlebell throughout — a stable gaze helps maintain the overhead position.',
+      'Transition through each stage slowly and with control: roll to elbow, push to hand, lift the hips, sweep the leg to a kneeling position, stand.',
+      'Reverse the sequence to return to lying.',
+      'Every transition should be deliberate — there is no benefit to rushing.',
+      'Practice each segment in isolation before combining them.',
+    ],
+    breathing: [
+      'Breathe steadily throughout — there is no single prescribed breathing point.',
+      'Exhale at effort transitions such as pressing up from the elbow or standing.',
+    ],
+    cues: [
+      '"Eyes on the bell throughout."',
+      '"One step at a time — no rushing."',
+      '"Wrist, elbow, shoulder stacked."',
+    ],
+    commonMistakes: [
+      'Looking away from the kettlebell during a transition.',
+      'Allowing the shoulder to collapse or the elbow to bend during a transition.',
+      'Progressing load before each stage is reliably controlled.',
+      'Rushing through the transitions.',
+    ],
+    variations: [
+      {
+        name: 'Shoe TGU (no-load practice)',
+        purpose: 'Allows pattern practice without the risk of a dropped kettlebell.',
+        formChange: 'Balance a shoe on the fist instead of using a kettlebell.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Partial TGU',
+        purpose: 'Practices individual segments rather than the full sequence.',
+        formChange: 'Perform only the first 2–3 stages and reverse — build segment by segment.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Light-load TGU',
+        purpose: 'The standard starting point for load — much lighter than expected.',
+        formChange: 'Use a light kettlebell and confirm every stage before progressing load.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Heavy TGU',
+        purpose: 'Full strength expression of the movement for experienced practitioners.',
+        formChange: 'Progressively increase load only when every stage is reliable and controlled.',
+        difficulty: 'harder',
+      },
+    ],
+    safetyNotes: [
+      'Learn this movement with qualified instruction before adding load — a dropped kettlebell overhead is a serious risk.',
+      'Every stage must be stable before progressing to the next.',
+      'Perform over a mat and clear the surrounding area.',
+      'Modify or stop for sharp pain, numbness, dizziness, loss of balance, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Kettlebell Windmill ────────────────────────────────────────────────────────
+  'kettlebell-windmill': {
+    exerciseKey: 'kettlebell-windmill',
+    displayName: 'Kettlebell Windmill',
+    summary: 'A standing movement combining a hip shift, hinge, and controlled side bend while holding a kettlebell overhead or at the side. It is a mobility and stability exercise rather than a primary strength lift. Load should be light, especially when learning.',
+    setup: [
+      'Stand with feet wider than shoulder-width, toes angled at roughly 45 degrees on the working side.',
+      'Press the kettlebell overhead on the working side with the arm fully extended.',
+      'The opposite arm may travel down the inside of the leg as a guide.',
+    ],
+    execution: [
+      'Shift the hip to the side of the overhead arm.',
+      'Hinge and side-bend toward the floor on the non-working side, keeping the overhead arm extended and the eye on the kettlebell.',
+      'Lower to the range your mobility and control allow — there is no requirement to touch the floor.',
+      'Return to standing with control.',
+    ],
+    breathing: [
+      'Exhale as you hinge down.',
+      'Inhale as you return to standing.',
+    ],
+    cues: [
+      '"Hip out first, then hinge."',
+      '"Eyes on the bell — arm stays locked."',
+      '"Only go as far as control allows."',
+    ],
+    commonMistakes: [
+      'Bending the overhead elbow during the movement.',
+      'Looking away from the kettlebell.',
+      'Rounding the spine to reach further than mobility allows.',
+      'Using too much load before the movement pattern is stable.',
+    ],
+    variations: [
+      {
+        name: 'Bodyweight Windmill',
+        purpose: 'Practices the movement pattern without any load overhead.',
+        formChange: 'Perform with no kettlebell, arm extended overhead as a guide.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Low-arm Windmill',
+        purpose: 'Holds the kettlebell at the side rather than overhead — less shoulder stability demand.',
+        formChange: 'Hold the kettlebell in the lower hand and perform the same hinge.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Shortened-range Windmill',
+        purpose: 'Limits the depth to what current mobility allows.',
+        formChange: 'Lower only partway and prioritise a stable spine and locked-out arm.',
+        difficulty: 'easier',
+      },
+    ],
+    safetyNotes: [
+      'Use a light load — this movement is more about control and mobility than maximum load.',
+      'Do not force range of motion beyond what your shoulder, hip, and back mobility allow.',
+      'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Kettlebell Russian Twist ──────────────────────────────────────────────────
+  'kettlebell-russian-twist': {
+    exerciseKey: 'kettlebell-russian-twist',
+    displayName: 'Kettlebell Russian Twist',
+    summary: 'A seated trunk-rotation exercise holding a kettlebell at chest height. Similar in mechanics to the bodyweight Russian Twist, but with added load. Rotation should be controlled and within a comfortable range.',
+    setup: [
+      'Sit on the floor with knees bent and feet flat or slightly raised.',
+      'Lean the torso back to roughly 30–45 degrees.',
+      'Hold a light kettlebell by the horns at chest height.',
+    ],
+    execution: [
+      'Brace lightly, then rotate the trunk to one side, bringing the kettlebell with it.',
+      'Pause briefly, then rotate to the other side.',
+      'Keep the movement deliberate — avoid swinging the kettlebell for momentum.',
+      'Choose a load that allows comfortable rotation without forcing the range.',
+    ],
+    breathing: [
+      'Exhale as you rotate to each side.',
+      'Inhale as you return to centre.',
+    ],
+    cues: [
+      '"Control the bell — don\'t swing it."',
+      '"Rotate from the trunk."',
+      '"Comfortable range — don\'t force it."',
+    ],
+    commonMistakes: [
+      'Using the kettlebell as a pendulum rather than rotating the trunk.',
+      'Forcing rotation further than comfortable.',
+      'Losing the trunk brace midway through the set.',
+    ],
+    variations: [
+      {
+        name: 'Feet-supported Kettlebell Twist',
+        purpose: 'Reduces hip-flexor and balance demand.',
+        formChange: 'Keep the feet flat on the floor throughout.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Light Kettlebell Twist',
+        purpose: 'Reduces the rotational load — useful when learning the weighted version.',
+        formChange: 'Use the lightest available kettlebell.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Slower-tempo Kettlebell Twist',
+        purpose: 'Increases trunk control demand and reduces momentum.',
+        formChange: 'Take 2–3 seconds per rotation.',
+        difficulty: 'similar',
+      },
+    ],
+    safetyNotes: [
+      'Use a light load and avoid forced rotation — the spine has natural limits on comfortable rotational range.',
+      'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Kettlebell Farmer's Carry ─────────────────────────────────────────────────
+  'kettlebell-farmers-carry': {
+    exerciseKey: 'kettlebell-farmers-carry',
+    displayName: "Kettlebell Farmer's Carry",
+    summary: 'A loaded carry exercise holding one or two kettlebells at the sides while walking with tall posture. It trains grip strength, shoulder stability, trunk bracing, and overall carry capacity.',
+    setup: [
+      'Hold one or two kettlebells at the sides with a firm grip.',
+      'Stand tall — shoulders level, not elevated or pulled down aggressively.',
+      'Brace the trunk lightly before taking the first step.',
+    ],
+    execution: [
+      'Walk with short, controlled steps — avoid waddling or excessive trunk lean.',
+      'Keep the shoulders level and the trunk stable throughout.',
+      'Breathe steadily under load.',
+      'Set the kettlebells down with control at the end of each carry.',
+    ],
+    breathing: [
+      'Breathe steadily throughout the carry.',
+      'Short, rhythmic breaths are easier to maintain than a full brace held for long distances.',
+    ],
+    cues: [
+      '"Stand tall — don\'t let the load pull you down."',
+      '"Shoulders level."',
+      '"Short steps — stay controlled."',
+    ],
+    commonMistakes: [
+      'Leaning to one side during a single-arm carry (suitcase carry) — the trunk should resist lateral tilt.',
+      'Shrugging the shoulders aggressively upward.',
+      'Taking excessively long strides that destabilise the trunk.',
+    ],
+    variations: [
+      {
+        name: 'Suitcase Carry',
+        purpose: 'Single-arm version that adds lateral trunk stability demand.',
+        formChange: 'Carry one kettlebell and resist the trunk tilting toward the loaded side.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Light-load Carry',
+        purpose: 'Builds the carry pattern before adding significant load.',
+        formChange: 'Use a lighter kettlebell and focus on posture and breathing.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Double Kettlebell Carry',
+        purpose: 'Increases total load and grip demand.',
+        formChange: 'Carry one kettlebell in each hand.',
+        difficulty: 'harder',
+      },
+    ],
+    safetyNotes: [
+      'Choose a load that allows you to maintain tall posture and level shoulders throughout.',
+      'Set the kettlebells down carefully — dropping them can cause foot or floor damage.',
+      'Modify or stop for sharp pain, numbness, dizziness, loss of balance, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Kettlebell Around the World ───────────────────────────────────────────────
+  'kettlebell-around-the-world': {
+    exerciseKey: 'kettlebell-around-the-world',
+    displayName: 'Kettlebell Around the World',
+    summary: 'A movement passing a kettlebell around the body in a circle, transferring it hand to hand. It trains trunk stability and coordination under a moving load. A light kettlebell and a deliberate pace are recommended, especially when learning.',
+    setup: [
+      'Stand with feet shoulder-width, holding a light kettlebell in one hand at the side.',
+      'Stand tall with the core lightly braced.',
+    ],
+    execution: [
+      'Pass the kettlebell around the body — one hand passes it to the other behind the back, then to the front.',
+      'Keep the trunk stable — avoid rotating the hips with the bell.',
+      'Move at a pace you can control the transfer smoothly.',
+      'Complete the desired number of circles in each direction.',
+    ],
+    breathing: [
+      'Breathe steadily throughout.',
+      'Exhale at each hand transfer if a focal point helps.',
+    ],
+    cues: [
+      '"Trunk stays still — the bell moves."',
+      '"Controlled transfer — don\'t let it swing."',
+      '"Light bell until the pattern is reliable."',
+    ],
+    commonMistakes: [
+      'Rotating the hips and trunk with the bell rather than keeping them stable.',
+      'Moving too fast and losing control of the transfer.',
+      'Using too heavy a kettlebell before the pattern is coordinated.',
+    ],
+    variations: [
+      {
+        name: 'Slow Around the World',
+        purpose: 'Builds the transfer pattern with full control.',
+        formChange: 'Move very deliberately, pausing at each transfer point.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Figure-8',
+        purpose: 'A more complex passing pattern between the legs — increases coordination demand.',
+        formChange: 'Pass the kettlebell through the legs in a figure-8 pattern.',
+        difficulty: 'harder',
+      },
+    ],
+    safetyNotes: [
+      'Use a light kettlebell — dropping or losing control during the transfer is the main risk.',
+      'Clear the area around you before performing the movement.',
+      'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── L-Sit ─────────────────────────────────────────────────────────────────────
+  'l-sit': {
+    exerciseKey: 'l-sit',
+    displayName: 'L-Sit',
+    summary: 'An advanced static hold with the body supported on the hands and the legs extended forward at hip height. It requires significant trunk strength, hip-flexor endurance, shoulder depression, and scapular stability. Progressive development through the tuck position is the standard approach.',
+    setup: [
+      'Use parallel bars, dip handles, gymnastics parallettes, or the floor (hardest).',
+      'Place the hands beside the hips, arms straight.',
+      'Depress the shoulders — push the hands into the surface and drive the scapulae down.',
+    ],
+    execution: [
+      'From the support position, brace and attempt to hold the legs extended at hip height, or hold a tucked position.',
+      'Keep the arms straight and the shoulders actively depressed throughout.',
+      'Hold for a duration you can maintain with control.',
+    ],
+    breathing: [
+      'Breathe steadily — short breaths are easier to maintain under compression.',
+      'Do not hold the breath.',
+    ],
+    cues: [
+      '"Push the handles down — shoulders away from the ears."',
+      '"Legs together and active."',
+      '"Arms straight throughout."',
+    ],
+    commonMistakes: [
+      'Allowing the shoulders to shrug toward the ears.',
+      'Bending the arms.',
+      'Attempting the full L-sit before the tuck hold is stable.',
+    ],
+    variations: [
+      {
+        name: 'Tuck Sit',
+        purpose: 'Reduces hip-flexor and trunk demand — the standard starting point.',
+        formChange: 'Hold both knees tucked to the chest in the support position.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Single-leg Extension',
+        purpose: 'Intermediate step between the tuck and full L-sit.',
+        formChange: 'Extend one leg while keeping the other tucked.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Full L-Sit',
+        purpose: 'Both legs extended at hip height — the target position.',
+        formChange: 'Extend both legs parallel to the floor with toes pointed.',
+        difficulty: 'harder',
+      },
+      {
+        name: 'Parallettes L-Sit',
+        purpose: 'Parallettes raise the hands, making it easier to clear the floor.',
+        formChange: 'Perform on low parallettes rather than the floor.',
+        difficulty: 'easier',
+      },
+    ],
+    safetyNotes: [
+      'Build wrist and shoulder strength progressively — jumping to the full position without preparation is a common source of wrist strain.',
+      'Ensure the parallettes or bars are stable before loading them.',
+      'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Dragon Flag ───────────────────────────────────────────────────────────────
+  'dragon-flag': {
+    exerciseKey: 'dragon-flag',
+    displayName: 'Dragon Flag',
+    summary: 'An advanced trunk exercise where the body is held rigid and lowered from a vertical to a near-horizontal position on a bench, supported only by the upper back and shoulders. It is not a general-fitness requirement and should be developed progressively. The eccentric (lowering) phase is the most accessible entry point.',
+    setup: [
+      'Lie on a bench and grip the bench behind the head for stability.',
+      'Press the upper back and shoulders into the bench — this is the only contact point.',
+      'Begin with the legs raised vertically.',
+    ],
+    execution: [
+      'Keep the body rigid from shoulders to feet — no bending at the hips.',
+      'Slowly lower the body toward the bench, maintaining the rigid position.',
+      'Stop before the lower back touches the bench.',
+      'Return to vertical using the trunk or assist with the hands if needed.',
+      'Focus on a controlled eccentric — the lowering is where the stimulus lies.',
+    ],
+    breathing: [
+      'Exhale at the top and during the lowering phase.',
+      'Inhale as you return to vertical.',
+    ],
+    cues: [
+      '"Rigid body — no hip bend."',
+      '"Lower slowly — the eccentric is the work."',
+      '"Upper back and shoulders on the bench."',
+    ],
+    commonMistakes: [
+      'Bending at the hips instead of maintaining a rigid body line.',
+      'Lowering too quickly and losing control.',
+      'Attempting the full movement before the eccentric-only version is reliable.',
+    ],
+    variations: [
+      {
+        name: 'Eccentric-only Dragon Flag',
+        purpose: 'Builds the strength to lower slowly before adding the concentric phase.',
+        formChange: 'Lower the body slowly and return with assistance from the hands.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Bent-knee Dragon Flag',
+        purpose: 'Shortens the lever by keeping the knees bent — reduces the total demand.',
+        formChange: 'Keep both knees bent throughout the lowering and return.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Reverse Crunch Progression',
+        purpose: 'An earlier-stage exercise that builds lower-trunk strength.',
+        formChange: 'Perform reverse crunches on a flat bench before attempting dragon flags.',
+        difficulty: 'easier',
+      },
+    ],
+    safetyNotes: [
+      'Use a stable bench rated for the loads and movements involved.',
+      'Build this exercise over many sessions — it is not a beginner movement and should not be rushed.',
+      'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Hollow Body Hold ──────────────────────────────────────────────────────────
+  'hollow-body-hold': {
+    exerciseKey: 'hollow-body-hold',
+    displayName: 'Hollow Body Hold',
+    summary: 'A supine isometric exercise where the body is held in a slightly curved, rigid position with the lower back pressed toward the floor. It is a foundational gymnastics-style core position that can be scaled widely by adjusting the arm and leg positions.',
+    setup: [
+      'Lie on the back.',
+      'Press the lower back into the floor and tuck the pelvis slightly.',
+      'Start with knees bent and arms at the sides — progress to extended arms and legs as control improves.',
+    ],
+    execution: [
+      'Brace the trunk and press the lower back toward the floor.',
+      'Lift the shoulder blades and legs off the floor, maintaining the lower-back contact.',
+      'Hold for a duration you can maintain without the lower back arching.',
+      'Breathe steadily — do not hold the breath.',
+    ],
+    breathing: [
+      'Breathe steadily throughout the hold.',
+      'Short breaths are easier to maintain than deep inhales that disturb the position.',
+    ],
+    cues: [
+      '"Lower back to the floor."',
+      '"Breathe — don\'t hold."',
+      '"Rib cage down — don\'t let it flare."',
+    ],
+    commonMistakes: [
+      'Allowing the lower back to arch away from the floor as the legs extend further.',
+      'Holding the breath.',
+      'Progressing arm or leg position faster than core control allows.',
+    ],
+    variations: [
+      {
+        name: 'Bent-knee Hollow Hold',
+        purpose: 'Shortens the lever — the standard starting point.',
+        formChange: 'Keep both knees bent and raised rather than extending the legs.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Arms-at-sides Hollow Hold',
+        purpose: 'Reduces the lever on the upper body.',
+        formChange: 'Keep the arms at the sides rather than overhead.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Full Hollow Hold',
+        purpose: 'Arms extended overhead and legs extended — maximum lever demand.',
+        formChange: 'Extend both arms overhead and both legs with a slight hollow position.',
+        difficulty: 'harder',
+      },
+      {
+        name: 'Hollow Rock',
+        purpose: 'Adds a dynamic rocking element to the hold.',
+        formChange: 'Rock forward and backward while maintaining the hollow position.',
+        difficulty: 'harder',
+      },
+    ],
+    safetyNotes: [
+      'Only extend the arms and legs as far as the lower back can remain on or near the floor.',
+      'Breathe steadily — holding the breath under bracing stress is not necessary.',
+      'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Superman Hold ─────────────────────────────────────────────────────────────
+  'superman-hold': {
+    exerciseKey: 'superman-hold',
+    displayName: 'Superman Hold',
+    summary: 'A prone exercise lifting the arms, chest, and legs off the floor simultaneously, training the posterior chain. The emphasis is on a gentle, controlled lift rather than forcing maximum height. Individual range will vary.',
+    setup: [
+      'Lie face down with the arms extended overhead and legs extended behind.',
+      'Rest on a mat for comfort.',
+    ],
+    execution: [
+      'Exhale and gently lift the arms, chest, and legs off the floor simultaneously.',
+      'Lift to a height that feels controlled and comfortable — avoid forcing a high arch.',
+      'Hold briefly, then lower with control.',
+      'The movement should feel like a gentle extension, not a forced position.',
+    ],
+    breathing: [
+      'Exhale as you lift.',
+      'Inhale as you lower.',
+    ],
+    cues: [
+      '"Gentle lift — not maximum height."',
+      '"Arms and legs lift together."',
+      '"Lower with control."',
+    ],
+    commonMistakes: [
+      'Forcing an aggressive arch that compresses the lower back.',
+      'Only lifting the arms or only the legs rather than both.',
+      'Holding the breath during the hold.',
+    ],
+    variations: [
+      {
+        name: 'Alternating Superman',
+        purpose: 'Reduces the demand by lifting only one arm and the opposite leg at a time.',
+        formChange: 'Lift the right arm and left leg, lower, then alternate.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Short-hold Superman',
+        purpose: 'Reduces the hold duration for those new to the movement.',
+        formChange: 'Lift and lower immediately rather than holding.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Extended-hold Superman',
+        purpose: 'Increases the duration of each repetition.',
+        formChange: 'Hold the lifted position for 3–5 seconds per rep.',
+        difficulty: 'similar',
+      },
+    ],
+    safetyNotes: [
+      'Lift to a comfortable height — forcing maximum extension can cause lower-back discomfort.',
+      'Individuals with lower-back sensitivity should try the alternating variation and use a reduced range.',
+      'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Bear Crawl ────────────────────────────────────────────────────────────────
+  'bear-crawl': {
+    exerciseKey: 'bear-crawl',
+    displayName: 'Bear Crawl',
+    summary: 'A quadrupedal crawling movement with the knees hovering close to the floor. It trains shoulder stability, trunk control, and contralateral coordination. The movement should be slow and deliberate, not a sprint.',
+    setup: [
+      'Start on hands and knees with hands under the shoulders and knees under the hips.',
+      'Lift the knees a few centimetres off the floor — hover them as tolerated.',
+      'The back should be roughly flat, not arched or rounded.',
+    ],
+    execution: [
+      'Move forward by stepping the right hand and left foot simultaneously, then the left hand and right foot.',
+      'Keep the hips level — avoid letting them rise high or rotate with each step.',
+      'Move slowly and deliberately, maintaining the knee hover throughout.',
+      'Cover a set distance or time.',
+    ],
+    breathing: [
+      'Breathe steadily throughout.',
+      'Exhale on each hand placement if a focal point helps.',
+    ],
+    cues: [
+      '"Opposite arm and leg move together."',
+      '"Hips stay level."',
+      '"Knees hover — don\'t drag them."',
+    ],
+    commonMistakes: [
+      'Hips rising into the air rather than staying low.',
+      'Moving the same-side arm and leg together (same-side crawl).',
+      'Rushing — losing trunk control at speed.',
+    ],
+    variations: [
+      {
+        name: 'Stationary Bear Crawl Hold',
+        purpose: 'Builds shoulder and trunk stability in the setup position before adding movement.',
+        formChange: 'Hold the hover position for 20–30 seconds without moving.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Elevated Bear Crawl',
+        purpose: 'Reduces the upper-body load by raising the hands on a bench.',
+        formChange: 'Place the hands on a bench and crawl forward.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Backward Bear Crawl',
+        purpose: 'Adds coordination challenge by reversing the movement direction.',
+        formChange: 'Crawl backward using the same contralateral pattern.',
+        difficulty: 'similar',
+      },
+      {
+        name: 'Loaded Bear Crawl',
+        purpose: 'Adds a plate or vest for additional load.',
+        formChange: 'Place a weight plate on the back and crawl with control.',
+        difficulty: 'harder',
+      },
+    ],
+    safetyNotes: [
+      'Use a mat or padded surface for wrist and knee comfort.',
+      'Adjust the knee-hover height to what is comfortable — a small hover is sufficient.',
+      'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Inchworm ──────────────────────────────────────────────────────────────────
+  'inchworm': {
+    exerciseKey: 'inchworm',
+    displayName: 'Inchworm',
+    summary: 'A dynamic movement walking the hands out from standing to a plank position and walking the feet back in. It combines hamstring mobility, shoulder stability, and trunk control in a single flowing movement.',
+    setup: [
+      'Stand with feet hip-width.',
+      'Clear the space in front of and behind you.',
+    ],
+    execution: [
+      'Hinge forward and place the hands on the floor near the feet.',
+      'Walk the hands forward one at a time until a plank position is reached.',
+      'Pause briefly in the plank, then walk the feet toward the hands one step at a time.',
+      'Stand and repeat.',
+      'Bend the knees if hamstring tightness prevents the hands from reaching the floor comfortably.',
+    ],
+    breathing: [
+      'Exhale as you walk out to the plank.',
+      'Inhale as you walk the feet back in.',
+    ],
+    cues: [
+      '"Control each hand step — don\'t lunge forward."',
+      '"Stable plank at the end of the walk-out."',
+      '"Bend the knees if needed — honour your hamstring range."',
+    ],
+    commonMistakes: [
+      'Lunging the hands out in one jump rather than controlled steps.',
+      'Hips sagging in the plank position.',
+      'Forcing straight-leg position when hamstring mobility does not allow it.',
+    ],
+    variations: [
+      {
+        name: 'Bent-knee Inchworm',
+        purpose: 'Accommodates limited hamstring flexibility.',
+        formChange: 'Keep a generous bend in the knees throughout the walkout and walk-in.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Short-range Inchworm',
+        purpose: 'Reduces the range to a comfortable window while building the pattern.',
+        formChange: 'Walk the hands out only to a half-plank rather than a full plank.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Inchworm with Push-up',
+        purpose: 'Adds a push-up at the plank position for upper-body strength.',
+        formChange: 'Perform one push-up at the bottom of the walkout before returning.',
+        difficulty: 'harder',
+      },
+    ],
+    safetyNotes: [
+      'Bend the knees as needed — do not force the hamstrings into a range they cannot yet reach.',
+      'Use a non-slip surface.',
+      'Modify or stop for sharp pain, numbness, dizziness, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
+    ],
+    contentVersion: 1,
+    reviewedAt: '2025-01-01',
+  },
+
+  // ── Burpee Pull-up ────────────────────────────────────────────────────────────
+  'burpee-pull-up': {
+    exerciseKey: 'burpee-pull-up',
+    displayName: 'Burpee Pull-up',
+    summary: 'An advanced conditioning exercise combining a burpee with a pull-up. The sequence is squat, jump back to plank, push-up (optional), return to squat, jump to the bar, and perform a pull-up. It is demanding on landing mechanics, grip, and aerobic capacity.',
+    setup: [
+      'Use a pull-up bar at a height that requires a jump to reach — not so high that reaching it is unsafe.',
+      'Ensure the floor surface is stable and non-slip.',
+    ],
+    execution: [
+      'Squat and place the hands on the floor.',
+      'Jump or step the feet back to a plank position.',
+      'Optionally add a push-up at the bottom.',
+      'Jump or step the feet back to the squat position.',
+      'Jump upward and grip the bar, then perform a pull-up.',
+      'Lower from the bar with control and land softly before the next rep.',
+      'Pace should allow consistent, controlled landings throughout — not maximum speed at the expense of control.',
+    ],
+    breathing: [
+      'Exhale at the jump and at the pull-up effort.',
+      'Inhale during the plank phase and the descent from the bar.',
+    ],
+    cues: [
+      '"Land soft — bend on every contact."',
+      '"Controlled landing before the next rep."',
+      '"Scale before fatigue affects form."',
+    ],
+    commonMistakes: [
+      'Jumping from the bar and landing with stiff knees.',
+      'Rushing reps until landing mechanics deteriorate.',
+      'Using a bar so high that reaching it requires an unsafe scramble.',
+      'Not pacing — the early reps dictate whether the later reps remain controlled.',
+    ],
+    variations: [
+      {
+        name: 'Burpee (No Pull-up)',
+        purpose: 'Removes the pull-up component — useful when pull-up strength is not yet sufficient.',
+        formChange: 'Perform the full burpee sequence and omit the jump-and-pull-up at the top.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Step-back Burpee Pull-up',
+        purpose: 'Removes the jump-back and reduces impact.',
+        formChange: 'Step the feet back to plank and step them forward rather than jumping.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Assisted Burpee Pull-up',
+        purpose: 'Allows the pull-up with a band for those building pull-up strength.',
+        formChange: 'Use a resistance band around the bar for assistance during the pull-up phase.',
+        difficulty: 'easier',
+      },
+      {
+        name: 'Chest-to-bar Burpee Pull-up',
+        purpose: 'Increases the pull-up range — for experienced practitioners.',
+        formChange: 'Pull until the chest contacts the bar rather than just chin over.',
+        difficulty: 'harder',
+      },
+    ],
+    safetyNotes: [
+      'Choose a bar height that is safe to jump to and land from.',
+      'Stop or scale if landing mechanics deteriorate — stiff or uncontrolled landings are a risk signal.',
+      'Ensure the bar and its mounting are rated for dynamic kipping and jumping loads.',
       'Modify or stop for sharp pain, numbness, dizziness, loss of balance, or other concerning symptoms. This content is coaching guidance, not medical advice — consult a qualified professional when appropriate.',
     ],
     contentVersion: 1,
