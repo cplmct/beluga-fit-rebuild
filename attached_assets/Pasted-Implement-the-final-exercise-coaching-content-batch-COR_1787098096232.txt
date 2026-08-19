@@ -1,0 +1,524 @@
+Implement the final exercise-coaching content batch: CORE ONLY.
+
+The Chest, Back, Shoulders, Arms, and Legs batches are complete.
+
+Current verified state:
+
+- Existing coaching records: 86.
+- Existing display-name mappings: 86.
+- The source file is:
+  src/data/exerciseCoaching.ts
+- Existing records and mappings are preserved.
+- Wall Walk already exists as:
+  'Wall Walk': 'wall-walk'
+- Wall Walk is shared between Shoulders and Core.
+- Do not create a duplicate Wall Walk record or mapping.
+
+IMAGE SCOPE RESTRICTION:
+
+Do not add, connect, import, rename, move, delete, generate, or reference exercise images or image assets. Leave all existing Form image placeholders and image-related code unchanged.
+
+Do not modify:
+
+- WorkoutChecklistScreen.tsx.
+- ExerciseCoachButton.tsx.
+- ExerciseCoachingSheet.tsx.
+- Workout behavior.
+- Weight-unit conversion.
+- Session-set persistence.
+- Personal-record calculations.
+- Navigation.
+- Exercise ordering.
+- Existing Edit, Form, Swap, or completion behavior.
+- Existing coaching records or mappings.
+- Any image files or image references.
+
+## File scope
+
+The only file permitted to change is:
+
+src/data/exerciseCoaching.ts
+
+Do not split the file in this batch.
+
+## Core records to add
+
+Add exactly these 22 new coaching records:
+
+1. Plank
+2. Side Plank
+3. Crunches
+4. Bicycle Crunches
+5. Russian Twists
+6. Leg Raises
+7. Hanging Leg Raises
+8. Ab Wheel
+9. Cable Crunches
+10. Mountain Climbers
+11. Kettlebell Turkish Get-Up
+12. Kettlebell Windmill
+13. Kettlebell Russian Twist
+14. Kettlebell Farmer's Carry
+15. Kettlebell Around the World
+16. L-Sit
+17. Dragon Flag
+18. Hollow Body Hold
+19. Superman Hold
+20. Bear Crawl
+21. Inchworm
+22. Burpee Pull-up
+
+Do not add another Wall Walk record. Reuse:
+
+- Wall Walk → wall-walk
+
+## Required mappings
+
+Add exactly these 22 mappings:
+
+- 'Plank': 'plank'
+- 'Side Plank': 'side-plank'
+- 'Crunches': 'crunches'
+- 'Bicycle Crunches': 'bicycle-crunches'
+- 'Russian Twists': 'russian-twists'
+- 'Leg Raises': 'leg-raises'
+- 'Hanging Leg Raises': 'hanging-leg-raises'
+- 'Ab Wheel': 'ab-wheel'
+- 'Cable Crunches': 'cable-crunches'
+- 'Mountain Climbers': 'mountain-climbers'
+- 'Kettlebell Turkish Get-Up': 'kettlebell-turkish-get-up'
+- 'Kettlebell Windmill': 'kettlebell-windmill'
+- 'Kettlebell Russian Twist': 'kettlebell-russian-twist'
+- "Kettlebell Farmer's Carry": 'kettlebell-farmers-carry'
+- 'Kettlebell Around the World': 'kettlebell-around-the-world'
+- 'L-Sit': 'l-sit'
+- 'Dragon Flag': 'dragon-flag'
+- 'Hollow Body Hold': 'hollow-body-hold'
+- 'Superman Hold': 'superman-hold'
+- 'Bear Crawl': 'bear-crawl'
+- 'Inchworm': 'inchworm'
+- 'Burpee Pull-up': 'burpee-pull-up'
+
+Preserve all existing mappings exactly.
+
+Use the apostrophe in the display name exactly as it appears:
+
+"Kettlebell Farmer's Carry"
+
+## Required record structure
+
+Match the exact existing ExerciseCoaching type and record style.
+
+Every new record must have populated:
+
+- exerciseKey
+- summary
+- setup
+- execution
+- breathing
+- cues
+- commonMistakes
+- variations
+- safetyNotes
+- contentVersion
+- reviewedAt
+
+Important TypeScript requirement:
+
+- `breathing` must be a string array, such as:
+  breathing: [
+    'Inhale to prepare.',
+    'Exhale during the effort.'
+  ]
+
+Do not use a plain string for breathing.
+
+Every variation must include:
+
+- name
+- purpose
+- formChange
+- difficulty: 'easier' | 'similar' | 'harder'
+
+Write original, concise, practical coaching. Avoid:
+
+- “Perfect form” claims.
+- Claims that an exercise completely isolates one muscle.
+- Guaranteed injury-prevention claims.
+- Unsupported medical statements.
+- Copying wording from external exercise websites.
+- Treating normal individual differences as automatically incorrect.
+
+Use adaptable wording such as:
+
+- “A useful starting position is…”
+- “Choose a range of motion you can control comfortably.”
+- “This version places relatively more emphasis on…”
+- “Adjust the setup to your mobility, equipment, and goal.”
+
+## Exercise-specific requirements
+
+### Plank
+
+Include:
+
+- Forearm or high-plank setup.
+- Head-to-heel alignment.
+- Trunk bracing.
+- Breathing while maintaining position.
+- Appropriate hold duration.
+- Kneeling and elevated regressions.
+
+### Side Plank
+
+Include:
+
+- Elbow or hand support.
+- Shoulder stacked over support.
+- Side-body and hip control.
+- Avoiding sagging or excessive rotation.
+- Kneeling and elevated variations.
+
+### Crunches
+
+Include:
+
+- Controlled spinal flexion.
+- Ribcage moving toward the pelvis.
+- Avoiding forceful neck pulling.
+- Controlled lowering.
+- Reverse-crunch and stability-ball options.
+
+### Bicycle Crunches
+
+Include:
+
+- Trunk position.
+- Controlled opposite elbow-to-knee movement.
+- Rotation from the trunk rather than pulling the neck.
+- Slow and reduced-range options.
+
+### Russian Twists
+
+Use careful coaching language.
+
+Include:
+
+- Seated balance setup.
+- Trunk rotation within a comfortable range.
+- Feet-supported regression.
+- Avoiding high-speed twisting or forcing range.
+- Bodyweight and light-load variations.
+
+### Leg Raises
+
+Include:
+
+- Supine setup.
+- Pelvic and lower-back control.
+- Controlled lowering.
+- Bent-knee regression.
+- Avoiding momentum.
+
+### Hanging Leg Raises
+
+Treat this as more advanced than floor leg raises.
+
+Include:
+
+- Grip and shoulder setup.
+- Controlled pelvic movement.
+- Bent-knee progression.
+- Avoiding swinging.
+- Captain’s-chair and supported regressions.
+
+### Ab Wheel
+
+Treat this as an advanced anti-extension exercise.
+
+Include:
+
+- Kneeling setup.
+- Braced trunk.
+- Controlled rollout distance.
+- Avoiding lumbar sag.
+- Short-range, wall-stop, and stability-ball regressions.
+
+### Cable Crunches
+
+Include:
+
+- Kneeling or standing setup.
+- Cable height.
+- Trunk flexion rather than pulling only with the arms.
+- Controlled return.
+- Avoiding excessive load and hip movement.
+
+### Mountain Climbers
+
+Include:
+
+- High-plank setup.
+- Trunk stability.
+- Controlled knee drive.
+- Slow and fast versions.
+- Avoiding excessive hip bouncing.
+- Elevated regression.
+
+### Kettlebell Turkish Get-Up
+
+Treat this as a complex, advanced movement.
+
+Include:
+
+- Light-load practice.
+- Sequenced transitions.
+- Keeping the kettlebell stacked over the shoulder.
+- Using a stable gaze and controlled movement.
+- Practicing partial segments.
+- No-load and shoe/bottoms-up practice only where appropriate.
+- Recommend qualified instruction for users unfamiliar with the movement.
+
+### Kettlebell Windmill
+
+Include:
+
+- Wide stance.
+- Hip shift and hinge.
+- Shoulder position.
+- Controlled side-bending/hinge combination.
+- Light loading.
+- Range limited by control and mobility.
+- Bodyweight and shortened-range regressions.
+
+### Kettlebell Russian Twist
+
+Include:
+
+- Seated setup.
+- Controlled trunk rotation.
+- Light load.
+- Feet-supported regression.
+- Avoiding fast or forced twisting.
+
+### Kettlebell Farmer's Carry
+
+Include:
+
+- Tall posture.
+- Grip and shoulder position.
+- Short controlled steps.
+- Breathing under load.
+- Suitcase-carry option and lighter-load regression.
+- Avoiding trunk leaning.
+
+### Kettlebell Around the World
+
+Include:
+
+- Stable stance.
+- Controlled hand-to-hand transfer around the body.
+- Trunk control.
+- Light kettlebell.
+- Slower learning pace.
+- Stationary and reduced-range variations.
+
+### L-Sit
+
+Treat this as advanced.
+
+Include:
+
+- Hand support and shoulder depression.
+- Straight or tucked-leg options.
+- Trunk control.
+- Scapular stability.
+- Tuck sit and parallettes regressions.
+
+### Dragon Flag
+
+Treat this as advanced.
+
+Include:
+
+- Stable bench or support.
+- Shoulder and upper-back contact.
+- Rigid body control.
+- Controlled lowering only within available strength.
+- Bent-knee, eccentric, and reverse-crunch regressions.
+- Do not imply it is necessary for general fitness.
+
+### Hollow Body Hold
+
+Include:
+
+- Supine setup.
+- Rib and pelvis control.
+- Bent-knee regression.
+- Arm and leg position scaling.
+- Avoiding lower-back arching beyond control.
+
+### Superman Hold
+
+Use balanced language.
+
+Include:
+
+- Prone setup.
+- Gentle arm and leg lift.
+- Controlled range.
+- Avoiding aggressive lumbar compression or forced height.
+- Alternating-arm/leg and shorter-duration variations.
+
+### Bear Crawl
+
+Include:
+
+- Hands-under-shoulders setup.
+- Knees hovering as tolerated.
+- Contralateral movement.
+- Trunk and hip control.
+- Forward, backward, and stationary variations.
+- Elevated regression.
+
+### Inchworm
+
+Include:
+
+- Standing-to-hands setup.
+- Controlled walkout.
+- Stable plank position.
+- Hips returning under control.
+- Short-range and elevated regressions.
+
+### Burpee Pull-up
+
+Treat this as advanced and conditioning-focused.
+
+Include:
+
+- Safe pull-up-bar height.
+- Squat, plank, return, jump, and pull-up sequence.
+- Scaling by removing the pull-up or using an assisted pull-up.
+- Controlling fatigue and landing.
+- Step-back and low-impact regressions.
+- Do not prescribe unsafe speed at the expense of control.
+
+## Variations
+
+Provide three to five variations per exercise.
+
+Every variation must include:
+
+- Name.
+- Purpose.
+- Form change.
+- Difficulty.
+
+For advanced exercises—Turkish Get-Up, Ab Wheel, Hanging Leg Raises, L-Sit, Dragon Flag, and Burpee Pull-up—include at least one clear regression.
+
+## Safety notes
+
+Every new record must include:
+
+- Use a load, range, speed, and duration you can control.
+- Modify or stop for sharp pain, numbness, dizziness, loss of balance, or concerning symptoms.
+- Use extra caution with complex, overhead, hanging, or ballistic movements.
+- General educational disclaimer: the guidance is not medical advice.
+- Seek qualified professional help when appropriate.
+
+## Organization
+
+Add the new mappings in the existing mapping section.
+
+Add the new records under a clearly labeled:
+
+// ── CORE ──
+
+section.
+
+Do not rewrite or reformat existing content unnecessarily.
+
+## Required checks
+
+After editing, run:
+
+npx tsc --noEmit
+
+Zero TypeScript errors are required.
+
+Then run:
+
+git diff --check
+
+No whitespace errors are allowed.
+
+Also verify:
+
+- Exactly 22 new records were added.
+- Exactly 22 new mappings were added.
+- Wall Walk was reused and not duplicated.
+- No duplicate stable keys exist.
+- All 22 new mappings resolve to records.
+- Every `breathing` field is a `string[]`.
+- Existing records remain unchanged.
+- The total coaching-record count is now 108.
+- The total mapping count is now 108.
+- No image files or image references changed.
+- No files other than src/data/exerciseCoaching.ts changed.
+
+## Final report
+
+Report:
+
+1. The exact file changed.
+2. The 22 new records.
+3. The 22 new stable keys.
+4. Final coaching-record count.
+5. Final mapping count.
+6. Confirmation that Wall Walk was reused.
+7. Confirmation that all breathing fields are string arrays.
+8. Confirmation that existing records were preserved.
+9. Confirmation that images were untouched.
+10. TypeScript result.
+11. git diff --check result.
+12. Confirmation that all built-in exercises now have coaching coverage.
+
+EXECUTION ORDER — 1 FILE:
+
+1. Before editing anything, inspect the current file and show me the plan for:
+   src/data/exerciseCoaching.ts
+
+   Include:
+   - The exact 22 mappings to add.
+   - The exact 22 records to add.
+   - The target insertion points and approximate line numbers.
+   - Confirmation that Wall Walk will be reused.
+   - Confirmation that every new breathing field will be a string array.
+   - Confirmation that final totals will be 108 records and 108 mappings.
+   Do not edit before showing this plan.
+
+2. After showing the plan, apply the requested changes to only this one file. Do not edit, delete, rename, generate, or stage any other files.
+
+3. Run the full-project TypeScript check:
+
+   npx tsc --noEmit
+
+   Zero TypeScript errors are required.
+
+4. Run:
+
+   git diff --check
+
+   No whitespace errors are allowed.
+
+5. Show what changed in src/data/exerciseCoaching.ts, including all new mappings and records.
+
+6. Confirm that existing functionality unrelated to this task was not changed.
+
+7. Confirm explicitly that no image files, image imports, image paths, or image references were added or modified.
+
+8. Do NOT commit.
+9. Do NOT push.
+10. Do NOT run git add.
+11. I will handle Git manually in the shell.
