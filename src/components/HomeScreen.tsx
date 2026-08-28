@@ -491,7 +491,14 @@ export function HomeScreen({ navigation }: any) {
           <View style={styles.resumeBannerLeft}>
             <Text style={styles.resumeBannerTitle}>Unfinished workout</Text>
             <Text style={styles.resumeBannerSub}>
-              {resumeSession.completedExercises.length}/{resumeSession.exerciseNames.length} exercises done
+              {Object.values(resumeSession.completedSets).reduce(
+                (sum, setNumbers) => sum + setNumbers.length,
+                0,
+              )}
+              /{resumeSession.exercises.reduce(
+                (sum, exercise) => sum + exercise.sets,
+                0,
+              )} sets done
             </Text>
           </View>
           <View style={styles.resumeBannerActions}>

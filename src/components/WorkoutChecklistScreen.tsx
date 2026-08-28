@@ -29,6 +29,7 @@ import {
   saveWorkoutSession,
   loadWorkoutSession,
   clearWorkoutSession,
+  WorkoutSessionPayload,
 } from '../utils/workoutSession';
 import { useSaveStatus } from '../hooks/useSaveStatus';
 import { SaveStatusBadge } from './SaveStatusBadge';
@@ -48,6 +49,23 @@ function formatDuration(seconds: number): string {
   return `${s}s`;
 }
 
+function getCompletedSetNumbers(
+  completedSets: WorkoutSessionPayload['completedSets'],
+  exerciseIndex: number,
+): number[] {
+  return completedSets[String(exerciseIndex)] || [];
+}
+
+function countCompletedSetsForExercise(
+  completedSets: WorkoutSessionPayload['completedSets'],
+  exerciseIndex: number,
+  plannedSets: number,
+): number {
+  return getCompletedSetNumbers(completedSets, exerciseIndex).filter(
+    (setNumber) => setNumber >= 1 && setNumber <= plannedSets,
+  ).length;
+}
+
 export function WorkoutChecklistScreen({ route, navigation }: any) {
   const { exercises: initialExercises, bodyParts } = route.params;
   const { user } = useAuth();
@@ -57,7 +75,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
   const [swapIndex, setSwapIndex] = useState<number | null>(null);
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [formIndex, setFormIndex] = useState<number | null>(null);
-  const [completedExercises, setCompletedExercises] = useState<Set<number>>(new Set());
+  const [completedSets, setCompletedSets] = useState<WorkoutSessionPayload['completedSets']>({});
   const [isSaving, setIsSaving] = useState(false);
   const [lastTimeMap, setLastTimeMap] = useState<Record<string, LastTimeData>>({});
   const [lastTimeLoading, setLastTimeLoading] = useState(true);
@@ -65,6 +83,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
   const [coachingKey, setCoachingKey] = useState<string | null>(null);
 
   const startTimeRef = useRef(Date.now());
+  const restTriggerRef = useRef(0);
   // Latched to true the moment a workout is successfully saved.
   // Prevents both save paths from re-writing AsyncStorage after the session
   // has been cleared, which would cause the Home resume banner to reappear
@@ -83,13 +102,13 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
   // ── On every focus: sync in-memory state with AsyncStorage ──────────────────
   // If the session was cleared externally (e.g. Home screen "Discard" button)
   // while this screen was still mounted in the Workout tab stack, reset the
-  // local completedExercises Set so the user always sees a clean slate.
+  // local completedSets map so the user always sees a clean slate.
   // If a session still exists we leave the in-progress state untouched.
   useFocusEffect(
     useCallback(() => {
       loadWorkoutSession().then(saved => {
         if (!saved) {
-          setCompletedExercises(new Set());
+          setCompletedSets({});
           startTimeRef.current = Date.now();
         }
       });
@@ -119,14 +138,18 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
     // they already confirmed intent by tapping Resume there.
     if (route.params?.autoResume) {
       setExercises(saved.exercises);
-      setCompletedExercises(new Set(saved.completedExercises));
+      setCompletedSets(saved.completedSets);
       startTimeRef.current = saved.startTime;
       return;
     }
 
     // Session is valid and matches — offer to resume.
-    const completed = saved.completedExercises.length;
-    const total = saved.exerciseNames.length;
+    const completed = saved.exercises.reduce(
+      (sum, exercise, index) =>
+        sum + countCompletedSetsForExercise(saved.completedSets, index, exercise.sets),
+      0,
+    );
+    const total = saved.exercises.reduce((sum, exercise) => sum + exercise.sets, 0);
     Alert.alert(
       'Resume workout?',
       `You have an unfinished workout (${completed}/${total} sets checked off). Pick up where you left off?`,
@@ -142,7 +165,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
             // Restore exercise list (captures any mid-session swaps),
             // checked-off sets, and original start time.
             setExercises(saved.exercises);
-            setCompletedExercises(new Set(saved.completedExercises));
+            setCompletedSets(saved.completedSets);
             startTimeRef.current = saved.startTime;
           },
         },
@@ -158,15 +181,15 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
     // Skip if the workout has already been saved and the session cleared.
     if (workoutFinishedRef.current) return;
     // Skip the initial empty state — no point persisting a blank session.
-    if (completedExercises.size === 0 && exercises === initialExercises) return;
+    if (Object.keys(completedSets).length === 0 && exercises === initialExercises) return;
     saveWorkoutSession({
       exerciseNames: exercises.map((ex: ExerciseSelection) => ex.name),
-      completedExercises: Array.from(completedExercises),
+      completedSets,
       startTime: startTimeRef.current,
       exercises,
       bodyParts,
     });
-  }, [completedExercises, exercises]);
+  }, [completedSets, exercises]);
 
   // ── Save session when app moves to background (belt + suspenders) ───────────
   useEffect(() => {
@@ -176,7 +199,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
         if (workoutFinishedRef.current) return;
         saveWorkoutSession({
           exerciseNames: exercises.map((ex: ExerciseSelection) => ex.name),
-          completedExercises: Array.from(completedExercises),
+          completedSets,
           startTime: startTimeRef.current,
           exercises,
           bodyParts,
@@ -185,7 +208,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
     };
     const sub = AppState.addEventListener('change', handleAppStateChange);
     return () => sub.remove();
-  }, [completedExercises, exercises]);
+  }, [completedSets, exercises]);
 
   const fetchLastTimeData = async () => {
     if (!user) {
@@ -268,20 +291,55 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
     }
   };
 
-  const toggleComplete = (index: number) => {
-    const newCompleted = new Set(completedExercises);
-    if (newCompleted.has(index)) {
-      // Unchecking — just remove, no timer
-      newCompleted.delete(index);
+  const toggleSet = (exerciseIndex: number, setNumber: number) => {
+    const exercise = exercises[exerciseIndex];
+    if (!exercise) return;
+
+    const exerciseKey = String(exerciseIndex);
+    const currentSetNumbers = new Set(getCompletedSetNumbers(completedSets, exerciseIndex));
+
+    if (currentSetNumbers.has(setNumber)) {
+      currentSetNumbers.delete(setNumber);
       haptic.light();
-      setCompletedExercises(newCompleted);
-    } else {
-      // Checking complete — mark it and launch rest timer
-      newCompleted.add(index);
-      haptic.light();
-      setCompletedExercises(newCompleted);
-      navigation.navigate('RestTimer', { initialSeconds: restDuration });
+      setCompletedSets((previous) => {
+        const next = { ...previous };
+        const nextSetNumbers = Array.from(currentSetNumbers).sort((a, b) => a - b);
+        if (nextSetNumbers.length > 0) {
+          next[exerciseKey] = nextSetNumbers;
+        } else {
+          delete next[exerciseKey];
+        }
+        return next;
+      });
+      return;
     }
+
+    currentSetNumbers.add(setNumber);
+    const nextCompletedSets = {
+      ...completedSets,
+      [exerciseKey]: Array.from(currentSetNumbers).sort((a, b) => a - b),
+    };
+    const exerciseCompleted = currentSetNumbers.size >= exercise.sets;
+    const nextExercise = exercises.find((candidate, index) => {
+      if (index === exerciseIndex) return false;
+      return countCompletedSetsForExercise(
+        nextCompletedSets,
+        index,
+        candidate.sets,
+      ) < candidate.sets;
+    });
+
+    haptic.light();
+    setCompletedSets(nextCompletedSets);
+
+    restTriggerRef.current += 1;
+    navigation.navigate('RestTimer', {
+      initialSeconds: restDuration,
+      triggerKey: `${exerciseIndex}-${setNumber}-${restTriggerRef.current}`,
+      completedSetLabel: `${exercise.name} — Set ${setNumber}`,
+      exerciseCompleted,
+      nextExerciseName: nextExercise?.name,
+    });
   };
 
   const handleSwapSelect = (replacement: Exercise) => {
@@ -298,13 +356,12 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
           }
     );
     setExercises(updated);
-    // The swapped slot must not be checked — it's a new exercise.
-    // (Swap button is only shown for uncompleted slots, but guard anyway.)
-    if (completedExercises.has(swapIndex)) {
-      const newCompleted = new Set(completedExercises);
-      newCompleted.delete(swapIndex);
-      setCompletedExercises(newCompleted);
-    }
+    // The swapped slot must not retain completion — it is a new exercise.
+    setCompletedSets((previous) => {
+      const next = { ...previous };
+      delete next[String(swapIndex)];
+      return next;
+    });
     setSwapIndex(null);
     haptic.light();
   };
@@ -315,6 +372,19 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
       i !== editIndex ? ex : { ...ex, sets, reps, weight }
     );
     setExercises(updated);
+    setCompletedSets((previous) => {
+      const exerciseKey = String(editIndex);
+      const existingSetNumbers = getCompletedSetNumbers(previous, editIndex)
+        .filter((setNumber) => setNumber <= sets)
+        .sort((a, b) => a - b);
+      const next = { ...previous };
+      if (existingSetNumbers.length > 0) {
+        next[exerciseKey] = existingSetNumbers;
+      } else {
+        delete next[exerciseKey];
+      }
+      return next;
+    });
     setEditIndex(null);
   };
 
@@ -472,16 +542,28 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
 
         // Batch-insert session_sets — one row per set per exercise
         const allSetRows: object[] = [];
+        const firstCompletedSetNumberBySessionExerciseId: Record<string, number> = {};
         for (const insertedEx of insertedExercises || []) {
           const match = validExercises.find((ve) => ve.originalIndex === insertedEx.order_index);
           if (!match) continue;
           const { exercise, originalIndex } = match;
+          const completedSetNumbers = getCompletedSetNumbers(completedSets, originalIndex)
+            .filter((setNumber) => setNumber >= 1 && setNumber <= exercise.sets)
+            .sort((a, b) => a - b);
+          const firstCompletedSetNumber = completedSetNumbers[0];
+          if (firstCompletedSetNumber !== undefined) {
+            firstCompletedSetNumberBySessionExerciseId[insertedEx.id] = firstCompletedSetNumber;
+          }
 
           // weight_kg is always kilograms (see weightKgByIndex above).
           const weightKg = weightKgByIndex.get(originalIndex) ?? null;
           const prevMax = maxWeightMap[exercise.name] || 0;
           // prevMax comes from personal_records.value (kg), so compare kg-vs-kg.
-          const isPr = weightKg !== null && weightKg > 0 && weightKg > prevMax;
+          const isPr =
+            firstCompletedSetNumber !== undefined &&
+            weightKg !== null &&
+            weightKg > 0 &&
+            weightKg > prevMax;
 
           for (let setNum = 1; setNum <= exercise.sets; setNum++) {
             allSetRows.push({
@@ -489,8 +571,8 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
               set_number: setNum,
               reps: exercise.reps,
               weight_kg: weightKg,
-              is_completed: completedExercises.has(originalIndex),
-              is_pr: setNum === 1 && isPr,
+              is_completed: completedSetNumbers.includes(setNum),
+              is_pr: setNum === firstCompletedSetNumber && isPr,
             });
           }
         }
@@ -508,10 +590,16 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
           // ── END (B) ────────────────────────────────────────────────────────────────
 
           // ── (C) Upsert personal_records for max_weight and max_reps PRs ──────────
-          // Build a lookup: session_exercise_id → id of set_number=1
-          const seIdToFirstSetId: Record<string, string> = {};
+          // Build a lookup to the first completed set for each exercise. PRs
+          // must never reference an unchecked set in a partially completed workout.
+          const seIdToFirstCompletedSetId: Record<string, string> = {};
           for (const s of insertedSets || []) {
-            if (s.set_number === 1) seIdToFirstSetId[s.session_exercise_id] = s.id;
+            if (
+              s.set_number ===
+              firstCompletedSetNumberBySessionExerciseId[s.session_exercise_id]
+            ) {
+              seIdToFirstCompletedSetId[s.session_exercise_id] = s.id;
+            }
           }
 
           const prUpsertRows: object[] = [];
@@ -526,7 +614,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
             // upsert is kg-consistent with session_sets.weight_kg above.
             // personal_records .value (max_weight) is stored in kilograms.
             const weightKg = weightKgByIndex.get(originalIndex) ?? null;
-            const setId = seIdToFirstSetId[insertedEx.id];
+            const setId = seIdToFirstCompletedSetId[insertedEx.id];
             if (!setId) continue;
 
             // max_weight — only upsert if new kg weight exceeds current personal record
@@ -703,7 +791,11 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
                 weightKg !== null &&
                 weightKg > 0 &&
                 weightKg > prevMax &&
-                completedExercises.has(originalIndex)
+                countCompletedSetsForExercise(
+                  completedSets,
+                  originalIndex,
+                  exercise.sets,
+                ) > 0
               );
             })
             .map(({ exercise }) => exercise.name)
@@ -738,8 +830,15 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
     }
   };
 
-  const completedCount = completedExercises.size;
-  const totalCount = exercises.length;
+  const completedCount = exercises.reduce(
+    (sum, exercise, index) =>
+      sum + countCompletedSetsForExercise(completedSets, index, exercise.sets),
+    0,
+  );
+  const totalCount = exercises.reduce(
+    (sum, exercise) => sum + Math.max(0, exercise.sets),
+    0,
+  );
 
   // Guard wrapper — confirms before saving a partial workout.
   const handleFinishWorkout = () => {
@@ -754,7 +853,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
     if (completedCount < totalCount) {
       Alert.alert(
         'Finish early?',
-        `You've checked off ${completedCount} of ${totalCount} exercises. Save this workout anyway?`,
+        `You've completed ${completedCount} of ${totalCount} sets. Save this workout anyway?`,
         [
           { text: 'Keep going', style: 'cancel' },
           { text: 'Save anyway', style: 'default', onPress: () => { void doSaveWorkout(); } },
@@ -783,7 +882,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.title}>Workout Checklist</Text>
         <Text style={styles.subtitle}>
-          Mark exercises as you complete them ({completedCount}/{totalCount})
+          {completedCount} of {totalCount} sets completed
         </Text>
 
         <View style={styles.progressBar}>
@@ -802,16 +901,21 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
           {exercises.map((exercise: ExerciseSelection, index: number) => {
             const lastTime = lastTimeMap[exercise.name];
             const weightDisplay = formatWeightDisplay(exercise.weight);
+            const exerciseCompletedSetCount = countCompletedSetsForExercise(
+              completedSets,
+              index,
+              exercise.sets,
+            );
+            const exerciseCompleted =
+              exercise.sets > 0 && exerciseCompletedSetCount === exercise.sets;
 
             return (
-              <TouchableOpacity
+              <View
                 key={index}
                 style={[
                   styles.exerciseCard,
-                  completedExercises.has(index) && styles.exerciseCardCompleted,
+                  exerciseCompleted && styles.exerciseCardCompleted,
                 ]}
-                onPress={() => toggleComplete(index)}
-                activeOpacity={0.82}
               >
                 {!lastTimeLoading && lastTime && (
                   <View style={styles.lastTimeBadge}>
@@ -822,26 +926,31 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
                 )}
 
                 <View style={styles.exerciseHeader}>
-                  <View
-                    style={[
-                      styles.checkbox,
-                      completedExercises.has(index) && styles.checkboxCompleted,
-                    ]}
-                  >
-                    {completedExercises.has(index) && (
-                      <Text style={styles.checkmark}>✓</Text>
-                    )}
-                  </View>
                   <View style={styles.exerciseInfo}>
                     <Text
                       style={[
                         styles.exerciseName,
-                        completedExercises.has(index) && styles.exerciseNameCompleted,
+                        exerciseCompleted && styles.exerciseNameCompleted,
                       ]}
                     >
                       {exercise.name}
                     </Text>
                     <Text style={styles.bodyPartLabel}>{exercise.bodyPart}</Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.exerciseProgressBadge,
+                      exerciseCompleted && styles.exerciseProgressBadgeCompleted,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.exerciseProgressText,
+                        exerciseCompleted && styles.exerciseProgressTextCompleted,
+                      ]}
+                    >
+                      {exerciseCompletedSetCount}/{exercise.sets}
+                    </Text>
                   </View>
                 </View>
 
@@ -860,6 +969,49 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
                       <Text style={styles.detailValue}>{weightDisplay}</Text>
                     </View>
                   )}
+                </View>
+
+                <View style={styles.setsList}>
+                  {Array.from({ length: Math.max(0, exercise.sets) }, (_, setIndex) => {
+                    const setNumber = setIndex + 1;
+                    const setCompleted = getCompletedSetNumbers(
+                      completedSets,
+                      index,
+                    ).includes(setNumber);
+
+                    return (
+                      <TouchableOpacity
+                        key={setNumber}
+                        style={[
+                          styles.setRow,
+                          setCompleted && styles.setRowCompleted,
+                        ]}
+                        onPress={() => toggleSet(index, setNumber)}
+                        activeOpacity={0.75}
+                      >
+                        <View
+                          style={[
+                            styles.setCheckbox,
+                            setCompleted && styles.setCheckboxCompleted,
+                          ]}
+                        >
+                          {setCompleted && <Text style={styles.setCheckmark}>✓</Text>}
+                        </View>
+                        <Text
+                          style={[
+                            styles.setLabel,
+                            setCompleted && styles.setLabelCompleted,
+                          ]}
+                        >
+                          Set {setNumber}
+                        </Text>
+                        <Text style={styles.setTarget}>
+                          {exercise.reps} reps
+                          {weightDisplay ? ` · ${weightDisplay}` : ''}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
 
                 <View style={styles.cardActions}>
@@ -890,7 +1042,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
                     />
                   )}
 
-                  {!completedExercises.has(index) && (
+                  {!exerciseCompleted && (
                     <TouchableOpacity
                       style={styles.swapButton}
                       onPress={(e) => { e.stopPropagation(); setSwapIndex(index); }}
@@ -901,7 +1053,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
                     </TouchableOpacity>
                   )}
                 </View>
-              </TouchableOpacity>
+              </View>
             );
           })}
         </View>
@@ -1080,24 +1232,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  checkbox: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: '#d1d5db',
-    marginRight: 12,
+  exerciseProgressBadge: {
+    minWidth: 44,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: '#f1f5f9',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkboxCompleted: {
+  exerciseProgressBadgeCompleted: {
     backgroundColor: '#10b981',
-    borderColor: '#10b981',
   },
-  checkmark: {
-    color: '#fff',
-    fontSize: 16,
+  exerciseProgressText: {
+    color: '#64748b',
+    fontSize: 12,
     fontWeight: '700',
+  },
+  exerciseProgressTextCompleted: {
+    color: '#fff',
   },
   exerciseInfo: {
     flex: 1,
@@ -1142,6 +1295,60 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: '#0f172a',
+  },
+  setsList: {
+    gap: 8,
+    marginTop: 12,
+  },
+  setRow: {
+    minHeight: 48,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    backgroundColor: '#f8fafc',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  setRowCompleted: {
+    borderColor: '#86efac',
+    backgroundColor: '#f0fdf4',
+  },
+  setCheckbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#cbd5e1',
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  setCheckboxCompleted: {
+    borderColor: '#10b981',
+    backgroundColor: '#10b981',
+  },
+  setCheckmark: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  setLabel: {
+    minWidth: 52,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#334155',
+  },
+  setLabelCompleted: {
+    color: '#047857',
+  },
+  setTarget: {
+    flex: 1,
+    fontSize: 13,
+    color: '#64748b',
+    textAlign: 'right',
   },
   footer: {
     padding: 20,

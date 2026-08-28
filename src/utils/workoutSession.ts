@@ -9,8 +9,8 @@ const MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
 export interface WorkoutSessionPayload {
   /** Exercise names in order — used to match against route.params on restore. */
   exerciseNames: string[];
-  /** Indices (into the exercises array) that the user has checked off. */
-  completedExercises: number[];
+  /** Set numbers completed for each exercise index. */
+  completedSets: Record<string, number[]>;
   /** Original Date.now() when the workout started — preserves duration accuracy. */
   startTime: number;
   /** Date.now() at the time of last save — used for staleness detection. */
@@ -19,6 +19,73 @@ export interface WorkoutSessionPayload {
   exercises: ExerciseSelection[];
   /** Body parts for the workout — passed as route.params to WorkoutChecklistScreen. */
   bodyParts: string[];
+}
+
+type StoredWorkoutSession = Omit<WorkoutSessionPayload, 'completedSets'> & {
+  completedSets?: unknown;
+  /** Legacy payload field saved before completion became set-level. */
+  completedExercises?: unknown;
+};
+
+function normalizeCompletedSets(
+  completedSets: unknown,
+  completedExercises: unknown,
+  exercises: ExerciseSelection[],
+): Record<string, number[]> {
+  const normalized: Record<string, number[]> = {};
+
+  if (completedSets && typeof completedSets === 'object' && !Array.isArray(completedSets)) {
+    for (const [exerciseIndex, rawSetNumbers] of Object.entries(completedSets)) {
+      const index = Number(exerciseIndex);
+      if (
+        !Number.isInteger(index) ||
+        index < 0 ||
+        index >= exercises.length ||
+        !Array.isArray(rawSetNumbers)
+      ) {
+        continue;
+      }
+
+      const setNumbers = rawSetNumbers
+        .filter((setNumber): setNumber is number =>
+          typeof setNumber === 'number' &&
+          Number.isInteger(setNumber) &&
+          setNumber >= 1 &&
+          setNumber <= exercises[index].sets
+        )
+        .sort((a, b) => a - b);
+
+      if (setNumbers.length > 0) {
+        normalized[String(index)] = [...new Set(setNumbers)];
+      }
+    }
+    return normalized;
+  }
+
+  // Older sessions stored exercise indices. Treat each legacy completed
+  // exercise as having all of its planned sets completed.
+  if (Array.isArray(completedExercises)) {
+    for (const rawIndex of completedExercises) {
+      if (
+        typeof rawIndex !== 'number' ||
+        !Number.isInteger(rawIndex) ||
+        rawIndex < 0 ||
+        rawIndex >= exercises.length
+      ) {
+        continue;
+      }
+
+      const setCount = Math.max(0, exercises[rawIndex].sets);
+      if (setCount > 0) {
+        normalized[String(rawIndex)] = Array.from(
+          { length: setCount },
+          (_, setIndex) => setIndex + 1,
+        );
+      }
+    }
+  }
+
+  return normalized;
 }
 
 /** Persist the current workout state. Silently swallows errors. */
@@ -40,7 +107,7 @@ export async function loadWorkoutSession(): Promise<WorkoutSessionPayload | null
   try {
     const raw = await AsyncStorage.getItem(KEY);
     if (!raw) return null;
-    const data: WorkoutSessionPayload = JSON.parse(raw);
+    const data: StoredWorkoutSession = JSON.parse(raw);
     if (Date.now() - data.savedAt > MAX_AGE_MS) {
       await AsyncStorage.removeItem(KEY);
       return null;
@@ -52,7 +119,15 @@ export async function loadWorkoutSession(): Promise<WorkoutSessionPayload | null
       await AsyncStorage.removeItem(KEY);
       return null;
     }
-    return data;
+
+    return {
+      ...data,
+      completedSets: normalizeCompletedSets(
+        data.completedSets,
+        data.completedExercises,
+        data.exercises,
+      ),
+    };
   } catch (_) {
     return null;
   }

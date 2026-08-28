@@ -2,13 +2,37 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 
+interface RestTimerRouteParams {
+  initialSeconds?: number;
+  triggerKey?: string;
+  nextExerciseName?: string;
+  exerciseCompleted?: boolean;
+  completedSetLabel?: string;
+}
+
 export function RestTimerScreen({ route, navigation }: any) {
-  const initialSeconds: number = (route?.params as any)?.initialSeconds ?? 60;
+  const params = route?.params as RestTimerRouteParams | undefined;
+  const initialSeconds = params?.initialSeconds ?? 60;
+  const triggerKey = params?.triggerKey;
+  const nextExerciseName = params?.nextExerciseName;
+  const exerciseCompleted = params?.exerciseCompleted ?? false;
+  const completedSetLabel = params?.completedSetLabel;
   const [timeLeft, setTimeLeft] = useState(initialSeconds);
   const [isRunning, setIsRunning] = useState(true); // auto-start when navigated from checklist
   const [isComplete, setIsComplete] = useState(false);
   const [initialTime, setInitialTime] = useState(initialSeconds);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // A completed set sends a unique trigger key. Reset the single workout-level
+  // timer whenever a new key arrives instead of creating per-exercise timers.
+  useEffect(() => {
+    if (!triggerKey) return;
+    const nextInitialTime = params?.initialSeconds ?? 60;
+    setInitialTime(nextInitialTime);
+    setTimeLeft(nextInitialTime);
+    setIsComplete(false);
+    setIsRunning(true);
+  }, [triggerKey]);
 
   useEffect(() => {
     if (isRunning && timeLeft > 0) {
@@ -72,10 +96,21 @@ export function RestTimerScreen({ route, navigation }: any) {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const progress = timeLeft / initialTime;
+  const progress = initialTime > 0 ? timeLeft / initialTime : 0;
+  const completeMessage = exerciseCompleted
+    ? nextExerciseName
+      ? `Exercise complete — ready for ${nextExerciseName}?`
+      : 'All exercises complete — ready to finish your workout?'
+    : 'Rest complete — ready for your next set?';
+  const continueLabel = exerciseCompleted && nextExerciseName
+    ? 'Next Exercise'
+    : 'Continue Workout';
 
   return (
     <View style={styles.container}>
+      {!!completedSetLabel && (
+        <Text style={styles.completedSetLabel}>{completedSetLabel} complete</Text>
+      )}
       <View style={styles.timerContainer}>
         <View style={[styles.progressCircle, { opacity: 0.2 }]} />
         <View
@@ -92,13 +127,13 @@ export function RestTimerScreen({ route, navigation }: any) {
         {isComplete ? (
           <View style={styles.completeBlock}>
             <Text style={styles.completeMessage}>
-              Rest complete — ready for your next set?
+              {completeMessage}
             </Text>
             <TouchableOpacity
               style={[styles.button, styles.continueButton]}
               onPress={() => navigation.goBack()}
             >
-              <Text style={styles.buttonText}>Continue Workout</Text>
+              <Text style={styles.buttonText}>{continueLabel}</Text>
             </TouchableOpacity>
           </View>
         ) : !isRunning ? (
@@ -183,6 +218,12 @@ const styles = StyleSheet.create({
     padding: 20,
     justifyContent: 'space-around',
     alignItems: 'center',
+  },
+  completedSetLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#334155',
+    textAlign: 'center',
   },
   timerContainer: {
     position: 'relative',
