@@ -74,7 +74,7 @@ export function ExerciseFormModal({
                       <Image
                         source={frame.imageSource}
                         style={styles.frameImage}
-                        resizeMode="cover"
+                        resizeMode="contain"
                       />
                     )}
                     <View style={[styles.frameLabelPill, { backgroundColor: colors.border }]}>

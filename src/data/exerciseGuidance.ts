@@ -16,17 +16,16 @@ export const EXERCISE_GUIDANCE: Record<string, ExerciseGuidance> = {
     frames: [
       {
         label: 'Start',
-        imageSource: require('../../assets/guidance/bench-press-start.jpg'),
+        imageSource: require('../../assets/guidance/barbell-bench-press-start.webp'),
         caption: 'Lie flat, grip slightly wider than shoulders, bar over lower chest, shoulder blades retracted.',
       },
       {
         label: 'Mid',
-        imageSource: require('../../assets/guidance/bench-press-mid.jpg'),
         caption: 'Lower the bar with control, elbows tracking at 45–75° from your torso.',
       },
       {
         label: 'Finish',
-        imageSource: require('../../assets/guidance/bench-press-finish.jpg'),
+        imageSource: require('../../assets/guidance/barbell-bench-press-finish.webp'),
         caption: 'Press to full extension without locking elbows hard, maintaining your natural arch.',
       },
     ],
@@ -41,6 +40,7 @@ export const EXERCISE_GUIDANCE: Record<string, ExerciseGuidance> = {
     frames: [
       {
         label: 'Start',
+        imageSource: require('../../assets/guidance/push-ups-start.webp'),
         caption: 'Hands slightly wider than shoulders, body in a straight line from head to heels, core braced.',
       },
       {
@@ -49,6 +49,7 @@ export const EXERCISE_GUIDANCE: Record<string, ExerciseGuidance> = {
       },
       {
         label: 'Finish',
+        imageSource: require('../../assets/guidance/push-ups-finish.webp'),
         caption: 'Push back to the start position, keeping your hips level and body rigid throughout.',
       },
     ],
@@ -63,17 +64,16 @@ export const EXERCISE_GUIDANCE: Record<string, ExerciseGuidance> = {
     frames: [
       {
         label: 'Start',
-        imageSource: require('../../assets/guidance/deadlift-start.jpg'),
+        imageSource: require('../../assets/guidance/deadlift-start.webp'),
         caption: 'Feet hip-width apart, bar over mid-foot, grip just outside your legs, hips hinged back, back flat.',
       },
       {
         label: 'Mid',
-        imageSource: require('../../assets/guidance/deadlift-mid.jpg'),
         caption: 'Drive through your heels, keeping the bar close to your body as it passes the knees.',
       },
       {
         label: 'Finish',
-        imageSource: require('../../assets/guidance/deadlift-finish.jpg'),
+        imageSource: require('../../assets/guidance/deadlift-finish.webp'),
         caption: 'Stand tall with hips fully extended — do not hyperextend your lower back at the top.',
       },
     ],
@@ -89,6 +89,7 @@ export const EXERCISE_GUIDANCE: Record<string, ExerciseGuidance> = {
     frames: [
       {
         label: 'Start',
+        imageSource: require('../../assets/guidance/dumbbell-row-start.webp'),
         caption: 'One knee and hand on a bench, back flat and parallel to the floor, dumbbell hanging below your shoulder.',
       },
       {
@@ -97,6 +98,7 @@ export const EXERCISE_GUIDANCE: Record<string, ExerciseGuidance> = {
       },
       {
         label: 'Finish',
+        imageSource: require('../../assets/guidance/dumbbell-row-finish.webp'),
         caption: 'Fully retract your shoulder blade at the top and hold briefly to feel the back engagement.',
       },
     ],
@@ -108,9 +110,11 @@ export const EXERCISE_GUIDANCE: Record<string, ExerciseGuidance> = {
   },
 
   'Overhead Press': {
+    // Barbell-specific visuals for Overhead Press; do not reuse for Military Press.
     frames: [
       {
         label: 'Start',
+        imageSource: require('../../assets/guidance/barbell-overhead-press-start.webp'),
         caption: 'Bar resting on your front shoulders, grip slightly wider than shoulders, elbows just in front of the bar.',
       },
       {
@@ -119,6 +123,7 @@ export const EXERCISE_GUIDANCE: Record<string, ExerciseGuidance> = {
       },
       {
         label: 'Finish',
+        imageSource: require('../../assets/guidance/barbell-overhead-press-finish.webp'),
         caption: 'Bar locked out overhead with ears between your arms, standing fully tall.',
       },
     ],
@@ -133,6 +138,7 @@ export const EXERCISE_GUIDANCE: Record<string, ExerciseGuidance> = {
     frames: [
       {
         label: 'Start',
+        imageSource: require('../../assets/guidance/dumbbell-shoulder-press-start.webp'),
         caption: 'Seated or standing, dumbbells at shoulder height, palms facing forward, elbows at 90°.',
       },
       {
@@ -141,6 +147,7 @@ export const EXERCISE_GUIDANCE: Record<string, ExerciseGuidance> = {
       },
       {
         label: 'Finish',
+        imageSource: require('../../assets/guidance/dumbbell-shoulder-press-finish.webp'),
         caption: 'Arms extended overhead, dumbbells nearly touching, without locking elbows hard.',
       },
     ],
@@ -155,6 +162,7 @@ export const EXERCISE_GUIDANCE: Record<string, ExerciseGuidance> = {
     frames: [
       {
         label: 'Start',
+        imageSource: require('../../assets/guidance/dumbbell-curl-start.webp'),
         caption: 'Stand tall, dumbbells at your sides, palms facing forward, elbows pinned to your torso.',
       },
       {
@@ -163,6 +171,7 @@ export const EXERCISE_GUIDANCE: Record<string, ExerciseGuidance> = {
       },
       {
         label: 'Finish',
+        imageSource: require('../../assets/guidance/dumbbell-curl-finish.webp'),
         caption: 'Dumbbells at shoulder level, squeeze your biceps hard at the top before lowering.',
       },
     ],
@@ -174,20 +183,20 @@ export const EXERCISE_GUIDANCE: Record<string, ExerciseGuidance> = {
   },
 
   'Squat': {
+    // Barbell back-squat visuals mapped to the generic Squat guidance entry.
     frames: [
       {
         label: 'Start',
-        imageSource: require('../../assets/guidance/squat-start.jpg'),
+        imageSource: require('../../assets/guidance/barbell-back-squat-start.webp'),
         caption: 'Bar on your upper traps, feet shoulder-width apart with toes slightly out, core braced.',
       },
       {
         label: 'Mid',
-        imageSource: require('../../assets/guidance/squat-mid.jpg'),
         caption: 'Sit down and back, knees tracking over your toes, chest staying up throughout.',
       },
       {
         label: 'Finish',
-        imageSource: require('../../assets/guidance/squat-finish.jpg'),
+        imageSource: require('../../assets/guidance/barbell-back-squat-finish.webp'),
         caption: 'Drive through your heels to stand, fully extending your hips and knees at the top.',
       },
     ],
@@ -199,9 +208,11 @@ export const EXERCISE_GUIDANCE: Record<string, ExerciseGuidance> = {
   },
 
   'Lunges': {
+    // Dumbbell lunge visuals mapped to the generic Lunges guidance entry.
     frames: [
       {
         label: 'Start',
+        imageSource: require('../../assets/guidance/dumbbell-lunge-start.webp'),
         caption: 'Stand tall, feet together, dumbbells at your sides, core engaged and chest up.',
       },
       {
@@ -210,6 +221,7 @@ export const EXERCISE_GUIDANCE: Record<string, ExerciseGuidance> = {
       },
       {
         label: 'Finish',
+        imageSource: require('../../assets/guidance/dumbbell-lunge-finish.webp'),
         caption: 'Push through your front heel to return to standing, then repeat on the other leg.',
       },
     ],
@@ -224,6 +236,7 @@ export const EXERCISE_GUIDANCE: Record<string, ExerciseGuidance> = {
     frames: [
       {
         label: 'Start',
+        imageSource: require('../../assets/guidance/plank.webp'),
         caption: 'Forearms on the floor, elbows directly under your shoulders, body in a straight line.',
       },
       {
@@ -246,6 +259,7 @@ export const EXERCISE_GUIDANCE: Record<string, ExerciseGuidance> = {
     frames: [
       {
         label: 'Start',
+        imageSource: require('../../assets/guidance/kettlebell-swing-start.webp'),
         caption: 'Feet shoulder-width apart, KB on the floor slightly in front of you, hinge at the hips to grip the handle.',
       },
       {
@@ -254,6 +268,7 @@ export const EXERCISE_GUIDANCE: Record<string, ExerciseGuidance> = {
       },
       {
         label: 'Finish',
+        imageSource: require('../../assets/guidance/kettlebell-swing-finish.webp'),
         caption: 'Hips fully extended, KB floats to chest height, arms relaxed — the hips power the swing, not the arms.',
       },
     ],
@@ -269,6 +284,7 @@ export const EXERCISE_GUIDANCE: Record<string, ExerciseGuidance> = {
     frames: [
       {
         label: 'Start',
+        imageSource: require('../../assets/guidance/kettlebell-goblet-squat-start.webp'),
         caption: 'Hold the KB by the horns at chest height, feet shoulder-width apart, toes slightly out.',
       },
       {
@@ -277,6 +293,7 @@ export const EXERCISE_GUIDANCE: Record<string, ExerciseGuidance> = {
       },
       {
         label: 'Finish',
+        imageSource: require('../../assets/guidance/kettlebell-goblet-squat-finish.webp'),
         caption: 'Drive through your heels to stand, fully extending your hips at the top of the movement.',
       },
     ],
