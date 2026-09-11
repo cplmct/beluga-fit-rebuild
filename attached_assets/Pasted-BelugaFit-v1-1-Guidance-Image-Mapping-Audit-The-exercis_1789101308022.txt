@@ -1,0 +1,101 @@
+BelugaFit v1.1 — Guidance Image Mapping Audit
+
+The exercise coaching images have now been optimized locally and placed in:
+
+assets/guidance/
+
+Current asset facts:
+- 202 WebP files are present.
+- Total guidance asset size is approximately 6.12 MB.
+- Images have been resized and optimized.
+- Most images are 1024x1024.
+- Some portrait images are approximately 800x1200.
+- Original unoptimized files are preserved outside the repository and must not be modified.
+- Do not generate new images.
+
+Important workflow rules:
+- Plan and audit first.
+- Do not commit or push.
+- Do not modify files during this audit phase.
+- Do not delete or rename assets.
+- Do not restore the old JPG files.
+- Do not modify the database.
+- Preserve exact Title Case exercise names.
+- Do not use toLowerCase() for exercise-name database lookups.
+
+Files to inspect:
+- src/data/exercises.ts
+- src/data/exerciseGuidance.ts
+- src/components/ExerciseFormModal.tsx
+- src/components/WorkoutChecklistScreen.tsx
+- src/components/ExercisesScreen.tsx
+- assets/guidance/
+
+Known current issue:
+src/data/exerciseGuidance.ts still references deleted JPG files:
+- bench-press-start.jpg
+- bench-press-mid.jpg
+- bench-press-finish.jpg
+- deadlift-start.jpg
+- deadlift-mid.jpg
+- deadlift-finish.jpg
+- squat-start.jpg
+- squat-mid.jpg
+- squat-finish.jpg
+
+Required audit:
+
+1. Extract the canonical exercise list from src/data/exercises.ts.
+   - Report every exact exercise name.
+   - Report the total count.
+
+2. Extract all current entries from src/data/exerciseGuidance.ts.
+   - Report which entries have text guidance.
+   - Report which entries reference images.
+   - Identify all broken JPG references.
+
+3. Inventory assets/guidance/.
+   - List all image filenames.
+   - Infer the exercise slug and frame from each filename.
+   - Identify Start, Mid, Finish, and single-image assets.
+   - Report duplicates or ambiguous names.
+
+4. Create a proposed mapping table with these columns:
+   - Canonical exercise name
+   - Current guidance entry?
+   - Proposed image filename(s)
+   - Frame coverage
+   - Exact match / ambiguous / missing
+   - Reason for ambiguity
+   - Human approval required?
+
+5. Pay particular attention to:
+   - Bench Press versus Barbell Bench Press
+   - Squat versus Barbell Back Squat
+   - Deadlift versus Romanian Deadlift
+   - Dips versus Tricep Dips
+   - Dumbbell Goblet Squat versus Kettlebell Goblet Squat
+   - Archer Push-ups Right versus Archer Push-ups
+   - Kettlebell Swing versus other kettlebell movements
+   - Plank and Side Plank single-image assets
+   - Any exercise that has only Start and Finish images
+   - Any exercise that has no matching image
+
+6. Inspect ExerciseFormModal.tsx and report:
+   - Whether .webp assets can be used with the current imageSource type.
+   - How local assets are loaded.
+   - Whether static require() references are required.
+   - How missing Mid or single-image guidance should be represented.
+   - Whether any code changes are necessary before wiring images.
+
+7. Produce a final report with:
+   A. Canonical exercise count
+   B. Current guidance coverage
+   C. Proposed image mappings
+   D. Ambiguous mappings
+   E. Missing images
+   F. Broken references
+   G. Required code changes
+   H. Recommended implementation order
+
+Do not modify, rename, delete, or commit anything. Return the report only.
