@@ -1,0 +1,197 @@
+The final audit is NOT READY — FIXES REQUIRED. Do not commit, push, merge, or create an Android build yet.
+
+We need to resolve the audit issues in three controlled stages.
+
+## Stage 1: Fix or remove unapproved non-exact mappings
+
+The following 12 mappings do not have explicit approval and must not remain automatically accepted unless the image is clearly appropriate for the exact exercise:
+
+- Ab Wheel → ab-wheel-rollout-*
+- Dumbbell Press → dumbbell-bench-press-*
+- Chest Fly → dumbbell-chest-fly-*
+- Chin-ups → chin-up-*
+- Face Pulls → face-pull-*
+- Hyperextensions → hyperextension-*
+- Lateral Raises → lateral-raise-*
+- Front Raises → dumbbell-front-raise-*
+- Rear Delt Fly → seated-rear-delt-fly-*
+- Shrugs → dumbbell-shrug-*
+- Front Squat → barbell-front-squat-*
+- Tuck Jump → tuck-jumps-*
+
+For each mapping:
+
+1. Inspect the actual Start and Finish assets.
+2. Compare the asset to the exact exercise name and the guidance text.
+3. If it is a genuinely appropriate exact-equivalent image, document the approval in a clearly named mapping comment or audit file.
+4. If it depicts a different variation, remove the image references and retain the phase as text-only.
+5. Never reuse an image merely because the movement is vaguely similar.
+6. Do not change the canonical exercise names or database values.
+
+Special requirement:
+- Rear Delt Fly must be resolved explicitly. The current image depicts a seated rear-delt fly while the text describes a standing hinged dumbbell fly. Either change the text to match the seated image or remove the image and keep text-only guidance. Do not leave the mismatch unresolved.
+
+## Stage 2: Resolve image-to-caption phase inconsistencies
+
+Review the actual Finish image and Finish text for every item below:
+
+- Rear Delt Fly
+- Lunges
+- Jump Squat
+- Tuck Jump
+- Dips
+- Kettlebell Pullover
+- Pike Push-ups
+- Diamond Push-ups
+- Pseudo Planche Push-ups
+- Kettlebell Good Morning
+- Typewriter Pull-ups
+- Close-grip Bench Press
+- Overhead Tricep Extension
+- Skull Crushers
+- Kettlebell Tricep Extension
+- Squat
+- Pause Squat
+- Front Squat
+- Romanian Deadlift
+- Bulgarian Split Squat
+- Kettlebell Goblet Squat
+- Kettlebell Romanian Deadlift
+- Pistol Squat
+
+For each item:
+
+1. Inspect the actual asset.
+2. Determine what pose or phase it depicts.
+3. Make the Finish description accurately describe that pictured pose.
+4. If the asset is better classified as a Mid image, do not silently relabel it without checking the overall guide. Prefer text-only Finish guidance if the image cannot represent a safe end position.
+5. Keep descriptions concise and exercise-specific.
+6. Do not describe a landing, lockout, standing position, or lowered position unless the image actually shows it.
+7. Preserve safe technique wording.
+
+Do not make assumptions based only on filenames.
+
+## Stage 3: Preserve and rerun the full audit
+
+After making only the necessary guidance-data changes:
+
+Run:
+
+```bash
+npx tsc --noEmit
+npm run validate:guidance
+git diff --stat
+git status
+```
+
+Recheck:
+
+```bash
+git diff -- src/data/exerciseGuidance.ts
+git diff -- scripts/validate-guidance.js
+git diff -- package.json
+```
+
+The validator must still report:
+
+- 112 guidance entries.
+- 0 missing entries.
+- 0 orphan entries.
+- 0 duplicate keys.
+- 0 case mismatches.
+- 0 missing Start descriptions.
+- 0 missing Mid descriptions.
+- 0 missing Finish descriptions.
+- 0 invalid image paths.
+- 0 broken image references.
+- 0 legacy JPG/JPEG references.
+
+Text-only Start and Finish phases are acceptable and should be reported honestly.
+
+## Do not claim simulator testing
+
+The previous simulator test was blocked at the sign-in screen. Do not report simulator coverage as passed unless an authenticated development session is actually available.
+
+If authentication remains unavailable:
+
+- Keep simulator results marked NOT TESTED.
+- Do not create an account.
+- Do not change database data.
+- Do not bypass authentication.
+- Complete all source-level and static validation possible.
+- Report the exact remaining manual test matrix.
+
+## Final report
+
+Return:
+
+### Mapping decisions
+
+For each of the 12 mappings, state:
+
+- Kept with reason, or
+- Removed and converted to text-only.
+
+### Phase decisions
+
+For each of the 23 phase-review exercises, state:
+
+- Image pose observed.
+- Final text decision.
+- Whether the image was retained, changed, or removed.
+
+### Validation
+
+Include exact output for:
+
+```text
+TypeScript:
+Guidance validator:
+Canonical entries:
+Guidance entries:
+Missing entries:
+Orphan entries:
+Duplicate keys:
+Case mismatches:
+Invalid image paths:
+Legacy JPG/JPEG references:
+```
+
+### Simulator
+
+Report each item as PASS, FAIL, or NOT TESTED:
+
+- Bench Press
+- Squat
+- Kettlebell Swing
+- Image-backed exercise
+- Text-only fallback exercise
+- Advanced exercise
+- Long-name exercise
+- Strength category
+- Cardio category
+- Repeated open/close
+- Small Android layout
+- Scroll and Close-button behavior
+
+### Final recommendation
+
+Use exactly one:
+
+```text
+READY FOR COMMIT
+```
+
+or
+
+```text
+NOT READY — FIXES REQUIRED
+```
+
+Only use READY FOR COMMIT if:
+- All mappings are resolved.
+- All image-to-caption mismatches are resolved.
+- TypeScript and the guidance validator pass.
+- No broken or misleading image references remain.
+
+Do not commit, push, merge, or build.
