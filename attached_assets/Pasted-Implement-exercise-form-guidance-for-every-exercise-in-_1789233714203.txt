@@ -1,0 +1,190 @@
+Implement exercise form guidance for every exercise in the Beluga Fit app.
+
+Project context:
+- React Native with Expo SDK 53
+- TypeScript
+- Supabase
+- The guidance-image-assets work has already been merged into main.
+- Exercise guidance currently works for Bench Press, Squat, and Kettlebell Swing.
+- Exercise names in the database and static exercise data use exact Title Case.
+- Do not use toLowerCase() for exercise-name lookups.
+- Preserve the existing working guidance modal and its visual design.
+
+Goal:
+Give every exercise a complete form guide containing:
+1. Start image
+2. Mid-phase text description
+3. Finish image
+4. Coaching tips
+
+Important:
+- Do not generate or invent misleading exercise images.
+- Use the existing approved guidance images where they exist.
+- For exercises without approved images, create a clearly defined fallback strategy rather than referencing missing files.
+- The Mid phase should remain text-only unless an approved Mid image is specifically available.
+- Every exercise must have usable Start and Finish guidance. If an approved image is unavailable, use a safe text-only fallback or an explicitly approved generic fallback; do not create broken image references.
+- Do not change exercise names or database values.
+- Do not modify workout tracking, timers, Supabase queries, RLS behavior, personal records, or exercise progression logic.
+
+First inspect the current implementation:
+- src/components/ExerciseFormModal.tsx
+- src/data/exerciseGuidance.ts
+- src/data/exercises.ts
+- assets/
+- Any screen that opens ExerciseFormModal
+- The current Git history and existing guidance-image changes
+
+Then implement the following.
+
+1. Audit all exercises
+
+Build a complete list of all exercises from the canonical static exercise list and/or the current database-compatible exercise list.
+
+For every exercise, identify:
+- Exact Title Case exercise name
+- Category
+- Primary muscle group
+- Equipment
+- Whether approved Start and Finish images exist
+- Whether approved Mid image exists
+- Whether text-only guidance is required
+
+Do not create duplicate exercise entries caused by capitalization differences.
+
+2. Expand the guidance data model
+
+Update src/data/exerciseGuidance.ts so every exercise has a guidance entry using a consistent type, for example:
+
+- exerciseName
+- startImage, optional
+- startDescription
+- midImage, optional
+- midDescription
+- finishImage, optional
+- finishDescription
+- coachingTips
+- guidanceAvailable or fallbackMode if needed
+
+Use exact Title Case names matching the database and static exercise data.
+
+Keep the existing working entries for:
+- Bench Press
+- Squat
+- Kettlebell Swing
+
+Improve them only if necessary to match the final shared type.
+
+3. Add guidance for every exercise
+
+For every exercise:
+- Add a Start description explaining setup and starting position.
+- Add a Mid description explaining the movement, control, alignment, and breathing.
+- Add a Finish description explaining the end position and safe completion.
+- Add 2–4 exercise-specific coaching tips.
+- Use concise, practical wording suitable for a mobile modal.
+- Avoid claiming medical or therapeutic benefits.
+- Avoid unsafe absolute statements.
+- Do not provide advice that conflicts with normal safe lifting technique.
+
+Descriptions must be specific to the exercise. Do not use the same generic text for every exercise.
+
+4. Handle images safely
+
+Use the existing approved local assets and mappings wherever available.
+
+For exercises without approved Start or Finish images:
+- Do not reference nonexistent assets.
+- Do not use a misleading image from another exercise.
+- Use a text-only fallback card for that phase, or use an explicitly documented generic fallback only if it is genuinely appropriate.
+- Keep the UI stable when an image is missing.
+
+The modal must render correctly for all combinations:
+- Start image + description
+- Start text only
+- Mid text only
+- Mid image + description if available
+- Finish image + description
+- Finish text only
+
+Use conditional rendering and verify that missing images do not leave broken-image icons, empty image boxes, or layout gaps.
+
+5. Preserve and improve the modal
+
+Keep the current visual style:
+- Exercise title and muscle-group label
+- Color-coded Start, Mid, and Finish sections
+- Scrollable content
+- Coaching tips
+- Close button
+
+Make sure:
+- Long descriptions wrap correctly.
+- Long exercise names do not overlap.
+- The modal works on small Android screens.
+- Images use resizeMode="contain".
+- The modal can be opened and closed repeatedly.
+- The Close button remains reachable after scrolling.
+- Text-only phases have appropriate spacing and styling.
+
+6. Add validation
+
+Add development-time validation that detects:
+- Exercise entries missing from exerciseGuidance.ts
+- Guidance entries that do not correspond to a canonical exercise
+- Duplicate exercise names
+- Missing startDescription, midDescription, or finishDescription
+- Image paths that do not exist
+- Case mismatches in exercise names
+
+Do not make validation crash production users. It may log clear warnings in development.
+
+If practical, add a small script or test that reports the audit results.
+
+7. Test the implementation
+
+Run:
+
+npx tsc --noEmit
+
+Then test the guidance modal using:
+- Bench Press
+- Squat
+- Kettlebell Swing
+- At least three exercises that currently lack guidance images
+- At least one exercise with text-only Start or Finish fallback
+- At least one long exercise name
+- Multiple exercises from different categories
+
+Confirm:
+- Every canonical exercise opens a form guide.
+- Every guide has Start text, Mid text, and Finish text.
+- Approved images load correctly.
+- Missing images do not create broken references.
+- The modal remains scrollable and usable.
+- Existing workout behavior is unchanged.
+
+8. Keep the change focused
+
+Do not:
+- Change Supabase schema
+- Change RLS policies
+- Change exercise-name casing
+- Change workout-session logic
+- Change timers
+- Change personal-record logic
+- Start an EAS build
+- Modify unrelated screens
+- Commit secrets, tokens, or generated credentials
+
+Before finishing, report:
+- Number of canonical exercises found
+- Number of complete guidance entries
+- Number using approved Start images
+- Number using approved Finish images
+- Number using text-only fallbacks
+- Number of missing or unresolved exercises
+- Files changed
+- TypeScript validation result
+- Any exercises that still need manually approved artwork
+
+Do not create an Android build yet. Only implement and validate the code in Replit.
