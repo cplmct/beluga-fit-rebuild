@@ -160,6 +160,31 @@ const GUIDANCE_COPY: Record<string, GuidanceCopy> = {
  * Squat artwork is reused.
  */
 const IMAGE_SOURCES: Record<string, { start?: ImageSourcePropType; finish?: ImageSourcePropType }> = {
+  'Upright Row': {
+    start: require('../../assets/guidance/upright-row-start.webp'),
+    finish: require('../../assets/guidance/upright-row-finish.webp'),
+  },
+  'Cable Lateral Raises': {
+    start: require('../../assets/guidance/cable-lateral-raises-start.webp'),
+    finish: require('../../assets/guidance/cable-lateral-raises-finish.webp'),
+  },
+  'Kettlebell Press': {
+    start: require('../../assets/guidance/kettlebell-press-start.webp'),
+    finish: require('../../assets/guidance/kettlebell-press-finish.webp'),
+  },
+  'Kettlebell Halo': {
+    start: require('../../assets/guidance/kettlebell-halo-start.webp'),
+    finish: require('../../assets/guidance/kettlebell-halo-finish.webp'),
+  },
+  'Kettlebell Front Raise': {
+    start: require('../../assets/guidance/kettlebell-front-raise-start.webp'),
+    finish: require('../../assets/guidance/kettlebell-front-raise-finish.webp'),
+  },
+  'Handstand Push-ups': {
+    start: require('../../assets/guidance/handstand-push-ups-start.webp'),
+    finish: require('../../assets/guidance/handstand-push-ups-finish.webp'),
+  },
+  'Archer Push-ups': { start: require('../../assets/guidance/archer-push-ups-start.webp'), finish: require('../../assets/guidance/archer-push-ups-finish.webp') },
   'Bench Press': { start: require('../../assets/guidance/barbell-bench-press-start.webp'), finish: require('../../assets/guidance/barbell-bench-press-finish.webp') },
   'Incline Bench Press': { start: require('../../assets/guidance/incline-bench-press-start.webp'), finish: require('../../assets/guidance/incline-bench-press-finish.webp') },
   'Decline Bench Press': { start: require('../../assets/guidance/decline-bench-press-start.webp'), finish: require('../../assets/guidance/decline-bench-press-finish.webp') },
@@ -192,7 +217,14 @@ const IMAGE_SOURCES: Record<string, { start?: ImageSourcePropType; finish?: Imag
   'Kettlebell Good Morning': { start: require('../../assets/guidance/kettlebell-good-morning-start.webp'), finish: require('../../assets/guidance/kettlebell-good-morning-finish.webp') },
   'Typewriter Pull-ups': { start: require('../../assets/guidance/typewriter-pull-ups-start.webp'), finish: require('../../assets/guidance/typewriter-pull-ups-finish.webp') },
   'Australian Pull-ups': { start: require('../../assets/guidance/australian-pull-ups-start.webp'), finish: require('../../assets/guidance/australian-pull-ups-finish.webp') },
-  'Overhead Press': { start: require('../../assets/guidance/barbell-overhead-press-start.webp'), finish: require('../../assets/guidance/barbell-overhead-press-finish.webp') },
+  'Overhead Press': {
+    start: require('../../assets/guidance/military-press-start.webp'),
+    finish: require('../../assets/guidance/military-press-finish.webp'),
+  },
+  'Military Press': {
+    start: require('../../assets/guidance/military-press-start.webp'),
+    finish: require('../../assets/guidance/military-press-finish.webp'),
+  },
   'Dumbbell Shoulder Press': { start: require('../../assets/guidance/dumbbell-shoulder-press-start.webp'), finish: require('../../assets/guidance/dumbbell-shoulder-press-finish.webp') },
   'Arnold Press': { start: require('../../assets/guidance/arnold-press-start.webp'), finish: require('../../assets/guidance/arnold-press-finish.webp') },
   'Lateral Raises': { start: require('../../assets/guidance/lateral-raise-start.webp'), finish: require('../../assets/guidance/lateral-raise-finish.webp') },
