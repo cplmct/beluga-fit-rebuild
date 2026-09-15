@@ -1,0 +1,188 @@
+Perform a complete pre-production audit of the Beluga Fit React Native app.
+
+Project context:
+- React Native with Expo SDK 53
+- TypeScript
+- Supabase with authenticated client and active RLS
+- EAS production builds
+- Repository: cplmct/beluga-fit-rebuild
+- Current branch must be main
+- Expected commit: 84c242c
+- Recent change: complete exercise guidance artwork and IMAGE_SOURCES mappings
+
+IMPORTANT RULES:
+1. Do not modify, create, delete, rename, or auto-format any files.
+2. Do not install or upgrade dependencies.
+3. Do not run git reset, git clean, git checkout on another branch, or any destructive command.
+4. Do not start an EAS production build.
+5. Do not push commits or change GitHub.
+6. This is an audit only. Report issues and recommended fixes without applying them.
+7. Preserve the current working tree exactly as found.
+
+PHASE 1 — Git and repository state
+
+Run and report:
+
+git branch --show-current
+git status --short
+git log -1 --oneline
+git rev-parse HEAD
+git rev-parse origin/main
+
+Verify:
+- Current branch is main.
+- HEAD is 84c242c.
+- HEAD matches origin/main.
+- Working tree is clean.
+- No temporary .bak files, generated files, or untracked files are present.
+
+PHASE 2 — Required automated checks
+
+Run these commands exactly:
+
+npx tsc --noEmit
+npm run validate:guidance
+
+Report the complete output and whether each check passes.
+
+Expected guidance results:
+- Canonical entries: 112
+- Guidance entries: 112
+- Start images: 112
+- Fully text-only fallbacks: 0
+- Guidance validation passed.
+
+If any result differs, investigate and report why. Do not modify the files.
+
+PHASE 3 — Guidance source integrity
+
+Inspect:
+- src/data/exercises.ts
+- src/data/exerciseGuidance.ts
+- scripts/validate-guidance.js
+- assets/guidance/
+
+Verify:
+- Every canonical exercise has guidance text.
+- Every canonical exercise has an IMAGE_SOURCES mapping.
+- Every literal require(...) path points to an existing file.
+- No dynamic require(...) calls exist.
+- No stale or case-mismatched image keys exist.
+- No old references remain to:
+  - barbell-overhead-press-start.webp
+  - barbell-overhead-press-finish.webp
+  - archer-push-ups-right-finish.webp
+- The replacement files exist:
+  - military-press-start.webp
+  - military-press-finish.webp
+  - archer-push-ups-finish.webp
+- The six newly added exercise pairs exist:
+  - upright-row-start.webp / upright-row-finish.webp
+  - cable-lateral-raises-start.webp / cable-lateral-raises-finish.webp
+  - kettlebell-press-start.webp / kettlebell-press-finish.webp
+  - kettlebell-halo-start.webp / kettlebell-halo-finish.webp
+  - kettlebell-front-raise-start.webp / kettlebell-front-raise-finish.webp
+  - handstand-push-ups-start.webp / handstand-push-ups-finish.webp
+
+Also verify that these two canonical exercises intentionally share the same artwork:
+- Overhead Press
+- Military Press
+
+Verify that Kettlebell Floor Press remains separate from Kettlebell Press.
+
+PHASE 4 — Static asset and bundling audit
+
+Check every image reference in exerciseGuidance.ts:
+- The path is relative to the source file correctly.
+- The file extension matches the actual file.
+- The referenced file exists.
+- The asset is inside assets/guidance/.
+- There are no accidental references to files outside the repository.
+- There are no duplicate mappings that unintentionally point different exercises to the wrong artwork.
+
+Confirm that Expo/React Native static require(...) usage is compatible with the current project configuration. Do not replace require(...) calls with dynamic paths.
+
+PHASE 5 — TypeScript and project configuration audit
+
+Inspect:
+- package.json
+- tsconfig.json
+- app.json or app.config.*
+- eas.json
+- babel.config.*
+- metro.config.*
+- package-lock.json or other lockfile
+
+Verify:
+- Expo SDK and React Native dependencies are internally compatible.
+- TypeScript configuration is valid.
+- EAS production configuration uses the intended Android app-bundle output.
+- Node version configuration is consistent with the project requirements.
+- No missing scripts or broken references exist.
+- No accidental dependency changes were introduced by the artwork update.
+
+Run only safe validation commands that do not modify files. If an additional command is necessary, explain it before running it.
+
+PHASE 6 — Source-level regression scan
+
+Search for:
+- references to the old image filenames
+- broken import paths
+- unresolved TODO/FIXME items related to guidance
+- duplicate exercise names
+- lowercased exercise-name database lookups
+- references to the old database tables workouts, workout_exercises, or ai_workout_plans in active production code
+- unauthenticated Supabase client usage
+- hardcoded secrets or credentials
+
+Do not treat intentional duplicate catalog names as errors:
+- Pike Push-ups
+- Diamond Push-ups
+- Muscle-ups
+- Wall Walk
+
+Do not make unrelated refactoring changes.
+
+PHASE 7 — Runtime smoke-test plan
+
+If a simulator or Expo preview is available, do a read-only smoke test of:
+1. App startup.
+2. Exercise catalog loading.
+3. An exercise with existing artwork.
+4. Archer Push-ups.
+5. Military Press.
+6. Overhead Press.
+7. Upright Row.
+8. Cable Lateral Raises.
+9. Kettlebell Press.
+10. Kettlebell Halo.
+11. Kettlebell Front Raise.
+12. Handstand Push-ups.
+13. Kettlebell Floor Press.
+14. An exercise that intentionally uses a text-only phase.
+
+For each exercise verify:
+- The correct exercise name appears.
+- Guidance text loads.
+- Start image loads.
+- Finish image loads.
+- No red screen, require error, missing asset error, or navigation error occurs.
+- Kettlebell Press does not incorrectly display Kettlebell Floor Press artwork.
+- Military Press and Overhead Press display the intended shared artwork.
+
+If a simulator is not available, state that clearly and provide the exact manual smoke-test checklist instead. Do not claim runtime testing was completed if it was not.
+
+PHASE 8 — Production-readiness report
+
+At the end, provide a concise report with these sections:
+
+1. Overall status: READY, READY WITH WARNINGS, or NOT READY.
+2. Git status and commit verification.
+3. Automated check results.
+4. Guidance and asset audit.
+5. Runtime smoke-test results.
+6. Blocking issues.
+7. Non-blocking warnings.
+8. Exact recommended next steps before the production EAS build.
+
+Do not modify any files. Do not build or publish the app. Only report findings.
