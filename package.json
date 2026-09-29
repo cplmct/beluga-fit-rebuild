@@ -14,7 +14,8 @@
     "web": "expo start --web",
     "build:web": "expo export --platform web",
     "type-check": "tsc --noEmit",
-    "validate:guidance": "node scripts/validate-guidance.js"
+    "validate:guidance": "node scripts/validate-guidance.js",
+    "test:weight-units": "node scripts/test-weight-units.js"
   },
   "dependencies": {
     "@expo/metro-runtime": "~5.0.5",
