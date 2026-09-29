@@ -11,6 +11,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useUnits } from '../contexts/UnitsContext';
+import { kgToDisplayWeight } from '../utils/weightUnits';
 
 interface PRRecord {
   exerciseId: string;
@@ -200,7 +201,7 @@ export function PRHistoryScreen({ navigation }: any) {
           ) : null}
           {item.maxWeight !== null && (
             <View style={styles.weightChip}>
-              <Text style={styles.weightText}>🏆 {item.maxWeight} {weightUnit}</Text>
+              <Text style={styles.weightText}>🏆 {kgToDisplayWeight(item.maxWeight, weightUnit)} {weightUnit}</Text>
             </View>
           )}
           {item.maxReps !== null && (

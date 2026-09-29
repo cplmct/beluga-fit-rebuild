@@ -18,6 +18,7 @@ import { LineChart } from 'react-native-chart-kit';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useUnits } from '../contexts/UnitsContext';
+import { kgToDisplayWeight } from '../utils/weightUnits';
 
 interface BodyMeasurement {
   id: string;
@@ -428,7 +429,7 @@ export function BodyTrackerScreen() {
                 <Text style={styles.measurementTime}>{formatTime(m.created_at)}</Text>
               </View>
               <View style={styles.measurementGrid}>
-                {m.weight      != null && <MeasurementItem label="Weight"   value={`${m.weight} ${weightUnit}`} />}
+                {m.weight      != null && <MeasurementItem label="Weight"   value={`${kgToDisplayWeight(m.weight, weightUnit)} ${weightUnit}`} />}
                 {m.waist       != null && <MeasurementItem label="Waist"    value={`${m.waist} ${lengthUnit}`} />}
                 {m.height      != null && <MeasurementItem label="Height"   value={`${m.height} ${lengthUnit}`} />}
                 {m.chest       != null && <MeasurementItem label="Chest"    value={`${m.chest} ${lengthUnit}`} />}

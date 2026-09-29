@@ -14,11 +14,13 @@ import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useUnits } from '../contexts/UnitsContext';
+import { profileWeightForUnit, profileWeightToKg } from '../utils/weightUnits';
 
 interface ProfileData {
   name: string;
   height: string;
   weight: string;
+  weightInputUnit: string;
   gender: string;
   age: string;
 }
@@ -143,6 +145,7 @@ export function ProfileScreen() {
     name: '',
     height: '',
     weight: '',
+    weightInputUnit: 'kg',
     gender: '',
     age: '',
   });
@@ -154,6 +157,7 @@ export function ProfileScreen() {
   const memberSince = formatMemberSince(user?.created_at);
   const initials = getInitials(profile.name, authEmail);
   const displayName = profile.name.trim() || authEmail.split('@')[0] || 'Your Name';
+  const displayWeight = profileWeightForUnit(profile.weight, profile.weightInputUnit, weightUnit);
 
   useFocusEffect(
     useCallback(() => {
@@ -180,6 +184,7 @@ export function ProfileScreen() {
           name: profileRes.data.name || '',
           height: profileRes.data.height?.toString() || '',
           weight: profileRes.data.weight?.toString() || '',
+          weightInputUnit: 'kg',
           gender: profileRes.data.gender || '',
           age: profileRes.data.age?.toString() || '',
         });
@@ -204,7 +209,7 @@ export function ProfileScreen() {
         .update({
           name: profile.name.trim() || null,
           height: profile.height ? parseFloat(profile.height) : null,
-          weight: profile.weight ? parseFloat(profile.weight) * (weightUnit === 'lbs' ? 0.453592 : 1) : null,
+          weight: profileWeightToKg(profile.weight, profile.weightInputUnit),
           gender: profile.gender.trim() || null,
           age: profile.age ? parseInt(profile.age, 10) : null,
           updated_at: new Date().toISOString(),
@@ -324,8 +329,8 @@ export function ProfileScreen() {
               />
               <FieldInput
                 label={`Weight (${weightUnit})`}
-                value={profile.weight}
-                onChange={(t) => setProfile((p) => ({ ...p, weight: t }))}
+                value={displayWeight}
+                onChange={(t) => setProfile((p) => ({ ...p, weight: t, weightInputUnit: weightUnit }))}
                 keyboardType="numeric"
                 editable={!saving}
               />

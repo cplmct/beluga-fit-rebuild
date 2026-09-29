@@ -10,6 +10,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useUnits } from '../contexts/UnitsContext';
+import { kgToDisplayWeight } from '../utils/weightUnits';
 
 interface StatsData {
   thisMonth: {
@@ -338,10 +339,13 @@ export function StatsScreen({ navigation }: any) {
     );
   }
 
-  const weightChange =
+  const weightChangeKg =
     stats.bodyWeight.latest !== null && stats.bodyWeight.previous !== null
       ? stats.bodyWeight.latest - stats.bodyWeight.previous
       : null;
+  const weightChange = weightChangeKg !== null
+    ? kgToDisplayWeight(weightChangeKg, weightUnit)
+    : null;
 
   const monthName = new Date().toLocaleDateString('en-US', { month: 'long' });
 
@@ -395,7 +399,7 @@ export function StatsScreen({ navigation }: any) {
                     {pr.name}
                   </Text>
                   <Text style={styles.prWeight}>
-                    {pr.weight} <Text style={styles.prUnit}>{weightUnit}</Text>
+                    {kgToDisplayWeight(pr.weight, weightUnit)} <Text style={styles.prUnit}>{weightUnit}</Text>
                   </Text>
                 </View>
               ))}
@@ -411,7 +415,7 @@ export function StatsScreen({ navigation }: any) {
               <View style={styles.weightRow}>
                 <View>
                   <Text style={styles.weightValue}>
-                    {stats.bodyWeight.latest}{' '}
+                    {kgToDisplayWeight(stats.bodyWeight.latest, weightUnit)}{' '}
                     <Text style={styles.weightUnit}>{weightUnit}</Text>
                   </Text>
                   {stats.bodyWeight.latestDate && (

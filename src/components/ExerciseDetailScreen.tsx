@@ -444,7 +444,7 @@ export function ExerciseDetailScreen({ route, navigation }: any) {
               {item.sets.map((s) => (
                 <Text key={s.setNumber} style={styles.setRow}>
                   Set {s.setNumber}: {s.reps ?? '—'} reps
-                  {s.weightKg !== null ? ` @ ${s.weightKg} ${weightUnit}` : ''}
+                  {s.weightKg != null ? ` @ ${formatWeightForDisplay(s.weightKg, weightUnit)}` : ''}
                   {s.isPr ? ' 🏆' : ''}
                 </Text>
               ))}
