@@ -14,7 +14,7 @@ interface WorkoutExercise {
   exercise_name: string;
   body_part: string;
   sets: number;
-  reps: number;
+  reps: number | null;
   weight: number | null;
   completed: boolean;
   is_pr: boolean;
@@ -151,7 +151,7 @@ export function WorkoutDetailsScreen({ route, navigation }: any) {
           exercise_name: se.exercises?.name || 'Unknown exercise',
           body_part: bodyPart,
           sets: sortedSets.length,
-          reps: firstSet?.reps ?? 0,
+          reps: firstSet?.reps ?? null,
           weight: firstSet?.weight_kg ?? null,
           completed: sortedSets.length > 0 && sortedSets.every((s) => s.is_completed === true),
           is_pr: sortedSets.some((s) => s.is_pr === true),
@@ -318,7 +318,7 @@ export function WorkoutDetailsScreen({ route, navigation }: any) {
                 </View>
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>Reps</Text>
-                  <Text style={styles.detailValue}>{exercise.reps}</Text>
+                  <Text style={styles.detailValue}>{exercise.reps ?? 'Not recorded'}</Text>
                 </View>
                 {exercise.weight != null && (
                   <View style={styles.detailItem}>

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { WORKOUT_TEMPLATES } from '../data/workoutTemplates';
 import { ExerciseSelection } from '../data/exercises';
+import { repsTarget } from '../utils/workoutTarget';
 
 export function WorkoutTemplatesScreen({ navigation }: any) {
   const handleTemplateSelect = (templateId: string) => {
@@ -10,6 +11,7 @@ export function WorkoutTemplatesScreen({ navigation }: any) {
 
     const selectedExercises: ExerciseSelection[] = template.exercises.map((ex) => ({
       ...ex,
+      target: repsTarget(ex.reps ?? NaN),
       selected: true,
     }));
 

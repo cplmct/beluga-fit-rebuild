@@ -407,8 +407,8 @@ export function ExerciseDetailScreen({ route, navigation }: any) {
                         {formatShortDate(item.date)}
                       </Text>
                       <Text style={styles.progressionDetail}>
-                        {formatWeightForDisplay(weight, weightUnit)}{' '}
-                        × {reps ?? '—'} reps
+                         {formatWeightForDisplay(weight, weightUnit)}{' '}
+                         {reps == null ? '· Reps not recorded' : `× ${reps} reps`}
                       </Text>
                       {item.hasPr && (
                         <View style={styles.prBadge}>
@@ -443,7 +443,7 @@ export function ExerciseDetailScreen({ route, navigation }: any) {
               </View>
               {item.sets.map((s) => (
                 <Text key={s.setNumber} style={styles.setRow}>
-                  Set {s.setNumber}: {s.reps ?? '—'} reps
+                   Set {s.setNumber}: {s.reps == null ? 'Reps not recorded' : `${s.reps} reps`}
                   {s.weightKg != null ? ` @ ${formatWeightForDisplay(s.weightKg, weightUnit)}` : ''}
                   {s.isPr ? ' 🏆' : ''}
                 </Text>

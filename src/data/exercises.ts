@@ -1,3 +1,5 @@
+import type { WorkoutTarget } from '../utils/workoutTarget';
+
 export const BODY_PARTS = [
   'Chest',
   'Back',
@@ -155,7 +157,9 @@ export interface ExerciseSelection {
   category: 'Strength' | 'Cardio' | 'Mobility';
   equipment: string;
   sets: number;
-  reps: number;
+  /** Legacy numeric field; never populated with seconds or steps. */
+  reps?: number;
+  target?: WorkoutTarget;
   weight: string;
   selected: boolean;
 }

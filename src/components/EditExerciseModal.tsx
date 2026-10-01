@@ -9,28 +9,30 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { WorkoutTarget, formatWorkoutTarget } from '../utils/workoutTarget';
 
 interface EditExerciseModalProps {
   visible: boolean;
   sets: number;
-  reps: number;
+  target: WorkoutTarget;
   weight: string;
   weightUnit: string;
-  onSave: (sets: number, reps: number, weight: string) => void;
+  onSave: (sets: number, target: WorkoutTarget, weight: string) => void;
   onCancel: () => void;
 }
 
 export function EditExerciseModal({
   visible,
   sets,
-  reps,
+  target,
   weight,
   weightUnit,
   onSave,
   onCancel,
 }: EditExerciseModalProps) {
   const [setsStr, setSetsStr] = useState('');
-  const [repsStr, setRepsStr] = useState('');
+  const [targetStr, setTargetStr] = useState('');
+  const [targetKind, setTargetKind] = useState<WorkoutTarget['kind']>('reps');
   const [weightStr, setWeightStr] = useState('');
   const [error, setError] = useState('');
 
@@ -38,30 +40,37 @@ export function EditExerciseModal({
   useEffect(() => {
     if (visible) {
       setSetsStr(String(sets));
-      setRepsStr(String(reps));
+      setTargetKind(target.kind);
+      setTargetStr(target.kind === 'unknown' ? target.raw : String(target.value));
       setWeightStr(weight ?? '');
       setError('');
     }
   }, [visible]);
 
   const handleSave = () => {
-    const parsedSets = parseInt(setsStr, 10);
-    const parsedReps = parseInt(repsStr, 10);
+    const parsedSets = Number(setsStr);
 
-    if (isNaN(parsedSets) || parsedSets < 1) {
+    if (!/^[0-9]+$/.test(setsStr) || !Number.isSafeInteger(parsedSets) || parsedSets < 1) {
       setError('Sets must be a whole number of at least 1.');
       return;
     }
-    if (isNaN(parsedReps) || parsedReps < 1) {
-      setError('Reps must be a whole number of at least 1.');
-      return;
+    let nextTarget: WorkoutTarget;
+    if (targetKind === 'unknown') {
+      nextTarget = { kind: 'unknown', raw: targetStr, origin: 'edit' };
+    } else {
+      const value = Number(targetStr);
+      if (!/^[0-9]+$/.test(targetStr) || !Number.isSafeInteger(value) || value < 1) {
+        setError('Target must be a positive whole number.');
+        return;
+      }
+      nextTarget = { kind: targetKind, value };
     }
     if (weightStr !== '' && isNaN(parseFloat(weightStr))) {
       setError('Weight must be a number, or leave it blank.');
       return;
     }
 
-    onSave(parsedSets, parsedReps, weightStr);
+    onSave(parsedSets, nextTarget, weightStr);
   };
 
   return (
@@ -80,12 +89,33 @@ export function EditExerciseModal({
 
           <View style={styles.header}>
             <Text style={styles.title}>Edit Exercise</Text>
-            <Text style={styles.subtitle}>Adjust sets, reps, and weight</Text>
+            <Text style={styles.subtitle}>Adjust sets, target, and weight</Text>
           </View>
 
           <View style={styles.fields}>
+            <View style={styles.targetKinds}>
+              {(['reps', 'seconds', 'steps'] as const).map((kind) => (
+                <TouchableOpacity
+                  key={kind}
+                  testID={`target-kind-${kind}`}
+                  style={[styles.kindButton, targetKind === kind && styles.kindButtonActive]}
+                  onPress={() => {
+                    if (targetKind !== kind) {
+                      setTargetKind(kind);
+                      setTargetStr(''); // A kind change needs an explicit new value.
+                      setError('');
+                    }
+                  }}
+                >
+                  <Text style={styles.kindButtonText}>{kind}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {targetKind === 'unknown' && (
+              <Text style={styles.subtitle}>Unsupported target: {formatWorkoutTarget(target)}. Choose a kind to replace it.</Text>
+            )}
             <View style={styles.row}>
-              <View style={[styles.fieldGroup, styles.fieldGroupNarrow]}>
+              <View style={styles.fieldGroup}>
                 <Text style={styles.fieldLabel}>Sets</Text>
                 <TextInput
                   style={styles.input}
@@ -97,19 +127,20 @@ export function EditExerciseModal({
                 />
               </View>
 
-              <View style={[styles.fieldGroup, styles.fieldGroupNarrow]}>
-                <Text style={styles.fieldLabel}>Reps</Text>
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>Target ({targetKind})</Text>
                 <TextInput
                   style={styles.input}
-                  value={repsStr}
-                  onChangeText={(v) => { setRepsStr(v); setError(''); }}
-                  keyboardType="number-pad"
+                  testID="exercise-target-value"
+                  value={targetStr}
+                  onChangeText={(v) => { setTargetStr(v); setError(''); }}
+                  keyboardType={targetKind === 'unknown' ? 'default' : 'number-pad'}
                   selectTextOnFocus
-                  maxLength={3}
+                  maxLength={targetKind === 'unknown' ? 60 : 8}
                 />
               </View>
 
-              <View style={[styles.fieldGroup, styles.fieldGroupWide]}>
+              <View style={styles.fieldGroup}>
                 <Text style={styles.fieldLabel}>Weight ({weightUnit})</Text>
                 <TextInput
                   style={styles.input}
@@ -196,28 +227,51 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 8,
   },
+  targetKinds: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 14,
+  },
+  kindButton: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+  },
+  kindButtonActive: {
+    borderColor: '#2563eb',
+    backgroundColor: '#dbeafe',
+  },
+  kindButtonText: {
+    fontSize: 13,
+    color: '#0f172a',
+    fontWeight: '600',
+    textTransform: 'capitalize',
+  },
   row: {
     flexDirection: 'row',
     gap: 10,
   },
   fieldGroup: {
     flex: 1,
-  },
-  fieldGroupNarrow: {
-    flex: 1,
-  },
-  fieldGroupWide: {
-    flex: 2,
+    flexBasis: 0,
+    minWidth: 0,
   },
   fieldLabel: {
     fontSize: 12,
     fontWeight: '600',
     color: '#64748b',
+    height: 36,
+    lineHeight: 16,
     marginBottom: 6,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
   input: {
+    width: '100%',
+    height: 48,
     borderWidth: 1.5,
     borderColor: '#e2e8f0',
     borderRadius: 10,

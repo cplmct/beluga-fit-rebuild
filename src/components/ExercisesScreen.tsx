@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
 import { EXERCISES, BodyPart, ExerciseSelection, Category, CATEGORIES } from '../data/exercises';
+import { repsTarget } from '../utils/workoutTarget';
 import { useUnits } from '../contexts/UnitsContext';
 import { ExerciseFormModal } from './ExerciseFormModal';
 import { EXERCISE_GUIDANCE } from '../data/exerciseGuidance';
@@ -19,6 +20,7 @@ export function ExercisesScreen({ route, navigation }: any) {
           equipment: exercise.equipment,
           sets: 3,
           reps: 10,
+          target: repsTarget(10),
           weight: '',
           selected: false,
         });
@@ -46,7 +48,9 @@ export function ExercisesScreen({ route, navigation }: any) {
 
   const updateReps = (index: number, delta: number) => {
     const updated = [...exercises];
-    updated[index].reps = Math.max(1, updated[index].reps + delta);
+    const reps = Math.max(1, (updated[index].reps ?? 10) + delta);
+    updated[index].reps = reps;
+    updated[index].target = repsTarget(reps);
     setExercises(updated);
   };
 

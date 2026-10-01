@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  Modal,
   ActivityIndicator,
   AppState,
   AppStateStatus,
@@ -33,11 +34,26 @@ import {
 } from '../utils/workoutSession';
 import { useSaveStatus } from '../hooks/useSaveStatus';
 import { SaveStatusBadge } from './SaveStatusBadge';
+import {
+  WorkoutTarget,
+  restoreWorkoutTarget,
+  formatWorkoutTarget,
+  formatWorkoutTargetLabel,
+  canSaveWorkoutTargets,
+  isMaxRepsPrCandidate,
+} from '../utils/workoutTarget';
 
 interface LastTimeData {
   sets: number;
-  reps: number;
+  reps: number | null;
   weight: number | null;
+}
+
+const UNSUPPORTED_SAVE_MESSAGE =
+  'Timed and step targets cannot be saved yet. Complete this workout using rep targets, or start a rep-based workout.';
+
+function getTarget(exercise: ExerciseSelection): WorkoutTarget {
+  return restoreWorkoutTarget(exercise.target, exercise.reps);
 }
 
 function formatDuration(seconds: number): string {
@@ -71,12 +87,20 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
   const { user } = useAuth();
   const { weightUnit } = useUnits();
 
-  const [exercises, setExercises] = useState<ExerciseSelection[]>(initialExercises);
+  const initialTargetedExercises = useRef<ExerciseSelection[]>(
+    initialExercises.map((exercise: ExerciseSelection) => ({
+      ...exercise,
+      target: getTarget(exercise),
+    }))
+  ).current;
+  const [exercises, setExercises] = useState<ExerciseSelection[]>(initialTargetedExercises);
   const [swapIndex, setSwapIndex] = useState<number | null>(null);
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [formIndex, setFormIndex] = useState<number | null>(null);
   const [completedSets, setCompletedSets] = useState<WorkoutSessionPayload['completedSets']>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [unsupportedFinishVisible, setUnsupportedFinishVisible] = useState(false);
+  const [completedWorkout, setCompletedWorkout] = useState<{ id: string; message: string } | null>(null);
   const [lastTimeMap, setLastTimeMap] = useState<Record<string, LastTimeData>>({});
   const [lastTimeLoading, setLastTimeLoading] = useState(true);
   const [restDuration] = useState(90);
@@ -89,6 +113,8 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
   // has been cleared, which would cause the Home resume banner to reappear
   // on the next app launch even though the workout finished correctly.
   const workoutFinishedRef = useRef(false);
+  // State updates are not synchronous; this ref closes the double-tap window.
+  const saveInProgressRef = useRef(false);
 
   // Save-confidence indicator — tracks the state of the most recent write.
   const saveStatus = useSaveStatus();
@@ -181,7 +207,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
     // Skip if the workout has already been saved and the session cleared.
     if (workoutFinishedRef.current) return;
     // Skip the initial empty state — no point persisting a blank session.
-    if (Object.keys(completedSets).length === 0 && exercises === initialExercises) return;
+    if (Object.keys(completedSets).length === 0 && exercises === initialTargetedExercises) return;
     saveWorkoutSession({
       exerciseNames: exercises.map((ex: ExerciseSelection) => ex.name),
       completedSets,
@@ -279,7 +305,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
         const firstSet = (ex.session_sets as any[])?.[0];
         map[exName] = {
           sets,
-          reps: firstSet?.reps || 0,
+          reps: firstSet?.reps ?? null,
           weight: firstSet?.weight_kg ?? null,
         };
       }
@@ -352,7 +378,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
             name: replacement.name,
             category: replacement.category,
             equipment: replacement.equipment,
-            // bodyPart preserved (same group), sets/reps/weight preserved
+            // Body part and typed target preserved for explicit review in the card.
           }
     );
     setExercises(updated);
@@ -366,10 +392,10 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
     haptic.light();
   };
 
-  const handleEditSave = (sets: number, reps: number, weight: string) => {
+  const handleEditSave = (sets: number, target: WorkoutTarget, weight: string) => {
     if (editIndex === null) return;
     const updated = exercises.map((ex, i) =>
-      i !== editIndex ? ex : { ...ex, sets, reps, weight }
+      i !== editIndex ? ex : { ...ex, sets, target, reps: target.kind === 'reps' ? target.value : undefined, weight }
     );
     setExercises(updated);
     setCompletedSets((previous) => {
@@ -390,7 +416,13 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
 
   // Core save logic — called after any confirmation guards pass.
   const doSaveWorkout = async () => {
-    if (!user) return;
+    if (saveInProgressRef.current || workoutFinishedRef.current || !user) return;
+    if (!canSaveWorkoutTargets(exercises.map(getTarget))) {
+      haptic.error();
+      setUnsupportedFinishVisible(true);
+      return;
+    }
+    saveInProgressRef.current = true;
     setIsSaving(true);
     saveStatus.setSaving();
     const durationSeconds = Math.floor((Date.now() - startTimeRef.current) / 1000);
@@ -565,11 +597,12 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
             weightKg > 0 &&
             weightKg > prevMax;
 
-          for (let setNum = 1; setNum <= exercise.sets; setNum++) {
+           const target = getTarget(exercise);
+           for (let setNum = 1; setNum <= exercise.sets; setNum++) {
             allSetRows.push({
               session_exercise_id: insertedEx.id,
               set_number: setNum,
-              reps: exercise.reps,
+              reps: target.kind === 'reps' ? target.value : null,
               weight_kg: weightKg,
               is_completed: completedSetNumbers.includes(setNum),
               is_pr: setNum === firstCompletedSetNumber && isPr,
@@ -630,12 +663,13 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
             }
 
             // max_reps — only upsert if new reps exceed current personal record
-            if (exercise.reps > (prRepsMap[exId] || 0)) {
+            const target = getTarget(exercise);
+            if (target.kind === 'reps' && isMaxRepsPrCandidate(target, prRepsMap[exId] || 0)) {
               prUpsertRows.push({
                 user_id: user.id,
                 exercise_id: exId,
                 record_type: 'max_reps',
-                value: exercise.reps,
+                value: target.value,
                 session_set_id: setId,
                 achieved_at: new Date().toISOString(),
               });
@@ -735,8 +769,9 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
                   .from('session_sets')
                   .select('reps')
                   .in('session_exercise_id', seIds);
-                newProgress = (setRows || []).reduce(
-                  (sum: number, r: any) => sum + (r.reps ?? 0),
+                 newProgress = (setRows || []).reduce(
+                   (sum: number, r: { reps: number | null }) =>
+                     typeof r.reps === 'number' ? sum + r.reps : sum,
                   0
                 );
               }
@@ -811,21 +846,19 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
         );
       }
 
+      // Latch before clearing local state or showing the confirmation; no
+      // second press may start another session after the first one is saved.
+      workoutFinishedRef.current = true;
       haptic.success();
       saveStatus.setSuccess();
-      workoutFinishedRef.current = true;
       await clearWorkoutSession();
-      Alert.alert('Workout Saved!', `Great job!\n\n${lines.join('\n')}`, [
-        {
-          text: 'OK',
-          onPress: () => navigation.navigate('WorkoutDetails', { workoutId: session.id }),
-        },
-      ]);
+      setCompletedWorkout({ id: session.id, message: `Great job!\n\n${lines.join('\n')}` });
     } catch (error: any) {
       haptic.error();
       saveStatus.setError(error);
       Alert.alert('Error', error.message || 'Failed to save workout.');
     } finally {
+      saveInProgressRef.current = false;
       setIsSaving(false);
     }
   };
@@ -842,11 +875,17 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
 
   // Guard wrapper — confirms before saving a partial workout.
   const handleFinishWorkout = () => {
-    if (isSaving || !user) return;
+    if (saveInProgressRef.current || workoutFinishedRef.current || isSaving || !user) return;
 
     if (exercises.length === 0) {
       haptic.error();
       Alert.alert('No exercises', 'Please select at least one exercise before finishing.');
+      return;
+    }
+
+    if (!canSaveWorkoutTargets(exercises.map(getTarget))) {
+      haptic.error();
+      setUnsupportedFinishVisible(true);
       return;
     }
 
@@ -865,6 +904,13 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
     void doSaveWorkout();
   };
 
+  const handleSavedWorkoutClose = () => {
+    if (!completedWorkout) return;
+    const workoutId = completedWorkout.id;
+    setCompletedWorkout(null);
+    navigation.navigate('WorkoutDetails', { workoutId });
+  };
+
   const formatWeightDisplay = (weight: string | number | null): string | null => {
     if (weight === null || weight === '') return null;
     const num = typeof weight === 'string' ? parseFloat(weight) : weight;
@@ -874,7 +920,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
 
   const formatLastTime = (data: LastTimeData): string => {
     // Only show sets×reps — weight excluded because unit provenance cannot be proven
-    return `${data.sets}×${data.reps}`;
+    return data.reps === null ? `${data.sets} sets · reps not recorded` : `${data.sets}×${data.reps}`;
   };
 
   return (
@@ -899,6 +945,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
 
         <View style={styles.exercisesList}>
           {exercises.map((exercise: ExerciseSelection, index: number) => {
+            const target = getTarget(exercise);
             const lastTime = lastTimeMap[exercise.name];
             const weightDisplay = formatWeightDisplay(exercise.weight);
             const exerciseCompletedSetCount = countCompletedSetsForExercise(
@@ -960,8 +1007,8 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
                     <Text style={styles.detailValue}>{exercise.sets}</Text>
                   </View>
                   <View style={styles.detailItem}>
-                    <Text style={styles.detailLabel}>Reps</Text>
-                    <Text style={styles.detailValue}>{exercise.reps}</Text>
+                    <Text style={styles.detailLabel}>Target</Text>
+                    <Text style={styles.detailValue}>{formatWorkoutTarget(target)}</Text>
                   </View>
                   {weightDisplay && (
                     <View style={styles.detailItem}>
@@ -1006,7 +1053,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
                           Set {setNumber}
                         </Text>
                         <Text style={styles.setTarget}>
-                          {exercise.reps} reps
+                          {formatWorkoutTargetLabel(target)}
                           {weightDisplay ? ` · ${weightDisplay}` : ''}
                         </Text>
                       </TouchableOpacity>
@@ -1072,7 +1119,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
       <EditExerciseModal
         visible={editIndex !== null}
         sets={editIndex !== null ? exercises[editIndex].sets : 3}
-        reps={editIndex !== null ? exercises[editIndex].reps : 10}
+        target={editIndex !== null ? getTarget(exercises[editIndex]) : { kind: 'reps', value: 10 }}
         weight={editIndex !== null ? (exercises[editIndex].weight ?? '') : ''}
         weightUnit={weightUnit}
         onSave={handleEditSave}
@@ -1095,6 +1142,48 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
       {/* Save confidence indicator — visible only while saving or if an error occurred */}
       <SaveStatusBadge status={saveStatus.status} />
 
+      <Modal
+        visible={unsupportedFinishVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setUnsupportedFinishVisible(false)}
+      >
+        <View style={styles.unsupportedFinishOverlay}>
+          <View style={styles.unsupportedFinishDialog}>
+            <Text style={styles.unsupportedFinishTitle}>Unable to finish workout</Text>
+            <Text style={styles.unsupportedFinishMessage}>{UNSUPPORTED_SAVE_MESSAGE}</Text>
+            <TouchableOpacity
+              style={styles.unsupportedFinishButton}
+              onPress={() => setUnsupportedFinishVisible(false)}
+              accessibilityRole="button"
+            >
+              <Text style={styles.unsupportedFinishButtonText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={completedWorkout !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={handleSavedWorkoutClose}
+      >
+        <View style={styles.unsupportedFinishOverlay}>
+          <View style={styles.unsupportedFinishDialog}>
+            <Text style={styles.unsupportedFinishTitle}>Workout Saved!</Text>
+            <Text style={styles.unsupportedFinishMessage}>{completedWorkout?.message}</Text>
+            <TouchableOpacity
+              style={styles.unsupportedFinishButton}
+              onPress={handleSavedWorkoutClose}
+              accessibilityRole="button"
+            >
+              <Text style={styles.unsupportedFinishButtonText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       <View style={styles.footer}>
         <TouchableOpacity
           style={styles.timerButton}
@@ -1103,9 +1192,9 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
           <Text style={styles.timerButtonText}>Rest Timer</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.finishButton, isSaving && styles.finishButtonDisabled]}
+          style={[styles.finishButton, (isSaving || workoutFinishedRef.current) && styles.finishButtonDisabled]}
           onPress={handleFinishWorkout}
-          disabled={isSaving}
+          disabled={isSaving || workoutFinishedRef.current}
         >
           {isSaving ? (
             <ActivityIndicator color="#fff" />
@@ -1119,6 +1208,43 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
 }
 
 const styles = StyleSheet.create({
+  unsupportedFinishOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  unsupportedFinishDialog: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
+  },
+  unsupportedFinishTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0f172a',
+    marginBottom: 12,
+  },
+  unsupportedFinishMessage: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: '#334155',
+    marginBottom: 24,
+  },
+  unsupportedFinishButton: {
+    backgroundColor: '#2563eb',
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  unsupportedFinishButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   container: {
     flex: 1,
     backgroundColor: '#f7f8fc',

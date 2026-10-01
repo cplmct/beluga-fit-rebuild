@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ExerciseSelection } from '../data/exercises';
+import { restoreWorkoutTarget } from './workoutTarget';
 
 const KEY = '@beluga_active_workout_v1';
 
@@ -122,6 +123,10 @@ export async function loadWorkoutSession(): Promise<WorkoutSessionPayload | null
 
     return {
       ...data,
+      exercises: data.exercises.map((exercise) => ({
+        ...exercise,
+        target: restoreWorkoutTarget(exercise.target, exercise.reps),
+      })),
       completedSets: normalizeCompletedSets(
         data.completedSets,
         data.completedExercises,

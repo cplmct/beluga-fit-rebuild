@@ -16,6 +16,7 @@ import {
   PlanExercise,
 } from '../data/workoutPlans';
 import { ExerciseSelection } from '../data/exercises';
+import { parseWorkoutTarget, formatWorkoutTargetLabel } from '../utils/workoutTarget';
 import {
   getActivePlan,
   setActivePlan,
@@ -74,7 +75,7 @@ function DayAccordion({ day, index }: { day: PlanDay; index: number }) {
                 </Text>
               </View>
               <View style={styles.exerciseRight}>
-                <Text style={styles.exerciseSets}>{ex.sets} × {ex.reps}</Text>
+                <Text style={styles.exerciseSets}>{ex.sets} × {formatWorkoutTargetLabel(parseWorkoutTarget(ex.reps, 'plan'))}</Text>
                 <Text style={styles.exerciseBodyPart}>{ex.bodyPart}</Text>
               </View>
             </View>
@@ -313,7 +314,7 @@ export function PlanDetailScreen({ route, navigation }: any) {
                     category: 'Strength' as const,
                     equipment: ex.equipment,
                     sets: ex.sets,
-                    reps: parseInt(ex.reps) || 1,
+                    target: parseWorkoutTarget(ex.reps, 'plan'),
                     weight: '',
                     selected: true,
                   }),
