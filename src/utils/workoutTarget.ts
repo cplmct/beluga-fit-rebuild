@@ -55,7 +55,35 @@ export function formatWorkoutTargetLabel(target: WorkoutTarget): string {
 }
 
 export function canSaveWorkoutTargets(targets: WorkoutTarget[]): boolean {
-  return targets.every((target) => target.kind === 'reps');
+  return targets.every((target) =>
+    (target.kind === 'reps' || target.kind === 'seconds' || target.kind === 'steps') &&
+    Number.isSafeInteger(target.value) &&
+    target.value > 0 &&
+    target.value <= 2147483647
+  );
+}
+
+/** Null metadata is legacy history, not evidence of a known planned target. */
+export function restoreSavedWorkoutTarget(metadata: {
+  target_kind?: string | null;
+  target_value?: number | null;
+  target_raw?: string | null;
+}): WorkoutTarget | null {
+  const { target_kind: kind, target_value: value, target_raw: raw } = metadata;
+  if (kind == null && value == null && raw == null) return null;
+  if (
+    (kind === 'reps' || kind === 'seconds' || kind === 'steps') &&
+    typeof value === 'number' &&
+    raw == null
+  ) {
+    const target: WorkoutTarget = { kind, value };
+    if (canSaveWorkoutTargets([target])) return target;
+  }
+  return {
+    kind: 'unknown',
+    raw: raw ?? 'Unknown target',
+    origin: 'saved-session-set',
+  };
 }
 
 export function isMaxRepsPrCandidate(target: WorkoutTarget, previousBest: number): boolean {

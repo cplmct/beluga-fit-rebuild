@@ -11,6 +11,7 @@ import { LineChart } from 'react-native-chart-kit';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useUnits } from '../contexts/UnitsContext';
+import { formatWorkoutTarget, restoreSavedWorkoutTarget, WorkoutTarget } from '../utils/workoutTarget';
 
 interface CurrentPRs {
   maxWeight: number | null;
@@ -26,6 +27,7 @@ interface SessionHistoryItem {
     setNumber: number;
     weightKg: number | null;
     reps: number | null;
+    target: WorkoutTarget | null;
     isCompleted: boolean;
     isPr: boolean;
   }>;
@@ -177,7 +179,7 @@ export function ExerciseDetailScreen({ route, navigation }: any) {
         const { data: seRows, error: seErr } = await supabase
           .from('session_exercises')
           .select(
-            'session_id, session_sets ( set_number, weight_kg, reps, is_completed, is_pr )'
+            'session_id, session_sets ( set_number, weight_kg, reps, is_completed, is_pr, target_kind, target_value, target_raw )'
           )
           .eq('exercise_id', exerciseId)
           .in('session_id', sessionIds);
@@ -193,6 +195,11 @@ export function ExerciseDetailScreen({ route, navigation }: any) {
                 setNumber: s.set_number,
                 weightKg: s.weight_kg,
                 reps: s.reps,
+                target: restoreSavedWorkoutTarget({
+                  target_kind: s.target_kind,
+                  target_value: s.target_value,
+                  target_raw: s.target_raw,
+                }),
                 isCompleted: s.is_completed,
                 isPr: s.is_pr,
               }));
@@ -395,6 +402,7 @@ export function ExerciseDetailScreen({ route, navigation }: any) {
                   const firstSet = item.sets[0];
                   const weight = firstSet?.weightKg;
                   const reps = firstSet?.reps;
+                  const target = firstSet?.target;
                   return (
                     <View
                       key={item.sessionId}
@@ -408,7 +416,13 @@ export function ExerciseDetailScreen({ route, navigation }: any) {
                       </Text>
                       <Text style={styles.progressionDetail}>
                          {formatWeightForDisplay(weight, weightUnit)}{' '}
-                         {reps == null ? '· Reps not recorded' : `× ${reps} reps`}
+                         {target
+                           ? `· Planned target: ${formatWorkoutTarget(target)} · ${
+                               firstSet?.isCompleted === true ? 'Completed' : 'Not completed'
+                             }`
+                           : reps == null
+                             ? '· Reps not recorded'
+                             : `× ${reps} reps`}
                       </Text>
                       {item.hasPr && (
                         <View style={styles.prBadge}>
@@ -443,7 +457,14 @@ export function ExerciseDetailScreen({ route, navigation }: any) {
               </View>
               {item.sets.map((s) => (
                 <Text key={s.setNumber} style={styles.setRow}>
-                   Set {s.setNumber}: {s.reps == null ? 'Reps not recorded' : `${s.reps} reps`}
+                   Set {s.setNumber}:{' '}
+                   {s.target
+                     ? `Planned target: ${formatWorkoutTarget(s.target)} · ${
+                         s.isCompleted === true ? 'Completed' : 'Not completed'
+                       }`
+                     : s.reps == null
+                       ? 'Reps not recorded'
+                       : `${s.reps} reps`}
                   {s.weightKg != null ? ` @ ${formatWeightForDisplay(s.weightKg, weightUnit)}` : ''}
                   {s.isPr ? ' 🏆' : ''}
                 </Text>

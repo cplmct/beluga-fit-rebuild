@@ -41,16 +41,18 @@ import {
   formatWorkoutTargetLabel,
   canSaveWorkoutTargets,
   isMaxRepsPrCandidate,
+  restoreSavedWorkoutTarget,
 } from '../utils/workoutTarget';
 
 interface LastTimeData {
   sets: number;
   reps: number | null;
   weight: number | null;
+  target: WorkoutTarget | null;
 }
 
 const UNSUPPORTED_SAVE_MESSAGE =
-  'Timed and step targets cannot be saved yet. Complete this workout using rep targets, or start a rep-based workout.';
+  'Unsupported target formats cannot be saved. Use a positive whole-number target within the supported range (1–2,147,483,647) for reps, seconds, or steps.';
 
 function getTarget(exercise: ExerciseSelection): WorkoutTarget {
   return restoreWorkoutTarget(exercise.target, exercise.reps);
@@ -282,7 +284,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
 
       const { data: pastExercises } = await supabase
         .from('session_exercises')
-        .select('session_id, exercise_id, session_sets(reps, weight_kg, set_number)')
+        .select('session_id, exercise_id, session_sets(reps, weight_kg, set_number, target_kind, target_value, target_raw)')
         .in('session_id', sessionIds)
         .in('exercise_id', exerciseIds);
 
@@ -302,11 +304,13 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
         const exName = exIdToName[ex.exercise_id];
         if (!exName || map[exName]) continue;
         const sets = (ex.session_sets as any[])?.length || 0;
-        const firstSet = (ex.session_sets as any[])?.[0];
+        const firstSet = [...((ex.session_sets as any[]) || [])]
+          .sort((a, b) => a.set_number - b.set_number)[0];
         map[exName] = {
           sets,
           reps: firstSet?.reps ?? null,
           weight: firstSet?.weight_kg ?? null,
+          target: restoreSavedWorkoutTarget(firstSet || {}),
         };
       }
       setLastTimeMap(map);
@@ -597,12 +601,17 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
             weightKg > 0 &&
             weightKg > prevMax;
 
-           const target = getTarget(exercise);
-           for (let setNum = 1; setNum <= exercise.sets; setNum++) {
+          const target = getTarget(exercise);
+          for (let setNum = 1; setNum <= exercise.sets; setNum++) {
             allSetRows.push({
               session_exercise_id: insertedEx.id,
               set_number: setNum,
+              target_kind: target.kind,
+              target_value: target.kind === 'unknown' ? null : target.value,
+              target_raw: target.kind === 'unknown' ? target.raw : null,
               reps: target.kind === 'reps' ? target.value : null,
+              // Only planned targets and completion are captured, not elapsed set time.
+              duration_seconds: null,
               weight_kg: weightKg,
               is_completed: completedSetNumbers.includes(setNum),
               is_pr: setNum === firstCompletedSetNumber && isPr,
@@ -919,7 +928,10 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
   };
 
   const formatLastTime = (data: LastTimeData): string => {
-    // Only show sets×reps — weight excluded because unit provenance cannot be proven
+    // Weight excluded because unit provenance cannot be proven.
+    if (data.target && data.target.kind !== 'reps') {
+      return `${data.sets} sets · planned target: ${formatWorkoutTarget(data.target)}`;
+    }
     return data.reps === null ? `${data.sets} sets · reps not recorded` : `${data.sets}×${data.reps}`;
   };
 

@@ -30,6 +30,7 @@ const {
   parseWorkoutTarget,
   repsTarget,
   restoreWorkoutTarget,
+  restoreSavedWorkoutTarget,
   formatWorkoutTargetLabel,
   canSaveWorkoutTargets,
   isMaxRepsPrCandidate,
@@ -66,9 +67,41 @@ assert.equal(isMaxRepsPrCandidate(repsTarget(10), 10), false);
 for (const kind of ['seconds', 'steps', 'unknown']) {
   const item = kind === 'unknown' ? { kind, raw: 'bad', origin: 'plan' } : { kind, value: 45 };
   assert.equal(isMaxRepsPrCandidate(item, 0), false);
-  assert.equal(canSaveWorkoutTargets([repsTarget(10), item]), false);
+  assert.equal(canSaveWorkoutTargets([repsTarget(10), item]), kind !== 'unknown');
 }
 assert.equal(canSaveWorkoutTargets([repsTarget(10), repsTarget(12)]), true);
+for (const kind of ['reps', 'seconds', 'steps']) {
+  assert.equal(restoreWorkoutTarget({ kind, value: 45 }).kind, kind);
+  assert.equal(restoreWorkoutTarget({ kind, value: 45 }).value, 45);
+  assert.equal(canSaveWorkoutTargets([{ kind, value: 2147483647 }]), true);
+  for (const value of [0, -1, 1.5, NaN, Infinity, 2147483648, Number.MAX_SAFE_INTEGER]) {
+    assert.equal(canSaveWorkoutTargets([{ kind, value }]), false, `${kind}: ${value}`);
+  }
+  const saved = restoreSavedWorkoutTarget({
+    target_kind: kind, target_value: 45, target_raw: null,
+  });
+  assert.equal(saved.kind, kind);
+  assert.equal(saved.value, 45);
+  assert.equal(formatWorkoutTargetLabel(saved), `Target: 45 ${kind}`);
+}
+assert.equal(restoreSavedWorkoutTarget({
+  target_kind: null, target_value: null, target_raw: null,
+}), null);
+assert.equal(restoreSavedWorkoutTarget({}), null); // Older responses have no metadata.
+assert.equal(restoreSavedWorkoutTarget({
+  target_kind: 'unknown', target_value: null, target_raw: 'unparsed',
+}).raw, 'unparsed');
+for (const metadata of [
+  { target_kind: 'seconds', target_value: null, target_raw: null },
+  { target_kind: 'steps', target_value: 2147483648, target_raw: null },
+  { target_kind: null, target_value: 12, target_raw: null },
+  { target_kind: 'reps', target_value: 12, target_raw: 'invalid' },
+]) {
+  assert.equal(restoreSavedWorkoutTarget(metadata).kind, 'unknown');
+}
+// Parsing/restoration remain unchanged; the database boundary rejects oversize values.
+assert.equal(parseWorkoutTarget('2147483648 steps', 'plan').kind, 'steps');
+assert.equal(canSaveWorkoutTargets([parseWorkoutTarget('2147483648 steps', 'plan')]), false);
 
 const stored = new Map();
 const storage = {
@@ -122,6 +155,9 @@ async function main() {
   assert.equal((checklist.match(/setUnsupportedFinishVisible\(true\)/g) || []).length, 2);
   assert.ok(checklist.includes('isMaxRepsPrCandidate(target, prRepsMap[exId] || 0)'));
   assert.ok(checklist.includes('formatWorkoutTargetLabel(target)'));
+  assert.ok(checklist.includes('Unsupported target formats cannot be saved.'));
+  assert.ok(!checklist.includes('Timed and step targets cannot be saved yet.'));
+  assert.ok(!checklist.includes('.toLowerCase()')); // Exercise-name lookups stay exact.
   assert.ok(checklist.includes('delete next[String(swapIndex)]'));
 
   const editor = fs.readFileSync(path.join(__dirname, '../src/components/EditExerciseModal.tsx'), 'utf8');
@@ -131,7 +167,14 @@ async function main() {
   assert.ok(details.includes("firstSet?.reps ?? null"));
   assert.ok(!details.includes('firstSet?.reps ?? 0'));
   assert.ok(checklist.includes("firstSet?.reps ?? null"));
-  console.log('Focused workout-target parsing, resume, save, PR, edit, swap, and null-reader checks passed.');
+  const exerciseDetails = fs.readFileSync(path.join(__dirname, '../src/components/ExerciseDetailScreen.tsx'), 'utf8');
+  for (const reader of [details, exerciseDetails, checklist]) {
+    assert.ok(reader.includes('target_kind, target_value, target_raw'));
+    assert.ok(reader.includes('restoreSavedWorkoutTarget'));
+  }
+  assert.ok(details.includes('Planned target'));
+  assert.ok(exerciseDetails.includes('Planned target'));
+  console.log('Workout targets: parsing, resume, integer bounds, saved-target restoration, supported saves, PR, and legacy-reader checks passed.');
 }
 
 main().catch((error) => { console.error(error); process.exitCode = 1; });

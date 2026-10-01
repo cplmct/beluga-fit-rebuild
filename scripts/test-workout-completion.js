@@ -8,7 +8,7 @@ const checklist = fs.readFileSync(
   path.join(__dirname, '../src/components/WorkoutChecklistScreen.tsx'), 'utf8',
 );
 const source = ts.createSourceFile('checklist.tsx', checklist, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
-const names = ['doSaveWorkout', 'handleFinishWorkout', 'handleSavedWorkoutClose'];
+const names = ['doSaveWorkout', 'handleFinishWorkout', 'handleSavedWorkoutClose', 'formatLastTime'];
 const declarations = [];
 function visit(node) {
   if (ts.isVariableDeclaration(node) && names.includes(node.name.getText(source))) {
@@ -32,8 +32,11 @@ vm.runInNewContext(targetCode, { exports: targetExports });
 
 const tick = () => new Promise((resolve) => setImmediate(resolve));
 
-function makeWorkout(kind = 'reps', failFirstInsert = false) {
-  const events = { attempts: 0, sessions: 0, prs: [], navigations: [], errors: [], alerts: [] };
+function makeWorkout(kind = 'reps', failFirstInsert = false, options = {}) {
+  const events = {
+    attempts: 0, sessions: 0, prs: [], navigations: [], errors: [], alerts: [],
+    setRows: [], sessionRows: [], challengeProgress: [],
+  };
   const refs = {
     saveInProgressRef: { current: false },
     workoutFinishedRef: { current: false },
@@ -47,8 +50,9 @@ function makeWorkout(kind = 'reps', failFirstInsert = false) {
     user: { id: 'test-user' },
     exercises: [{
       name: 'Test Lift', bodyPart: 'Legs', sets: 1, target: kind === 'unknown'
-        ? { kind, raw: 'invalid', origin: 'test' } : { kind, value: 12 },
-      weight: '',
+        ? { kind, raw: 'invalid', origin: 'test' }
+        : { kind, value: options.targetValue ?? (kind === 'seconds' ? 45 : kind === 'steps' ? 20 : 12) },
+      weight: options.weight ?? '',
     }],
     completedSets: { 0: [1] },
     completedCount: 1,
@@ -66,6 +70,7 @@ function makeWorkout(kind = 'reps', failFirstInsert = false) {
     getCompletedSetNumbers: (sets, index) => sets[String(index)] || [],
     countCompletedSetsForExercise: (sets, index) => (sets[String(index)] || []).length,
     formatDuration: () => '1m',
+    formatWorkoutTarget: targetExports.formatWorkoutTarget,
     haptic: { success() {}, error() {} },
     saveStatus: {
       setSaving() {},
@@ -90,11 +95,29 @@ function makeWorkout(kind = 'reps', failFirstInsert = false) {
       gte() { return this; },
       lte() { return this; },
       maybeSingle() { return this; },
-      update() { return this; },
+      update(rows) {
+        this.updating = true;
+        if (table === 'user_challenges' && 'current_progress' in rows) {
+          events.challengeProgress.push(rows.current_progress);
+        }
+        return this;
+      },
       insert(rows) { this.rows = rows; return this; },
       upsert(rows) { events.prs.push(...rows); return this; },
       then(resolve, reject) {
-        const data = table === 'exercises' ? [{ id: 'exercise-1', name: 'Test Lift' }] : [];
+        let data = table === 'exercises' ? [{ id: 'exercise-1', name: 'Test Lift' }] : [];
+        if (options.volumeChallenge) {
+          if (table === 'user_challenges' && !this.updating) {
+            data = [{
+              id: 'challenge-1', started_at: '2026-01-01', ends_at: '2027-01-01',
+              target_value: 9999,
+              challenges: { challenge_type: 'volume', target_exercise_id: 'exercise-1' },
+            }];
+          }
+          if (table === 'workout_sessions') data = [{ id: 'session-1' }];
+          if (table === 'session_exercises') data = [{ id: 'session-exercise-1' }];
+          if (table === 'session_sets') data = events.setRows.map((row) => ({ reps: row.reps }));
+        }
         return Promise.resolve({ data }).then(resolve, reject);
       },
     };
@@ -106,11 +129,14 @@ function makeWorkout(kind = 'reps', failFirstInsert = false) {
       events.attempts++;
       if (failFirstInsert && events.attempts === 1) throw new Error('Insert failed');
       events.sessions++;
+      events.sessionRows.push(JSON.parse(JSON.stringify(chain.rows)));
       return { id: `session-${events.sessions}` };
     }
     if (chain.table === 'session_exercises') return [{ id: 'session-exercise-1', order_index: 0 }];
     if (chain.table === 'session_sets') {
-      return [{ id: 'set-1', session_exercise_id: 'session-exercise-1', set_number: 1 }];
+      const rows = JSON.parse(JSON.stringify(chain.rows));
+      events.setRows.push(...rows);
+      return rows.map((row, index) => ({ id: `set-${index + 1}`, ...row }));
     }
     return [];
   };
@@ -133,12 +159,20 @@ async function run() {
   assert.equal(reps.ctx.completedWorkout.id, 'session-1');
   assert.equal(reps.events.prs.filter((pr) => pr.record_type === 'max_reps').length, 1);
   assert.equal(reps.events.prs.find((pr) => pr.record_type === 'max_reps').value, 12);
+  assert.deepEqual(reps.events.setRows[0], {
+    session_exercise_id: 'session-exercise-1', set_number: 1,
+    target_kind: 'reps', target_value: 12, target_raw: null,
+    reps: 12, duration_seconds: null, weight_kg: null,
+    is_completed: true, is_pr: false,
+  });
   reps.handleFinishWorkout();
   await reps.doSaveWorkout();
   assert.equal(reps.events.sessions, 1);
   reps.handleSavedWorkoutClose();
   assert.equal(reps.events.navigations[0][0], 'WorkoutDetails');
   assert.equal(reps.events.navigations[0][1].workoutId, 'session-1');
+  assert.equal(reps.formatLastTime({ sets: 2, reps: 12, weight: null, target: null }), '2×12');
+  assert.equal(reps.formatLastTime({ sets: 2, reps: null, weight: null, target: null }), '2 sets · reps not recorded');
 
   const retry = makeWorkout('reps', true);
   retry.handleFinishWorkout();
@@ -153,15 +187,67 @@ async function run() {
   assert.equal(retry.events.sessions, 1);
   assert.equal(retry.ctx.workoutFinishedRef.current, true);
 
-  for (const kind of ['seconds', 'steps', 'unknown']) {
-    const blocked = makeWorkout(kind);
+  for (const kind of ['reps', 'seconds', 'steps']) {
+    const workout = makeWorkout(kind, false, { weight: '100', volumeChallenge: true });
+    const planned = workout.ctx.exercises[0].target.value;
+    workout.handleFinishWorkout();
+    workout.handleFinishWorkout();
+    await tick();
+    assert.deepEqual(workout.events.errors, []);
+    assert.equal(workout.events.sessions, 1);
+    assert.equal(workout.ctx.workoutFinishedRef.current, true);
+    assert.deepEqual(workout.events.setRows[0], {
+      session_exercise_id: 'session-exercise-1', set_number: 1,
+      target_kind: kind, target_value: planned, target_raw: null,
+      reps: kind === 'reps' ? planned : null, duration_seconds: null,
+      weight_kg: 100, is_completed: true, is_pr: true,
+    });
+    assert.equal(workout.events.prs.filter((pr) => pr.record_type === 'max_reps').length, kind === 'reps' ? 1 : 0);
+    assert.equal(workout.events.prs.filter((pr) => pr.record_type === 'max_weight').length, 1);
+    assert.equal(workout.events.prs.some((pr) => pr.record_type === 'max_duration'), false);
+    assert.deepEqual(workout.events.challengeProgress, [kind === 'reps' ? planned : 0]);
+    const lastTime = workout.formatLastTime({
+      sets: 1, reps: kind === 'reps' ? planned : null, weight: 100,
+      target: workout.ctx.exercises[0].target,
+    });
+    assert.equal(lastTime, kind === 'reps'
+      ? `1×${planned}`
+      : `1 sets · planned target: ${planned} ${kind}`);
+    assert.ok(workout.events.sessionRows[0].duration_seconds >= 60);
+    assert.match(workout.ctx.completedWorkout.message, /Great job!/);
+    workout.handleFinishWorkout();
+    await workout.doSaveWorkout();
+    assert.equal(workout.events.sessions, 1);
+    workout.handleSavedWorkoutClose();
+    assert.equal(workout.events.navigations[0][0], 'WorkoutDetails');
+    assert.equal(workout.events.navigations[0][1].workoutId, 'session-1');
+
+    const retryTarget = makeWorkout(kind, true);
+    retryTarget.handleFinishWorkout();
+    await tick();
+    assert.equal(retryTarget.ctx.isSaving, false);
+    assert.equal(retryTarget.ctx.workoutFinishedRef.current, false);
+    assert.equal(retryTarget.ctx.saveInProgressRef.current, false);
+    retryTarget.handleFinishWorkout();
+    await tick();
+    assert.equal(retryTarget.events.sessions, 1);
+    assert.equal(retryTarget.events.attempts, 2);
+  }
+
+  for (const [kind, options] of [
+    ['unknown', {}], ['seconds', { targetValue: 2147483648 }],
+    ['steps', { targetValue: 0 }], ['reps', { targetValue: 1.5 }],
+  ]) {
+    const blocked = makeWorkout(kind, false, options);
     blocked.handleFinishWorkout();
     await blocked.doSaveWorkout(); // second guard also must block direct save
     assert.equal(blocked.ctx.unsupportedFinishVisible, true);
     assert.equal(blocked.events.attempts, 0);
     assert.equal(blocked.events.sessions, 0);
+    assert.equal(blocked.events.setRows.length, 0);
+    assert.equal(blocked.events.prs.length, 0);
   }
-  console.log('Workout completion: double-tap, success, navigation, retry, PR, and blocked-target checks passed.');
+  console.log('Workout completion: reps/seconds/steps payloads, completion, double-tap, navigation, retry, PR, rep volume, and unknown/invalid blocking passed.');
 }
 
 run().catch((error) => { console.error(error); process.exitCode = 1; });

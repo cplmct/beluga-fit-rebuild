@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { useUnits } from '../contexts/UnitsContext';
+import { formatWorkoutTarget, restoreSavedWorkoutTarget, WorkoutTarget } from '../utils/workoutTarget';
 
 interface WorkoutExercise {
   id: string;
@@ -16,6 +17,7 @@ interface WorkoutExercise {
   sets: number;
   reps: number | null;
   weight: number | null;
+  target: WorkoutTarget | null;
   completed: boolean;
   is_pr: boolean;
 }
@@ -124,7 +126,7 @@ export function WorkoutDetailsScreen({ route, navigation }: any) {
       const { data: sessionExercisesData, error: exercisesError } = await supabase
         .from('session_exercises')
         .select(
-          'id, order_index, exercises(name, exercise_muscle_groups(muscle_groups(name))), session_sets(set_number, reps, weight_kg, is_completed, is_pr)'
+          'id, order_index, exercises(name, exercise_muscle_groups(muscle_groups(name))), session_sets(set_number, reps, weight_kg, is_completed, is_pr, target_kind, target_value, target_raw)'
         )
         .eq('session_id', workoutId)
         .order('order_index', { ascending: true });
@@ -153,6 +155,13 @@ export function WorkoutDetailsScreen({ route, navigation }: any) {
           sets: sortedSets.length,
           reps: firstSet?.reps ?? null,
           weight: firstSet?.weight_kg ?? null,
+          target: firstSet
+            ? restoreSavedWorkoutTarget({
+                target_kind: firstSet.target_kind,
+                target_value: firstSet.target_value,
+                target_raw: firstSet.target_raw,
+              })
+            : null,
           completed: sortedSets.length > 0 && sortedSets.every((s) => s.is_completed === true),
           is_pr: sortedSets.some((s) => s.is_pr === true),
         };
@@ -317,14 +326,28 @@ export function WorkoutDetailsScreen({ route, navigation }: any) {
                   <Text style={styles.detailValue}>{exercise.sets}</Text>
                 </View>
                 <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Reps</Text>
-                  <Text style={styles.detailValue}>{exercise.reps ?? 'Not recorded'}</Text>
+                  <Text style={styles.detailLabel}>
+                    {exercise.target ? 'Planned target' : 'Reps'}
+                  </Text>
+                  <Text style={styles.detailValue}>
+                    {exercise.target
+                      ? formatWorkoutTarget(exercise.target)
+                      : exercise.reps ?? 'Not recorded'}
+                  </Text>
                 </View>
                 {exercise.weight != null && (
                   <View style={styles.detailItem}>
                     <Text style={styles.detailLabel}>Weight</Text>
                     <Text style={styles.detailValue}>
                       {displayWeight(exercise.weight, weightUnit)} {weightUnit}
+                    </Text>
+                  </View>
+                )}
+                {exercise.target && (
+                  <View style={styles.detailItem}>
+                    <Text style={styles.detailLabel}>Completion</Text>
+                    <Text style={styles.detailValue}>
+                      {exercise.completed ? 'Completed' : 'Incomplete'}
                     </Text>
                   </View>
                 )}
