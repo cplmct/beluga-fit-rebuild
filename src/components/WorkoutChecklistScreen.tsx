@@ -31,6 +31,7 @@ import {
   loadWorkoutSession,
   clearWorkoutSession,
   WorkoutSessionPayload,
+  WorkoutSaveOutcome,
 } from '../utils/workoutSession';
 import { useSaveStatus } from '../hooks/useSaveStatus';
 import { SaveStatusBadge } from './SaveStatusBadge';
@@ -102,7 +103,15 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
   const [completedSets, setCompletedSets] = useState<WorkoutSessionPayload['completedSets']>({});
   const [isSaving, setIsSaving] = useState(false);
   const [unsupportedFinishVisible, setUnsupportedFinishVisible] = useState(false);
-  const [completedWorkout, setCompletedWorkout] = useState<{ id: string; message: string } | null>(null);
+  const [resolutionFailure, setResolutionFailure] = useState<{
+    title: string;
+    message: string;
+  } | null>(null);
+  const [completedWorkout, setCompletedWorkout] = useState<WorkoutSaveOutcome | null>(null);
+  const [resultStorageError, setResultStorageError] = useState('');
+  const [resultWriteFailed, setResultWriteFailed] = useState(false);
+  const [sessionStorageError, setSessionStorageError] = useState('');
+  const [isRestoringSession, setIsRestoringSession] = useState(true);
   const [lastTimeMap, setLastTimeMap] = useState<Record<string, LastTimeData>>({});
   const [lastTimeLoading, setLastTimeLoading] = useState(true);
   const [restDuration] = useState(90);
@@ -117,6 +126,8 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
   const workoutFinishedRef = useRef(false);
   // State updates are not synchronous; this ref closes the double-tap window.
   const saveInProgressRef = useRef(false);
+  const sessionRestoreBlockedRef = useRef(true);
+  const initialRestoreRef = useRef(true);
 
   // Save-confidence indicator — tracks the state of the most recent write.
   const saveStatus = useSaveStatus();
@@ -124,7 +135,6 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
   // ── On mount: fetch last-time data + check for a rescued session ────────────
   useEffect(() => {
     fetchLastTimeData();
-    checkForSavedSession();
   }, []);
 
   // ── On every focus: sync in-memory state with AsyncStorage ──────────────────
@@ -134,72 +144,99 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
   // If a session still exists we leave the in-progress state untouched.
   useFocusEffect(
     useCallback(() => {
-      loadWorkoutSession().then(saved => {
-        if (!saved) {
-          setCompletedSets({});
-          startTimeRef.current = Date.now();
-        }
-      });
+      void checkForSavedSession(initialRestoreRef.current);
+      initialRestoreRef.current = false;
     }, [])
   );
 
-  const checkForSavedSession = async () => {
-    const saved = await loadWorkoutSession();
-    if (!saved) return;
+  const checkForSavedSession = async (offerResume = true) => {
+    sessionRestoreBlockedRef.current = true;
+    setIsRestoringSession(true);
+    setSessionStorageError('');
+    try {
+      const saved = await loadWorkoutSession();
+      if (!saved) {
+        if (!offerResume) {
+          setCompletedSets({});
+          startTimeRef.current = Date.now();
+        }
+        sessionRestoreBlockedRef.current = false;
+        return;
+      }
 
-    // Match the saved session by body-part set + exercise count rather than
-    // exact exercise names. This allows a mid-session swap to survive a
-    // force-quit/relaunch cycle — the guard still rejects sessions from a
-    // genuinely different workout (different body parts or different count).
-    const savedKey =
-      [...saved.bodyParts].sort().join(',') + ':' + saved.exercises.length;
-    const currentKey =
-      [...route.params.bodyParts].sort().join(',') + ':' + route.params.exercises.length;
-    const sessionMatches = savedKey === currentKey;
+      // Restore pending outcomes before mismatch cleanup or resume prompts.
+      if (saved.saveOutcome) {
+        setExercises(saved.exercises);
+        setCompletedSets(saved.completedSets);
+        startTimeRef.current = saved.startTime;
+        workoutFinishedRef.current = true;
+        sessionRestoreBlockedRef.current = false;
+        setResultWriteFailed(false);
+        setResultStorageError('');
+        setCompletedWorkout(saved.saveOutcome);
+        return;
+      }
 
-    if (!sessionMatches) {
-      await clearWorkoutSession();
-      return;
-    }
+      sessionRestoreBlockedRef.current = false;
+      if (!offerResume) return;
 
-    // If the user arrived here via the Home resume banner, restore silently —
-    // they already confirmed intent by tapping Resume there.
-    if (route.params?.autoResume) {
-      setExercises(saved.exercises);
-      setCompletedSets(saved.completedSets);
-      startTimeRef.current = saved.startTime;
-      return;
-    }
+      // Match body parts and count so mid-session swaps can still be restored.
+      const savedKey =
+        [...saved.bodyParts].sort().join(',') + ':' + saved.exercises.length;
+      const currentKey =
+        [...route.params.bodyParts].sort().join(',') + ':' + route.params.exercises.length;
+      const sessionMatches = savedKey === currentKey;
 
-    // Session is valid and matches — offer to resume.
-    const completed = saved.exercises.reduce(
-      (sum, exercise, index) =>
-        sum + countCompletedSetsForExercise(saved.completedSets, index, exercise.sets),
-      0,
-    );
-    const total = saved.exercises.reduce((sum, exercise) => sum + exercise.sets, 0);
-    Alert.alert(
-      'Resume workout?',
-      `You have an unfinished workout (${completed}/${total} sets checked off). Pick up where you left off?`,
-      [
-        {
-          text: 'Start Fresh',
-          style: 'destructive',
-          onPress: () => clearWorkoutSession(),
-        },
-        {
-          text: 'Resume',
-          onPress: () => {
-            // Restore exercise list (captures any mid-session swaps),
-            // checked-off sets, and original start time.
-            setExercises(saved.exercises);
-            setCompletedSets(saved.completedSets);
-            startTimeRef.current = saved.startTime;
+      if (!sessionMatches) {
+        await clearWorkoutSession();
+        return;
+      }
+
+      // Home's Resume action has already confirmed the user's intent.
+      if (route.params?.autoResume) {
+        setExercises(saved.exercises);
+        setCompletedSets(saved.completedSets);
+        startTimeRef.current = saved.startTime;
+        return;
+      }
+
+      const completed = saved.exercises.reduce(
+        (sum, exercise, index) =>
+          sum + countCompletedSetsForExercise(saved.completedSets, index, exercise.sets),
+        0,
+      );
+      const total = saved.exercises.reduce((sum, exercise) => sum + exercise.sets, 0);
+      Alert.alert(
+        'Resume workout?',
+        `You have an unfinished workout (${completed}/${total} sets checked off). Pick up where you left off?`,
+        [
+          {
+            text: 'Start Fresh',
+            style: 'destructive',
+            onPress: () => {
+              void clearWorkoutSession().catch(() => {
+                sessionRestoreBlockedRef.current = true;
+                setSessionStorageError('Couldn’t clear the retained workout. It has not been discarded. Retry checking storage before saving.');
+              });
+            },
           },
-        },
-      ],
-      { cancelable: false }
-    );
+          {
+            text: 'Resume',
+            onPress: () => {
+              setExercises(saved.exercises);
+              setCompletedSets(saved.completedSets);
+              startTimeRef.current = saved.startTime;
+            },
+          },
+        ],
+        { cancelable: false }
+      );
+    } catch {
+      sessionRestoreBlockedRef.current = true;
+      setSessionStorageError('Couldn’t check the retained workout on this device. Saving is blocked to avoid repeating a previous save. Retry checking storage.');
+    } finally {
+      setIsRestoringSession(false);
+    }
   };
 
   // ── Save session whenever checked-off sets OR exercise list changes ─────────
@@ -207,7 +244,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
   // the just-saved updated list.
   useEffect(() => {
     // Skip if the workout has already been saved and the session cleared.
-    if (workoutFinishedRef.current) return;
+    if (workoutFinishedRef.current || sessionRestoreBlockedRef.current) return;
     // Skip the initial empty state — no point persisting a blank session.
     if (Object.keys(completedSets).length === 0 && exercises === initialTargetedExercises) return;
     saveWorkoutSession({
@@ -216,22 +253,22 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
       startTime: startTimeRef.current,
       exercises,
       bodyParts,
-    });
-  }, [completedSets, exercises]);
+    }).catch(error => saveStatus.setError(error));
+  }, [completedSets, exercises, isRestoringSession]);
 
   // ── Save session when app moves to background (belt + suspenders) ───────────
   useEffect(() => {
     const handleAppStateChange = (nextState: AppStateStatus) => {
       if (nextState === 'background' || nextState === 'inactive') {
         // Do not re-save if the workout has already been finished and cleared.
-        if (workoutFinishedRef.current) return;
+        if (workoutFinishedRef.current || sessionRestoreBlockedRef.current) return;
         saveWorkoutSession({
           exerciseNames: exercises.map((ex: ExerciseSelection) => ex.name),
           completedSets,
           startTime: startTimeRef.current,
           exercises,
           bodyParts,
-        });
+        }).catch(error => saveStatus.setError(error));
       }
     };
     const sub = AppState.addEventListener('change', handleAppStateChange);
@@ -418,9 +455,20 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
     setEditIndex(null);
   };
 
+  const persistSavedWorkoutResult = async (outcome: WorkoutSaveOutcome) => {
+    await saveWorkoutSession({
+      exerciseNames: exercises.map((exercise: ExerciseSelection) => exercise.name),
+      completedSets,
+      startTime: startTimeRef.current,
+      exercises,
+      bodyParts,
+      saveOutcome: outcome,
+    });
+  };
+
   // Core save logic — called after any confirmation guards pass.
   const doSaveWorkout = async () => {
-    if (saveInProgressRef.current || workoutFinishedRef.current || !user) return;
+    if (saveInProgressRef.current || workoutFinishedRef.current || sessionRestoreBlockedRef.current || !user) return;
     if (!canSaveWorkoutTargets(exercises.map(getTarget))) {
       haptic.error();
       setUnsupportedFinishVisible(true);
@@ -428,8 +476,10 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
     }
     saveInProgressRef.current = true;
     setIsSaving(true);
+    setResolutionFailure(null);
     saveStatus.setSaving();
     const durationSeconds = Math.floor((Date.now() - startTimeRef.current) / 1000);
+    let unresolvedResult: { title: string; message: string } | null = null;
 
     try {
       const exercisesWithWeights = exercises.filter(
@@ -474,15 +524,38 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
 
       // Look up exercise IDs for all exercises in this workout
       const allExerciseNames = exercises.map((ex: ExerciseSelection) => ex.name);
-      const { data: allExerciseRows } = await supabase
+      const { data: allExerciseRows, error: resolutionError } = await supabase
         .from('exercises')
         .select('id, name')
         .in('name', allExerciseNames);
 
+      if (resolutionError) {
+        unresolvedResult = {
+          title: 'Workout not saved',
+          message: `Could not look up exercises:\n${allExerciseNames.map((name: string) => `• ${name}`).join('\n')}\n\nNo exercises were saved. Your active workout has been kept. Please try again.`,
+        };
+        throw new Error(unresolvedResult.message);
+      }
+
       const nameToExId: Record<string, string> = {};
       for (const row of allExerciseRows || []) {
-        nameToExId[row.name] = row.id;
+        if (row.id) nameToExId[row.name] = row.id;
       }
+
+      // Resolve before creating a session so an entirely unresolved selection
+      // cannot produce an empty completed workout.
+      const validExercises: { exercise: ExerciseSelection; originalIndex: number }[] = [];
+      exercises.forEach((exercise: ExerciseSelection, originalIndex: number) => {
+        if (nameToExId[exercise.name]) validExercises.push({ exercise, originalIndex });
+      });
+      if (validExercises.length === 0) {
+        unresolvedResult = {
+          title: 'Workout not saved',
+          message: `No exercises could be saved. Unresolved exercises:\n${allExerciseNames.map((name: string) => `• ${name}`).join('\n')}\n\nYour active workout has been kept. Please try again.`,
+        };
+        throw new Error(unresolvedResult.message);
+      }
+      const savedExerciseIndices = new Set<number>();
 
       // ── (A) Fetch current personal_records for all exercises in this workout ──
       // Used as the authoritative comparison guard for the upsert below.
@@ -522,18 +595,6 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
       );
 
       if (!session || !session.id) throw new Error('Failed to create workout session');
-
-      // Build session_exercises rows — skip exercises not in master table
-      const validExercises: { exercise: ExerciseSelection; originalIndex: number }[] = [];
-      exercises.forEach((exercise: ExerciseSelection, idx: number) => {
-        if (nameToExId[exercise.name]) {
-          validExercises.push({ exercise, originalIndex: idx });
-        } else if (__DEV__) {
-          console.warn(
-            `[WorkoutChecklist] Exercise not in master table, skipped: ${exercise.name}`
-          );
-        }
-      });
 
       // Convert each entered weight to the canonical storage unit (kg) once,
       // keyed by the exercise's original index so the set-insert, PR-upsert,
@@ -581,8 +642,9 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
         const firstCompletedSetNumberBySessionExerciseId: Record<string, number> = {};
         for (const insertedEx of insertedExercises || []) {
           const match = validExercises.find((ve) => ve.originalIndex === insertedEx.order_index);
-          if (!match) continue;
+          if (!match || !insertedEx.id) continue;
           const { exercise, originalIndex } = match;
+          savedExerciseIndices.add(originalIndex);
           const completedSetNumbers = getCompletedSetNumbers(completedSets, originalIndex)
             .filter((setNumber) => setNumber >= 1 && setNumber <= exercise.sets)
             .sort((a, b) => a - b);
@@ -697,6 +759,14 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
           }
           // ── END (C) ────────────────────────────────────────────────────────────────
         }
+      }
+
+      if (savedExerciseIndices.size === 0) {
+        unresolvedResult = {
+          title: 'Save incomplete',
+          message: `No exercises could be confirmed saved:\n${allExerciseNames.map((name: string) => `• ${name}`).join('\n')}\n\nYour active workout has been kept. Some session data may have been written. Check History before retrying.`,
+        };
+        throw new Error(unresolvedResult.message);
       }
 
       // ── (D) Update challenge progress after workout save ─────────────────────
@@ -821,7 +891,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
 
       scheduleInactivityReminder(user.id);
 
-      // Build PR names for alert — completed exercises only, deduplicated.
+      // Build PR names for alert — saved, completed exercises only, deduplicated.
       // Uses the canonical kg value (weightKgByIndex) vs the kg baseline from
       // personal_records (maxWeightMap), mirroring the session_sets/PR-upsert
       // comparisons above so a lbs-entered weight is never compared raw.
@@ -832,6 +902,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
               const weightKg = weightKgByIndex.get(originalIndex) ?? null;
               const prevMax = maxWeightMap[exercise.name] || 0;
               return (
+                savedExerciseIndices.has(originalIndex) &&
                 weightKg !== null &&
                 weightKg > 0 &&
                 weightKg > prevMax &&
@@ -855,17 +926,48 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
         );
       }
 
-      // Latch before clearing local state or showing the confirmation; no
+      const omittedNames = exercises
+        .filter((_exercise: ExerciseSelection, index: number) => !savedExerciseIndices.has(index))
+        .map((exercise: ExerciseSelection) => exercise.name);
+      const partial = omittedNames.length > 0;
+      const message = partial
+        ? `The workout was partially saved.\n\nExercises not saved:\n${omittedNames.map((name: string) => `• ${name}`).join('\n')}\n\n${lines.join('\n')}\n\nYour active workout has been kept.`
+        : `Great job!\n\n${lines.join('\n')}`;
+
+      // Latch before showing the confirmation; no
       // second press may start another session after the first one is saved.
+      // Keep the active workout until the user acknowledges the accurate result.
       workoutFinishedRef.current = true;
-      haptic.success();
-      saveStatus.setSuccess();
-      await clearWorkoutSession();
-      setCompletedWorkout({ id: session.id, message: `Great job!\n\n${lines.join('\n')}` });
+      const outcome = { id: session.id, message, partial };
+      let resultPersisted = false;
+      setResultStorageError('');
+      setResultWriteFailed(false);
+      try {
+        await persistSavedWorkoutResult(outcome);
+        resultPersisted = true;
+      } catch {
+        setResultWriteFailed(true);
+        setResultStorageError('The workout was saved, but its pending result could not be stored on this device. Keep this screen open: reopening could allow a duplicate save. Retry storing the result.');
+      }
+      if (partial) {
+        haptic.error();
+        saveStatus.setError(new Error('Workout partially saved.'));
+      } else if (resultPersisted) {
+        haptic.success();
+        saveStatus.setSuccess();
+      } else {
+        haptic.error();
+        saveStatus.setError(new Error('The pending workout result could not be stored.'));
+      }
+      setCompletedWorkout(outcome);
     } catch (error: any) {
       haptic.error();
       saveStatus.setError(error);
-      Alert.alert('Error', error.message || 'Failed to save workout.');
+      if (unresolvedResult) {
+        setResolutionFailure(unresolvedResult);
+      } else {
+        Alert.alert('Error', error.message || 'Failed to save workout.');
+      }
     } finally {
       saveInProgressRef.current = false;
       setIsSaving(false);
@@ -884,7 +986,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
 
   // Guard wrapper — confirms before saving a partial workout.
   const handleFinishWorkout = () => {
-    if (saveInProgressRef.current || workoutFinishedRef.current || isSaving || !user) return;
+    if (saveInProgressRef.current || workoutFinishedRef.current || sessionRestoreBlockedRef.current || isSaving || !user) return;
 
     if (exercises.length === 0) {
       haptic.error();
@@ -913,9 +1015,41 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
     void doSaveWorkout();
   };
 
-  const handleSavedWorkoutClose = () => {
-    if (!completedWorkout) return;
+  const handleRetrySavedResult = async () => {
+    if (!completedWorkout || saveInProgressRef.current) return;
+    saveInProgressRef.current = true;
+    setIsSaving(true);
+    try {
+      await persistSavedWorkoutResult(completedWorkout);
+      setResultStorageError('');
+      setResultWriteFailed(false);
+      if (completedWorkout.partial) {
+        saveStatus.setError(new Error('Workout partially saved.'));
+      } else {
+        saveStatus.setSuccess();
+      }
+    } catch {
+      setResultWriteFailed(true);
+      setResultStorageError('The pending result still could not be stored. Keep this screen open: reopening could allow a duplicate save. Please retry.');
+    } finally {
+      saveInProgressRef.current = false;
+      setIsSaving(false);
+    }
+  };
+
+  const handleSavedWorkoutClose = async () => {
+    if (!completedWorkout || saveInProgressRef.current) return;
+    saveInProgressRef.current = true;
     const workoutId = completedWorkout.id;
+    try {
+      await clearWorkoutSession();
+    } catch {
+      setResultStorageError('Couldn’t clear the retained workout on this device. The result is still open and the draft has not been cleared. Try the acknowledgement again.' +
+        (resultWriteFailed ? ' The pending result is also not stored; keep this screen open to avoid a duplicate save.' : ''));
+      return;
+    } finally {
+      saveInProgressRef.current = false;
+    }
     setCompletedWorkout(null);
     navigation.navigate('WorkoutDetails', { workoutId });
   };
@@ -1154,22 +1288,45 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
       {/* Save confidence indicator — visible only while saving or if an error occurred */}
       <SaveStatusBadge status={saveStatus.status} />
 
+      {sessionStorageError !== '' && (
+        <View style={styles.storageNotice} accessibilityRole="alert">
+          <Text style={styles.unsupportedFinishMessage}>{sessionStorageError}</Text>
+          <TouchableOpacity style={styles.unsupportedFinishButton} onPress={() => { void checkForSavedSession(); }} disabled={isRestoringSession}>
+            <Text style={styles.unsupportedFinishButtonText}>Retry checking storage</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       <Modal
-        visible={unsupportedFinishVisible}
+        visible={unsupportedFinishVisible || resolutionFailure !== null}
         transparent
         animationType="fade"
-        onRequestClose={() => setUnsupportedFinishVisible(false)}
+        onRequestClose={() => {
+          setUnsupportedFinishVisible(false);
+          setResolutionFailure(null);
+        }}
       >
         <View style={styles.unsupportedFinishOverlay}>
-          <View style={styles.unsupportedFinishDialog}>
-            <Text style={styles.unsupportedFinishTitle}>Unable to finish workout</Text>
-            <Text style={styles.unsupportedFinishMessage}>{UNSUPPORTED_SAVE_MESSAGE}</Text>
+          <View style={[styles.unsupportedFinishDialog, { maxHeight: '85%' }]}>
+            <Text style={styles.unsupportedFinishTitle}>
+              {resolutionFailure?.title ?? 'Unable to finish workout'}
+            </Text>
+            <ScrollView style={{ flexShrink: 1 }}>
+              <Text style={styles.unsupportedFinishMessage}>
+                {resolutionFailure?.message ?? UNSUPPORTED_SAVE_MESSAGE}
+              </Text>
+            </ScrollView>
             <TouchableOpacity
               style={styles.unsupportedFinishButton}
-              onPress={() => setUnsupportedFinishVisible(false)}
+              onPress={() => {
+                setUnsupportedFinishVisible(false);
+                setResolutionFailure(null);
+              }}
               accessibilityRole="button"
             >
-              <Text style={styles.unsupportedFinishButtonText}>OK</Text>
+              <Text style={styles.unsupportedFinishButtonText}>
+                {resolutionFailure ? 'Keep workout' : 'OK'}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1179,18 +1336,41 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
         visible={completedWorkout !== null}
         transparent
         animationType="fade"
-        onRequestClose={handleSavedWorkoutClose}
+        onRequestClose={() => {
+          // Partial results require explicit acknowledgement of draft clearing.
+          if (!completedWorkout?.partial) void handleSavedWorkoutClose();
+        }}
       >
         <View style={styles.unsupportedFinishOverlay}>
-          <View style={styles.unsupportedFinishDialog}>
-            <Text style={styles.unsupportedFinishTitle}>Workout Saved!</Text>
-            <Text style={styles.unsupportedFinishMessage}>{completedWorkout?.message}</Text>
+          <View style={[styles.unsupportedFinishDialog, { maxHeight: '85%' }]}>
+            <Text style={styles.unsupportedFinishTitle}>
+              {completedWorkout?.partial ? 'Workout partially saved' : 'Workout Saved!'}
+            </Text>
+            {resultStorageError !== '' && (
+              <Text style={styles.storageErrorText} accessibilityRole="alert">{resultStorageError}</Text>
+            )}
+            <ScrollView style={{ flexShrink: 1 }}>
+              <Text style={styles.unsupportedFinishMessage}>{completedWorkout?.message}</Text>
+            </ScrollView>
+            {resultWriteFailed && (
+              <TouchableOpacity onPress={handleRetrySavedResult} disabled={isSaving}>
+                <Text style={styles.storageActionText}>Retry storing result</Text>
+              </TouchableOpacity>
+            )}
+            {completedWorkout?.partial && (
+              <Text testID="partial-draft-clear-warning" style={styles.storageErrorText}>
+                Viewing the saved workout will clear the retained draft, including the exercises not saved. Omitted work cannot be resumed afterward.
+              </Text>
+            )}
             <TouchableOpacity
               style={styles.unsupportedFinishButton}
               onPress={handleSavedWorkoutClose}
+              disabled={isSaving}
               accessibilityRole="button"
             >
-              <Text style={styles.unsupportedFinishButtonText}>OK</Text>
+              <Text style={styles.unsupportedFinishButtonText}>
+                {completedWorkout?.partial ? 'View saved workout' : 'OK'}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1204,9 +1384,9 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
           <Text style={styles.timerButtonText}>Rest Timer</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.finishButton, (isSaving || workoutFinishedRef.current) && styles.finishButtonDisabled]}
+          style={[styles.finishButton, (isSaving || workoutFinishedRef.current || isRestoringSession || sessionStorageError !== '') && styles.finishButtonDisabled]}
           onPress={handleFinishWorkout}
-          disabled={isSaving || workoutFinishedRef.current}
+          disabled={isSaving || workoutFinishedRef.current || isRestoringSession || sessionStorageError !== ''}
         >
           {isSaving ? (
             <ActivityIndicator color="#fff" />
@@ -1220,6 +1400,28 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
 }
 
 const styles = StyleSheet.create({
+  storageNotice: {
+    padding: 16,
+    marginHorizontal: 20,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#b91c1c',
+    borderRadius: 12,
+    backgroundColor: '#ffffff',
+  },
+  storageErrorText: {
+    color: '#b91c1c',
+    fontSize: 13,
+    lineHeight: 19,
+    marginBottom: 12,
+    flexShrink: 0,
+  },
+  storageActionText: {
+    color: '#2563eb',
+    fontSize: 14,
+    fontWeight: '600',
+    paddingVertical: 10,
+  },
   unsupportedFinishOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.45)',

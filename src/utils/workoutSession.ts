@@ -4,8 +4,22 @@ import { restoreWorkoutTarget } from './workoutTarget';
 
 const KEY = '@beluga_active_workout_v1';
 
-// Maximum age before a saved session is treated as stale and discarded.
+// Ordinary unfinished drafts expire; pending results do not.
 const MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+// Keep cleanup and writes to this single key ordered, including failed calls.
+let storageOperations: Promise<unknown> = Promise.resolve();
+function withWorkoutStorage<T>(operation: () => Promise<T>): Promise<T> {
+  const result = storageOperations.then(operation);
+  storageOperations = result.catch(() => undefined);
+  return result;
+}
+
+export interface WorkoutSaveOutcome {
+  id: string;
+  message: string;
+  partial: boolean;
+}
 
 export interface WorkoutSessionPayload {
   /** Exercise names in order — used to match against route.params on restore. */
@@ -20,6 +34,8 @@ export interface WorkoutSessionPayload {
   exercises: ExerciseSelection[];
   /** Body parts for the workout — passed as route.params to WorkoutChecklistScreen. */
   bodyParts: string[];
+  /** Acknowledgement pending; do not save this workout again on resume. */
+  saveOutcome?: WorkoutSaveOutcome;
 }
 
 type StoredWorkoutSession = Omit<WorkoutSessionPayload, 'completedSets'> & {
@@ -89,27 +105,39 @@ function normalizeCompletedSets(
   return normalized;
 }
 
-/** Persist the current workout state. Silently swallows errors. */
+/** Persist the current workout state. Storage failures reject to the caller. */
 export async function saveWorkoutSession(
   payload: Omit<WorkoutSessionPayload, 'savedAt'>
 ): Promise<void> {
-  try {
+  return withWorkoutStorage(async () => {
+    const raw = await AsyncStorage.getItem(KEY);
+    const previous: StoredWorkoutSession | null = raw ? JSON.parse(raw) : null;
+    if (previous?.saveOutcome && (!payload.saveOutcome || previous.saveOutcome.id !== payload.saveOutcome.id)) {
+      throw new Error('A pending workout result must be acknowledged or discarded before replacing its draft.');
+    }
     const data: WorkoutSessionPayload = { ...payload, savedAt: Date.now() };
     await AsyncStorage.setItem(KEY, JSON.stringify(data));
-  } catch (_) {}
+  });
 }
 
 /**
  * Load the saved session.
- * Returns null if nothing is saved, or if the session is older than MAX_AGE_MS.
- * Stale sessions are deleted automatically.
+ * Returns null if nothing is saved, or an ordinary draft has expired.
+ * Pending results never expire. Read/parse/cleanup failures reject.
  */
 export async function loadWorkoutSession(): Promise<WorkoutSessionPayload | null> {
-  try {
+  return withWorkoutStorage(async () => {
     const raw = await AsyncStorage.getItem(KEY);
     if (!raw) return null;
     const data: StoredWorkoutSession = JSON.parse(raw);
-    if (Date.now() - data.savedAt > MAX_AGE_MS) {
+    if (data.saveOutcome && (
+      typeof data.saveOutcome.id !== 'string' || !data.saveOutcome.id ||
+      typeof data.saveOutcome.message !== 'string' ||
+      typeof data.saveOutcome.partial !== 'boolean'
+    )) {
+      throw new Error('The pending workout result could not be read.');
+    }
+    if (!data.saveOutcome && Date.now() - data.savedAt > MAX_AGE_MS) {
       await AsyncStorage.removeItem(KEY);
       return null;
     }
@@ -117,6 +145,9 @@ export async function loadWorkoutSession(): Promise<WorkoutSessionPayload | null
     // data needed to navigate from the Home banner. Discard them automatically
     // so they don't linger invisibly after an app upgrade.
     if (!data.exercises || data.exercises.length === 0) {
+      if (data.saveOutcome) {
+        throw new Error('The pending workout result could not be restored.');
+      }
       await AsyncStorage.removeItem(KEY);
       return null;
     }
@@ -133,14 +164,10 @@ export async function loadWorkoutSession(): Promise<WorkoutSessionPayload | null
         data.exercises,
       ),
     };
-  } catch (_) {
-    return null;
-  }
+  });
 }
 
-/** Delete the saved session — call on workout completion or discard. */
+/** Delete the saved session on acknowledgement/discard. Failures reject. */
 export async function clearWorkoutSession(): Promise<void> {
-  try {
-    await AsyncStorage.removeItem(KEY);
-  } catch (_) {}
+  return withWorkoutStorage(() => AsyncStorage.removeItem(KEY));
 }

@@ -292,6 +292,13 @@ export function HomeScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [resumeSession, setResumeSession] = useState<WorkoutSessionPayload | null>(null);
+  const [resumeStorageError, setResumeStorageError] = useState('');
+  const [discardStorageError, setDiscardStorageError] = useState('');
+  const [pendingDiscardConfirm, setPendingDiscardConfirm] = useState(false);
+  const [discardingSession, setDiscardingSession] = useState(false);
+  const discardInProgressRef = useRef(false);
+  const discardConfirmOpenRef = useRef(false);
+  const resumeReadRef = useRef(0);
 
   // Incremented each time a load is initiated or the screen loses focus.
   // Async state updates check this before committing — stale in-flight
@@ -302,14 +309,58 @@ export function HomeScreen({ navigation }: any) {
     useCallback(() => {
       if (user) loadDashboard();
       // Refresh the unfinished-workout banner whenever the screen is focused.
-      loadWorkoutSession().then(setResumeSession);
-      return () => { loadGenRef.current++; };
+      void refreshResumeSession();
+      return () => { loadGenRef.current++; resumeReadRef.current++; };
     }, [user])
   );
 
+  const refreshResumeSession = async () => {
+    const read = ++resumeReadRef.current;
+    try {
+      const saved = await loadWorkoutSession();
+      if (read !== resumeReadRef.current) return;
+      setResumeSession(saved);
+      setResumeStorageError('');
+      discardConfirmOpenRef.current = false;
+      setPendingDiscardConfirm(false);
+    } catch {
+      if (read !== resumeReadRef.current) return;
+      setResumeStorageError('Couldn’t check the retained workout on this device. Retry before resuming or discarding it.');
+    }
+  };
+
+  const confirmDiscardSession = async () => {
+    if (!resumeSession || discardInProgressRef.current) return;
+    discardInProgressRef.current = true;
+    setDiscardingSession(true);
+    setDiscardStorageError('');
+    ++resumeReadRef.current;
+    try {
+      await clearWorkoutSession();
+      setResumeSession(null);
+      discardConfirmOpenRef.current = false;
+      setPendingDiscardConfirm(false);
+    } catch {
+      setDiscardStorageError('Couldn’t discard the retained workout. It has not been cleared. Please retry.');
+    } finally {
+      discardInProgressRef.current = false;
+      setDiscardingSession(false);
+    }
+  };
+
   const handleDiscardSession = async () => {
-    await clearWorkoutSession();
-    setResumeSession(null);
+    if (!resumeSession || resumeStorageError || discardInProgressRef.current || discardConfirmOpenRef.current) return;
+    // No original exercise/target baseline is stored, so confirm even a
+    // zero-completed-set draft: it may contain edits worth keeping.
+    discardConfirmOpenRef.current = true;
+    ++resumeReadRef.current;
+    setPendingDiscardConfirm(true);
+  };
+
+  const cancelDiscardSession = () => {
+    if (discardInProgressRef.current) return;
+    discardConfirmOpenRef.current = false;
+    setPendingDiscardConfirm(false);
   };
 
   const loadDashboard = async () => {
@@ -486,10 +537,26 @@ export function HomeScreen({ navigation }: any) {
       </View>
 
       {/* ── Unfinished workout banner ── */}
-      {resumeSession && resumeSession.exercises?.length > 0 && (
+      {resumeStorageError !== '' && (
+        <View style={styles.sessionNotice} accessibilityRole="alert">
+          <Text style={styles.sessionNoticeText}>{resumeStorageError}</Text>
+          <TouchableOpacity onPress={refreshResumeSession}>
+            <Text style={styles.resumeDiscardText}>Retry checking storage</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+      {discardStorageError !== '' && (
+        <View style={styles.sessionNotice} accessibilityRole="alert">
+          <Text style={styles.sessionNoticeText}>{discardStorageError}</Text>
+        </View>
+      )}
+      {resumeSession && !resumeStorageError && resumeSession.exercises?.length > 0 && (
+        <View>
         <View style={styles.resumeBanner}>
           <View style={styles.resumeBannerLeft}>
-            <Text style={styles.resumeBannerTitle}>Unfinished workout</Text>
+            <Text style={styles.resumeBannerTitle}>
+              {resumeSession.saveOutcome ? 'Saved result awaiting acknowledgement' : 'Unfinished workout'}
+            </Text>
             <Text style={styles.resumeBannerSub}>
               {Object.values(resumeSession.completedSets).reduce(
                 (sum, setNumbers) => sum + setNumbers.length,
@@ -505,12 +572,14 @@ export function HomeScreen({ navigation }: any) {
             <TouchableOpacity
               style={styles.resumeDiscardBtn}
               onPress={handleDiscardSession}
+              disabled={discardingSession}
               activeOpacity={0.8}
             >
               <Text style={styles.resumeDiscardText}>Discard</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.resumeBtn}
+              disabled={discardingSession}
               onPress={() =>
                 navigation.navigate('Workout', {
                   screen: 'WorkoutChecklist',
@@ -523,9 +592,28 @@ export function HomeScreen({ navigation }: any) {
               }
               activeOpacity={0.85}
             >
-              <Text style={styles.resumeBtnText}>Resume</Text>
+              <Text style={styles.resumeBtnText}>{resumeSession.saveOutcome ? 'Review result' : 'Resume'}</Text>
             </TouchableOpacity>
           </View>
+        </View>
+        {pendingDiscardConfirm && (
+          <View style={styles.sessionNotice} accessibilityRole="alert">
+            {!resumeSession.saveOutcome && (
+              <Text style={styles.resumeBannerTitle}>Discard unfinished workout?</Text>
+            )}
+            <Text style={styles.sessionNoticeText}>
+              {resumeSession.saveOutcome
+                ? 'Discard this pending result and its retained draft? The workout already saved in History will remain. Any omitted exercises and local completion data will be permanently discarded and cannot be resumed.'
+                : 'Your progress in this workout will be deleted and cannot be recovered.'}
+            </Text>
+            <TouchableOpacity style={styles.sessionNoticeAction} onPress={cancelDiscardSession} disabled={discardingSession}>
+              <Text style={styles.resumeDiscardText}>{resumeSession.saveOutcome ? 'Keep retained draft' : 'Cancel'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sessionNoticeAction} onPress={confirmDiscardSession} disabled={discardingSession}>
+              <Text style={styles.resumeDiscardText}>{resumeSession.saveOutcome ? 'Discard retained draft' : 'Discard Workout'}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
         </View>
       )}
 
@@ -925,6 +1013,22 @@ const streakStyles = StyleSheet.create({
 });
 
 const styles = StyleSheet.create({
+  sessionNotice: {
+    padding: 16,
+    marginHorizontal: 20,
+    marginBottom: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#b91c1c',
+    backgroundColor: '#ffffff',
+  },
+  sessionNoticeText: {
+    color: '#b91c1c',
+    fontSize: 13,
+    lineHeight: 19,
+    marginBottom: 10,
+  },
+  sessionNoticeAction: { paddingVertical: 12 },
   loader: {
     flex: 1,
     justifyContent: 'center',

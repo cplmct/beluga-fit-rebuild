@@ -13,12 +13,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-
-interface AccountStats {
-  totalWorkouts: number;
-  daysActive: number;
-  lastMeasurementDate: string | null;
-}
+import { AccountStats, buildAccountSummary } from '../utils/accountSummary';
 
 function StatItem({ label, value }: { label: string; value: string }) {
   return (
@@ -61,11 +56,8 @@ export function DeleteAccountScreen() {
   const { user, deleteAccount } = useAuth();
 
   const [statsLoading, setStatsLoading] = useState(true);
-  const [stats, setStats] = useState<AccountStats>({
-    totalWorkouts: 0,
-    daysActive: 0,
-    lastMeasurementDate: null,
-  });
+  const [stats, setStats] = useState<AccountStats | null>(null);
+  const [statsError, setStatsError] = useState('');
 
   const [phase, setPhase] = useState<'review' | 'confirm'>('review');
   const [confirmEmail, setConfirmEmail] = useState('');
@@ -80,8 +72,11 @@ export function DeleteAccountScreen() {
   }, []);
 
   const fetchStats = async () => {
-    if (!user) return;
+    setStatsLoading(true);
+    setStatsError('');
+    setStats(null);
     try {
+      if (!user) throw new Error('Account unavailable.');
       const [sessionsRes, measurementsRes] = await Promise.all([
         supabase
           .from('workout_sessions')
@@ -96,18 +91,12 @@ export function DeleteAccountScreen() {
           .maybeSingle(),
       ]);
 
-      const sessions = sessionsRes.data || [];
-      const daysActive = new Set(
-        sessions.map((s) => (s.started_at as string).split('T')[0])
-      ).size;
-
-      setStats({
-        totalWorkouts: sessions.length,
-        daysActive,
-        lastMeasurementDate: measurementsRes.data?.created_at ?? null,
-      });
+      setStats(buildAccountSummary(sessionsRes, measurementsRes));
     } catch (err) {
       if (__DEV__) console.error('[DeleteAccount] fetchStats:', err);
+      setStatsError(
+        'Couldn’t load your account data summary. Your account may still contain workout or measurement data. Please try again.'
+      );
     } finally {
       setStatsLoading(false);
     }
@@ -184,7 +173,21 @@ export function DeleteAccountScreen() {
               <ActivityIndicator color="#2563eb" size="small" />
               <Text style={styles.statsLoadingText}>Loading your data summary...</Text>
             </View>
-          ) : (
+          ) : statsError ? (
+            <View testID="account-summary-error" accessibilityRole="alert">
+              <View style={styles.errorBanner}>
+                <Text style={styles.errorText}>{statsError}</Text>
+              </View>
+              <TouchableOpacity
+                testID="retry-account-summary"
+                style={styles.cancelButton}
+                onPress={fetchStats}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.cancelButtonText}>Retry data summary</Text>
+              </TouchableOpacity>
+            </View>
+          ) : stats ? (
             <View style={styles.statsRow}>
               <StatItem
                 label="Workouts logged"
@@ -205,7 +208,7 @@ export function DeleteAccountScreen() {
                 }
               />
             </View>
-          )}
+          ) : null}
         </View>
 
         {/* ── Account email display ── */}

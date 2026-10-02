@@ -148,10 +148,10 @@ async function main() {
   const saveGuard = savePath.indexOf('if (!canSaveWorkoutTargets(');
   assert.ok(saveGuard >= 0 && saveGuard < savePath.indexOf(".from('workout_sessions')"));
   assert.ok(saveGuard < savePath.indexOf('setIsSaving(true)'));
-  assert.ok(checklist.includes('visible={unsupportedFinishVisible}'));
-  assert.ok(checklist.includes('<Text style={styles.unsupportedFinishTitle}>Unable to finish workout</Text>'));
-  assert.ok(checklist.includes('<Text style={styles.unsupportedFinishMessage}>{UNSUPPORTED_SAVE_MESSAGE}</Text>'));
-  assert.ok(checklist.includes('<Text style={styles.unsupportedFinishButtonText}>OK</Text>'));
+  assert.ok(checklist.includes('visible={unsupportedFinishVisible || resolutionFailure !== null}'));
+  assert.ok(checklist.includes("resolutionFailure?.title ?? 'Unable to finish workout'"));
+  assert.ok(checklist.includes('resolutionFailure?.message ?? UNSUPPORTED_SAVE_MESSAGE'));
+  assert.ok(checklist.includes("{resolutionFailure ? 'Keep workout' : 'OK'}"));
   assert.equal((checklist.match(/setUnsupportedFinishVisible\(true\)/g) || []).length, 2);
   assert.ok(checklist.includes('isMaxRepsPrCandidate(target, prRepsMap[exId] || 0)'));
   assert.ok(checklist.includes('formatWorkoutTargetLabel(target)'));
