@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, Modal } from 'react-native';
 import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
@@ -49,7 +49,6 @@ function AppContent() {
 
   // ── App content (preserves all existing routing logic) ────────────────────
   const renderContent = () => {
-    if (accountCleanupBusy) return <View style={{ flex: 1, justifyContent: 'center' }}><ActivityIndicator /></View>;
     if (loading) return null;
 
     // ── Password recovery ──────────────────────────────────────────────────
@@ -88,7 +87,7 @@ function AppContent() {
   };
 
   return (
-    <>
+    <View style={{ flex: 1 }}>
       {accountCleanupError !== '' && (
         <View accessibilityRole="alert" style={{ padding: 16, paddingTop: 48, backgroundColor: '#fff4e5' }}>
           <Text>{accountCleanupError}</Text>
@@ -97,14 +96,35 @@ function AppContent() {
           </TouchableOpacity>
         </View>
       )}
-      {renderContent()}
+      <View
+        style={{ flex: 1 }}
+        pointerEvents={accountCleanupBusy ? 'none' : 'auto'}
+        accessibilityElementsHidden={accountCleanupBusy}
+        importantForAccessibility={accountCleanupBusy ? 'no-hide-descendants' : 'auto'}
+      >
+        {renderContent()}
+      </View>
+      {accountCleanupBusy && (
+        <Modal transparent visible onRequestClose={() => {}}>
+        <View
+          testID="account-cleanup-overlay"
+          accessibilityRole="progressbar"
+          accessibilityLabel="Finishing local account cleanup"
+          style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0,
+            zIndex: 100, backgroundColor: 'rgba(9, 23, 34, 0.55)',
+            justifyContent: 'center', alignItems: 'center' }}
+        >
+          <ActivityIndicator size="large" color="#ffffff" />
+        </View>
+        </Modal>
+      )}
       {launchMounted && (
         <LaunchScreen
           shouldFade={launchShouldFade}
           onDismissed={() => setLaunchMounted(false)}
         />
       )}
-    </>
+    </View>
   );
 }
 

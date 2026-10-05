@@ -8,9 +8,9 @@ const read = name => fs.readFileSync(path.join(__dirname, '..', name), 'utf8');
 const compile = text => ts.transpileModule(text, {
   compilerOptions: { target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.CommonJS, esModuleInterop: true, jsx: ts.JsxEmit.ReactJSX },
 }).outputText;
-function moduleFrom(file, dependencies) {
+function moduleFrom(file, dependencies, globals = {}) {
   const exports = {};
-  vm.runInNewContext(compile(read(file)), { exports, Date, require: name => {
+  vm.runInNewContext(compile(read(file)), { exports, Date, __DEV__: false, setTimeout, clearTimeout, ...globals, require: name => {
     assert.ok(name in dependencies, `Unexpected dependency ${name}`);
     return dependencies[name];
   } });
@@ -49,7 +49,7 @@ const MARKER_KEY = '@beluga_account_cleanup_v1';
 const authNames = [
   'onboardingKey', 'readOnboardingCache', 'writeOnboardingCache', 'resolveOnboardingCompleted',
   'invalidateLocalAuth', 'invalidateAccountAuth', 'applyAuthSession', 'restoreAuthSession', 'finishLocalAccountCleanup',
-  'retryAccountCleanup', 'signOut', 'deleteAccount', 'completeOnboarding', 'triggerOnboarding',
+  'retryAccountCleanup', 'beginAccountTransition', 'signIn', 'signUp', 'signOut', 'deleteAccount', 'completeOnboarding', 'triggerOnboarding',
 ];
 const authCode = extract('src/contexts/AuthContext.tsx', authNames);
 
@@ -74,12 +74,14 @@ function environment() {
     '@react-native-async-storage/async-storage': { __esModule: true, default: adapter },
     './workoutTarget': targets, './accountCleanup': cleanup,
   });
+  const transition = moduleFrom('src/utils/accountTransition.ts', { 'react-native': { Platform: { OS: 'android' } } });
   function auth(sdkSession = sessionFor('A')) {
     const profileReads = new Map();
     const profileWrites = [];
     const ctx = {
       exports: {}, __DEV__: false, console, setTimeout,
       AsyncStorage: adapter, ...cleanup,
+      ...transition,
       clearWorkoutSessionForAccount: storage.clearWorkoutSessionForAccount,
       setWorkoutSessionOwner: storage.setWorkoutSessionOwner,
       user: sdkSession?.user ?? null, session: sdkSession, sdkSession,
@@ -87,6 +89,7 @@ function environment() {
       accountCleanupError: '', accountCleanupBusy: false,
       authReadyRef: { current: true }, authMountedRef: { current: true },
       cleanupInProgressRef: { current: false }, pendingCleanupRef: { current: null },
+      accountTransitionInProgressRef: { current: false },
       currentUserIdRef: { current: sdkSession?.user.id ?? null },
       resolvedUserRef: { current: null }, authEventVersion: { current: 0 },
     };
@@ -383,12 +386,120 @@ async function testUnitsRaces() {
   assert.equal(ctx.units.system, 'imperial');
 }
 
+async function testAtomicAuthTransitions() {
+  const e = environment();
+  const a = e.auth();
+  const cleanup = { ownerUserId: 'A', kind: 'sign-out' };
+  await e.cleanup.beginAccountCleanup(cleanup);
+  a.ctx.pendingCleanupRef.current = cleanup;
+  const read = deferred();
+  const signedOut = deferred();
+  const signOutOwners = [];
+  const originalGet = a.ctx.supabase.auth.getSession;
+  a.ctx.supabase.auth.getSession = () => read.promise;
+  a.ctx.supabase.auth.signOut = async () => {
+    signOutOwners.push(a.ctx.sdkSession.user.id);
+    await signedOut.promise;
+    a.ctx.sdkSession = null;
+    await a.applyAuthSession(null);
+    return { error: null };
+  };
+  const retry = a.retryAccountCleanup();
+  await tick();
+  assert.equal(a.ctx.accountTransitionInProgressRef.current, true);
+  // The original A-read -> B-login -> signOut window is now closed.
+  await assert.rejects(a.signIn('b@example.invalid', 'fake'), /cleanup is not ready|transition.*in progress/);
+  await assert.rejects(a.signUp('b@example.invalid', 'fake'), /cleanup is not ready/);
+  assert.ok((await a.deleteAccount()).error);
+  await a.signOut();
+  assert.equal(e.counts.rpc, 0);
+  read.resolve({ data: { session: sessionFor('A') }, error: null });
+  await tick();
+  assert.deepEqual(signOutOwners, ['A']);
+  assert.equal(a.ctx.accountTransitionInProgressRef.current, true); // held through SDK completion
+  a.ctx.supabase.auth.getSession = originalGet;
+  signedOut.resolve();
+  await retry;
+  assert.equal(a.ctx.accountTransitionInProgressRef.current, false);
+
+  // A login that started earlier also owns the guard until it finishes.
+  const bLogin = deferred();
+  a.ctx.supabase.auth.signInWithPassword = async () => {
+    await bLogin.promise;
+    a.ctx.sdkSession = sessionFor('B');
+    await a.applyAuthSession(a.ctx.sdkSession);
+    return { error: null };
+  };
+  await e.cleanup.beginAccountCleanup(cleanup);
+  a.ctx.pendingCleanupRef.current = cleanup;
+  const login = a.signIn('b@example.invalid', 'fake');
+  await tick();
+  await a.retryAccountCleanup();
+  assert.deepEqual(signOutOwners, ['A']);
+  bLogin.resolve();
+  await login;
+  await a.retryAccountCleanup();
+  assert.equal(a.ctx.user.id, 'B');
+  assert.deepEqual(signOutOwners, ['A']); // never B
+
+  // Separate providers/tabs have separate refs and module queues. The shared
+  // browser lock must still serialize them across the comparison/SDK await.
+  let browserQueue = Promise.resolve();
+  const navigator = { locks: { request(name, options, operation) {
+    assert.equal(name, 'beluga-fit-account-transition-v1');
+    assert.equal(options.mode, 'exclusive');
+    const result = browserQueue.then(operation);
+    browserQueue = result.catch(() => undefined);
+    return result;
+  } } };
+  const tabA = e.auth(sessionFor('A'));
+  const tabB = e.auth(sessionFor('A'));
+  for (const tab of [tabA, tabB]) {
+    tab.ctx.withAccountTransitionLock = moduleFrom('src/utils/accountTransition.ts', {
+      'react-native': { Platform: { OS: 'web' } },
+    }, { navigator }).withAccountTransitionLock;
+  }
+  let sharedSession = sessionFor('A');
+  for (const tab of [tabA, tabB]) tab.ctx.supabase.auth.getSession = async () => ({
+    data: { session: sharedSession }, error: null,
+  });
+  const sdkCompletion = deferred();
+  const owners = [];
+  tabA.ctx.supabase.auth.signOut = async () => {
+    owners.push(sharedSession.user.id);
+    await sdkCompletion.promise;
+    sharedSession = null;
+    return { error: null };
+  };
+  tabB.ctx.supabase.auth.signInWithPassword = async () => {
+    sharedSession = sessionFor('B');
+    return { error: null };
+  };
+  const cleanupA = tabA.finishLocalAccountCleanup(cleanup);
+  await tick();
+  const loginB = tabB.signIn('b@example.invalid', 'fake');
+  await tick();
+  assert.equal(sharedSession.user.id, 'A'); // B cannot change the SDK owner in the window.
+  sdkCompletion.resolve();
+  await Promise.all([cleanupA, loginB]);
+  assert.deepEqual(owners, ['A']);
+  assert.equal(sharedSession.user.id, 'B');
+  // Unsupported older web runtimes fail closed for destructive account calls.
+  tabA.ctx.withAccountTransitionLock = moduleFrom('src/utils/accountTransition.ts', {
+    'react-native': { Platform: { OS: 'web' } },
+  }).withAccountTransitionLock;
+  assert.equal(await tabA.finishLocalAccountCleanup(cleanup), false);
+  assert.deepEqual(owners, ['A']);
+}
+
 async function run() {
   await testStorageOwnership();
   await testAuthCleanup();
   await testOnboardingRaces();
   await testUnitsRaces();
-  console.log('Account boundaries: PASS — owned/legacy/pending drafts, mismatched clear failures, stale reads/writes, sign-out/deletion cleanup, durable restart suppression, safe retry, preflight failures, and late units/onboarding responses. Auth/RPC calls were mocked.');
+  await testAtomicAuthTransitions();
+  await require('./test-account-overlay.js')({ environment, moduleFrom, extract });
+  console.log('Account boundaries: PASS — owned/legacy/pending drafts, failed cleanup suppression, safe retry, atomic A-read/B-login/sign-out and already-running-login races, cross-tab locks, mounted cleanup overlays, retained result guards, delayed deletion errors, and late units/onboarding responses. Auth/RPC calls were mocked.');
 }
 module.exports = run;
 if (require.main === module) run().catch(error => { console.error(error); process.exitCode = 1; });

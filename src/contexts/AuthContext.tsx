@@ -4,6 +4,7 @@ import { Session, User, AuthError } from '@supabase/supabase-js'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '../lib/supabase'
 import { setWorkoutSessionOwner, clearWorkoutSessionForAccount } from '../utils/workoutSession'
+import { withAccountTransitionLock } from '../utils/accountTransition'
 import {
   PendingAccountCleanup, readPendingAccountCleanup,
   beginAccountCleanup, removeAccountCleanupMarker,
@@ -162,6 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [accountCleanupError, setAccountCleanupError] = useState('')
   const [accountCleanupBusy, setAccountCleanupBusy] = useState(false)
   const cleanupInProgressRef = useRef(false)
+  const accountTransitionInProgressRef = useRef(false)
   const pendingCleanupRef = useRef<PendingAccountCleanup | null>(null)
   const authReadyRef = useRef(false)
   const authMountedRef = useRef(true)
@@ -184,14 +186,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let mounted = true
 
     const applyRecoveryUrl = async (url: string | null): Promise<void> => {
-      if (!url || cleanupInProgressRef.current) return
+      if (!url || cleanupInProgressRef.current || accountTransitionInProgressRef.current) return
       const tokens = parseRecoveryUrl(url)
       if (!tokens) return
 
-      const { error } = await supabase.auth.setSession({
+      const { data, error } = await beginAccountTransition(() => supabase.auth.setSession({
         access_token:  tokens.accessToken,
         refresh_token: tokens.refreshToken,
-      })
+      }))
 
       if (error) {
         if (__DEV__) console.error('[Auth] setSession error:', error.message)
@@ -204,6 +206,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // The PASSWORD_RECOVERY branch in onAuthStateChange remains as a secondary
       // path for environments where the event does fire.
       if (pendingCleanupRef.current && !currentUserIdRef.current) return
+      if (currentUserIdRef.current && data.session?.user.id !== currentUserIdRef.current) return
       setIsPasswordRecovery(true)
     }
 
@@ -243,6 +246,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Same-account token refresh must not strand an in-flight onboarding load.
     const version = nextId !== currentUserIdRef.current
       ? ++authEventVersion.current : authEventVersion.current
+    // Recording delete intent must not unmount the review screen on a same-user
+    // refresh before the RPC outcome is known. Writes remain marker-blocked.
+    if (nextId && nextId === pendingCleanupRef.current?.ownerUserId &&
+        pendingCleanupRef.current.kind === 'delete-account' &&
+        cleanupInProgressRef.current && currentUserIdRef.current === nextId) return
     if (!nextId || nextId === pendingCleanupRef.current?.ownerUserId) {
       invalidateLocalAuth()
       return
@@ -308,12 +316,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // ── Auth actions ──────────────────────────────────────────────────────────
 
+  const beginAccountTransition = async <T,>(
+    operation: (currentSession: Session | null) => Promise<T>,
+    requireSharedLock = false,
+  ): Promise<T> => {
+    if (accountTransitionInProgressRef.current) throw new Error('An account transition is already in progress. Please retry.')
+    // Claim before any await, including the session read. Login/recovery that
+    // started earlier owns this flag until its SDK operation actually finishes.
+    accountTransitionInProgressRef.current = true
+    try {
+      return await withAccountTransitionLock(async () => {
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession()
+        if (error) throw error
+        return await operation(currentSession)
+      }, requireSharedLock)
+    } finally {
+      accountTransitionInProgressRef.current = false
+    }
+  }
+
   const signIn = async (
     email: string,
     password: string,
   ): Promise<{ error: AuthError | null }> => {
     if (!authReadyRef.current || cleanupInProgressRef.current) throw new Error('Local account cleanup is not ready.')
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error } = await beginAccountTransition(() => supabase.auth.signInWithPassword({ email, password }))
     return { error }
   }
 
@@ -322,19 +349,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     password: string,
   ): Promise<{ error: AuthError | null }> => {
     if (!authReadyRef.current || cleanupInProgressRef.current) throw new Error('Local account cleanup is not ready.')
-    const { error } = await supabase.auth.signUp({ email, password })
+    const { error } = await beginAccountTransition(() => supabase.auth.signUp({ email, password }))
     return { error }
   }
 
   const finishLocalAccountCleanup = async (cleanup: PendingAccountCleanup): Promise<boolean> => {
     try {
-      const { data: { session: storedSession }, error: readError } = await supabase.auth.getSession()
-      if (readError) throw readError
-      // A retry for A must never sign out a newly authenticated B.
-      if (storedSession?.user.id === cleanup.ownerUserId) {
-        const { error } = await supabase.auth.signOut()
-        if (error) throw error
-      }
+      await beginAccountTransition(async (storedSession) => {
+        // Comparison and sign-out hold the same app lock. No supported login,
+        // recovery, deletion or other-tab transition can change the owner here.
+        if (storedSession?.user.id === cleanup.ownerUserId) {
+          const { error } = await supabase.auth.signOut()
+          if (error) throw error
+        }
+      }, true)
       await clearWorkoutSessionForAccount(cleanup.ownerUserId)
       if (cleanup.kind === 'delete-account') {
         const keys = [onboardingKey(cleanup.ownerUserId)]
@@ -355,7 +383,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const retryAccountCleanup = async (): Promise<void> => {
-    if (cleanupInProgressRef.current) return
+    if (cleanupInProgressRef.current || accountTransitionInProgressRef.current) return
     cleanupInProgressRef.current = true
     setAccountCleanupBusy(true)
     try {
@@ -375,7 +403,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async (): Promise<void> => {
-    if (!user || cleanupInProgressRef.current) return
+    if (!user || cleanupInProgressRef.current || accountTransitionInProgressRef.current) return
     if (pendingCleanupRef.current) {
       setAccountCleanupError('Finish the pending local account cleanup before signing out. Retry local cleanup.')
       return
@@ -406,8 +434,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updatePassword = async (
     newPassword: string,
   ): Promise<{ error: AuthError | null }> => {
-    const { error } = await supabase.auth.updateUser({ password: newPassword })
-    if (!error) setIsPasswordRecovery(false)
+    if (cleanupInProgressRef.current) throw new Error('Local account cleanup is in progress.')
+    const ownerUserId = currentUserIdRef.current
+    const version = authEventVersion.current
+    const { error } = await beginAccountTransition((currentSession) => {
+      if (!ownerUserId || currentSession?.user.id !== ownerUserId) {
+        throw new Error('The signed-in account changed. Password update was not performed.')
+      }
+      return supabase.auth.updateUser({ password: newPassword })
+    }, true)
+    if (!error && currentUserIdRef.current === ownerUserId && authEventVersion.current === version) setIsPasswordRecovery(false)
     return { error }
   }
 
@@ -465,7 +501,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const userId = user.id
-    if (cleanupInProgressRef.current || pendingCleanupRef.current) {
+    if (cleanupInProgressRef.current || accountTransitionInProgressRef.current || pendingCleanupRef.current) {
       return { error: { message: 'Finish local account cleanup before deleting the account.' } }
     }
     cleanupInProgressRef.current = true
@@ -481,13 +517,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     pendingCleanupRef.current = cleanup
     if (currentUserIdRef.current === userId) setWorkoutSessionOwner(null)
-    let deletionRejected = false
+    let deletionRejected = true
     try {
-      if (currentUserIdRef.current !== userId) {
-        deletionRejected = true
-        throw new Error('The signed-in account changed. Account deletion was not performed.')
-      }
-      const { error: rpcError } = await supabase.rpc('delete_user')
+      const { error: rpcError } = await beginAccountTransition(async (currentSession) => {
+        if (currentUserIdRef.current !== userId || currentSession?.user.id !== userId) {
+          deletionRejected = true
+          throw new Error('The signed-in account changed. Account deletion was not performed.')
+        }
+        deletionRejected = false
+        return await supabase.rpc('delete_user')
+      }, true)
       if (rpcError) {
         // A transport failure may occur after server deletion. Only an explicit
         // server rejection permits releasing the durable suppression marker.
