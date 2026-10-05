@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
@@ -16,7 +17,8 @@ import { scheduleInactivityReminder, setupNotificationHandler } from './src/util
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function AppContent() {
-  const { user, loading, needsOnboarding, completeOnboarding, isPasswordRecovery } = useAuth();
+  const { user, loading, needsOnboarding, completeOnboarding, isPasswordRecovery,
+    accountCleanupError, accountCleanupBusy, retryAccountCleanup } = useAuth();
   const navigationRef = useNavigationContainerRef();
   const pendingTabRef = useRef<string | null>(null);
 
@@ -47,6 +49,7 @@ function AppContent() {
 
   // ── App content (preserves all existing routing logic) ────────────────────
   const renderContent = () => {
+    if (accountCleanupBusy) return <View style={{ flex: 1, justifyContent: 'center' }}><ActivityIndicator /></View>;
     if (loading) return null;
 
     // ── Password recovery ──────────────────────────────────────────────────
@@ -79,13 +82,21 @@ function AppContent() {
           }
         }}
       >
-        {user ? <BottomTabNavigator /> : <AuthStackNavigator />}
+        {user ? <BottomTabNavigator key={user.id} /> : <AuthStackNavigator />}
       </NavigationContainer>
     );
   };
 
   return (
     <>
+      {accountCleanupError !== '' && (
+        <View accessibilityRole="alert" style={{ padding: 16, paddingTop: 48, backgroundColor: '#fff4e5' }}>
+          <Text>{accountCleanupError}</Text>
+          <TouchableOpacity onPress={retryAccountCleanup} disabled={accountCleanupBusy}>
+            <Text style={{ marginTop: 8, fontWeight: '600' }}>Retry local cleanup</Text>
+          </TouchableOpacity>
+        </View>
+      )}
       {renderContent()}
       {launchMounted && (
         <LaunchScreen

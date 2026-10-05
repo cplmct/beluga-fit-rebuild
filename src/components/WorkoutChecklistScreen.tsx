@@ -146,7 +146,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
     useCallback(() => {
       void checkForSavedSession(initialRestoreRef.current);
       initialRestoreRef.current = false;
-    }, [])
+    }, [user?.id])
   );
 
   const checkForSavedSession = async (offerResume = true) => {
@@ -154,7 +154,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
     setIsRestoringSession(true);
     setSessionStorageError('');
     try {
-      const saved = await loadWorkoutSession();
+      const saved = await loadWorkoutSession(user?.id ?? null);
       if (!saved) {
         if (!offerResume) {
           setCompletedSets({});
@@ -188,7 +188,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
       const sessionMatches = savedKey === currentKey;
 
       if (!sessionMatches) {
-        await clearWorkoutSession();
+        if (user) await clearWorkoutSession(user.id);
         return;
       }
 
@@ -214,7 +214,8 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
             text: 'Start Fresh',
             style: 'destructive',
             onPress: () => {
-              void clearWorkoutSession().catch(() => {
+              if (!user) return;
+              void clearWorkoutSession(user.id).catch(() => {
                 sessionRestoreBlockedRef.current = true;
                 setSessionStorageError('Couldn’t clear the retained workout. It has not been discarded. Retry checking storage before saving.');
               });
@@ -244,25 +245,27 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
   // the just-saved updated list.
   useEffect(() => {
     // Skip if the workout has already been saved and the session cleared.
-    if (workoutFinishedRef.current || sessionRestoreBlockedRef.current) return;
+    if (!user || workoutFinishedRef.current || sessionRestoreBlockedRef.current) return;
     // Skip the initial empty state — no point persisting a blank session.
     if (Object.keys(completedSets).length === 0 && exercises === initialTargetedExercises) return;
     saveWorkoutSession({
+      ownerUserId: user.id,
       exerciseNames: exercises.map((ex: ExerciseSelection) => ex.name),
       completedSets,
       startTime: startTimeRef.current,
       exercises,
       bodyParts,
     }).catch(error => saveStatus.setError(error));
-  }, [completedSets, exercises, isRestoringSession]);
+  }, [completedSets, exercises, isRestoringSession, user?.id]);
 
   // ── Save session when app moves to background (belt + suspenders) ───────────
   useEffect(() => {
     const handleAppStateChange = (nextState: AppStateStatus) => {
       if (nextState === 'background' || nextState === 'inactive') {
         // Do not re-save if the workout has already been finished and cleared.
-        if (workoutFinishedRef.current || sessionRestoreBlockedRef.current) return;
+        if (!user || workoutFinishedRef.current || sessionRestoreBlockedRef.current) return;
         saveWorkoutSession({
+          ownerUserId: user.id,
           exerciseNames: exercises.map((ex: ExerciseSelection) => ex.name),
           completedSets,
           startTime: startTimeRef.current,
@@ -273,7 +276,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
     };
     const sub = AppState.addEventListener('change', handleAppStateChange);
     return () => sub.remove();
-  }, [completedSets, exercises]);
+  }, [completedSets, exercises, user?.id]);
 
   const fetchLastTimeData = async () => {
     if (!user) {
@@ -456,7 +459,9 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
   };
 
   const persistSavedWorkoutResult = async (outcome: WorkoutSaveOutcome) => {
+    if (!user) throw new Error('The workout account is unavailable.');
     await saveWorkoutSession({
+      ownerUserId: user.id,
       exerciseNames: exercises.map((exercise: ExerciseSelection) => exercise.name),
       completedSets,
       startTime: startTimeRef.current,
@@ -1042,7 +1047,8 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
     saveInProgressRef.current = true;
     const workoutId = completedWorkout.id;
     try {
-      await clearWorkoutSession();
+      if (!user) throw new Error('The workout account is unavailable.');
+      await clearWorkoutSession(user.id);
     } catch {
       setResultStorageError('Couldn’t clear the retained workout on this device. The result is still open and the draft has not been cleared. Try the acknowledgement again.' +
         (resultWriteFailed ? ' The pending result is also not stored; keep this screen open to avoid a duplicate save.' : ''));

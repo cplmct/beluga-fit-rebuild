@@ -1,11 +1,34 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ExerciseSelection } from '../data/exercises';
 import { restoreWorkoutTarget } from './workoutTarget';
+import { readPendingAccountCleanup } from './accountCleanup';
 
 const KEY = '@beluga_active_workout_v1';
 
 // Ordinary unfinished drafts expire; pending results do not.
 const MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
+let activeOwnerUserId: string | null = null;
+let accountVersion = 0;
+
+export function setWorkoutSessionOwner(ownerUserId: string | null): void {
+  if (activeOwnerUserId !== ownerUserId) accountVersion++;
+  activeOwnerUserId = ownerUserId;
+}
+
+function assertOwner(ownerUserId: string, version: number): void {
+  if (!ownerUserId || ownerUserId !== activeOwnerUserId || version !== accountVersion) {
+    throw new Error('The active workout account changed. Retry checking storage.');
+  }
+}
+
+async function assertStorageOwner(ownerUserId: string, version: number): Promise<void> {
+  assertOwner(ownerUserId, version);
+  const cleanup = await readPendingAccountCleanup();
+  assertOwner(ownerUserId, version);
+  if (cleanup?.ownerUserId === ownerUserId) {
+    throw new Error('Local account cleanup must finish before restoring or saving this workout.');
+  }
+}
 
 // Keep cleanup and writes to this single key ordered, including failed calls.
 let storageOperations: Promise<unknown> = Promise.resolve();
@@ -22,6 +45,8 @@ export interface WorkoutSaveOutcome {
 }
 
 export interface WorkoutSessionPayload {
+  /** Authenticated account that owns this local draft/result. */
+  ownerUserId: string;
   /** Exercise names in order — used to match against route.params on restore. */
   exerciseNames: string[];
   /** Set numbers completed for each exercise index. */
@@ -38,7 +63,9 @@ export interface WorkoutSessionPayload {
   saveOutcome?: WorkoutSaveOutcome;
 }
 
-type StoredWorkoutSession = Omit<WorkoutSessionPayload, 'completedSets'> & {
+type StoredWorkoutSession = Omit<WorkoutSessionPayload, 'completedSets' | 'ownerUserId'> & {
+  /** Ownerless drafts from older builds are never assigned to a new account. */
+  ownerUserId?: string;
   completedSets?: unknown;
   /** Legacy payload field saved before completion became set-level. */
   completedExercises?: unknown;
@@ -109,14 +136,21 @@ function normalizeCompletedSets(
 export async function saveWorkoutSession(
   payload: Omit<WorkoutSessionPayload, 'savedAt'>
 ): Promise<void> {
+  const version = accountVersion;
   return withWorkoutStorage(async () => {
+    await assertStorageOwner(payload.ownerUserId, version);
     const raw = await AsyncStorage.getItem(KEY);
     const previous: StoredWorkoutSession | null = raw ? JSON.parse(raw) : null;
-    if (previous?.saveOutcome && (!payload.saveOutcome || previous.saveOutcome.id !== payload.saveOutcome.id)) {
+    assertOwner(payload.ownerUserId, version);
+    if (previous && previous.ownerUserId !== payload.ownerUserId) {
+      await AsyncStorage.removeItem(KEY);
+      assertOwner(payload.ownerUserId, version);
+    } else if (previous?.saveOutcome && (!payload.saveOutcome || previous.saveOutcome.id !== payload.saveOutcome.id)) {
       throw new Error('A pending workout result must be acknowledged or discarded before replacing its draft.');
     }
     const data: WorkoutSessionPayload = { ...payload, savedAt: Date.now() };
     await AsyncStorage.setItem(KEY, JSON.stringify(data));
+    assertOwner(payload.ownerUserId, version);
   });
 }
 
@@ -125,11 +159,22 @@ export async function saveWorkoutSession(
  * Returns null if nothing is saved, or an ordinary draft has expired.
  * Pending results never expire. Read/parse/cleanup failures reject.
  */
-export async function loadWorkoutSession(): Promise<WorkoutSessionPayload | null> {
+export async function loadWorkoutSession(ownerUserId: string | null): Promise<WorkoutSessionPayload | null> {
+  if (!ownerUserId) return null;
+  const version = accountVersion;
   return withWorkoutStorage(async () => {
+    await assertStorageOwner(ownerUserId, version);
     const raw = await AsyncStorage.getItem(KEY);
+    assertOwner(ownerUserId, version);
     if (!raw) return null;
     const data: StoredWorkoutSession = JSON.parse(raw);
+    // Check ownership before examining or returning any exercise/result data.
+    // Failed removal rejects; callers keep the foreign/legacy draft hidden.
+    if (!data || data.ownerUserId !== ownerUserId) {
+      await AsyncStorage.removeItem(KEY);
+      assertOwner(ownerUserId, version);
+      return null;
+    }
     if (data.saveOutcome && (
       typeof data.saveOutcome.id !== 'string' || !data.saveOutcome.id ||
       typeof data.saveOutcome.message !== 'string' ||
@@ -154,6 +199,7 @@ export async function loadWorkoutSession(): Promise<WorkoutSessionPayload | null
 
     return {
       ...data,
+      ownerUserId,
       exercises: data.exercises.map((exercise) => ({
         ...exercise,
         target: restoreWorkoutTarget(exercise.target, exercise.reps),
@@ -168,6 +214,23 @@ export async function loadWorkoutSession(): Promise<WorkoutSessionPayload | null
 }
 
 /** Delete the saved session on acknowledgement/discard. Failures reject. */
-export async function clearWorkoutSession(): Promise<void> {
-  return withWorkoutStorage(() => AsyncStorage.removeItem(KEY));
+export async function clearWorkoutSession(ownerUserId: string): Promise<void> {
+  const version = accountVersion;
+  return withWorkoutStorage(async () => {
+    await assertStorageOwner(ownerUserId, version);
+    await AsyncStorage.removeItem(KEY);
+    assertOwner(ownerUserId, version);
+  });
+}
+
+/** Boundary cleanup may run after sign-out, but must not remove a new owner's draft. */
+export async function clearWorkoutSessionForAccount(ownerUserId: string): Promise<void> {
+  return withWorkoutStorage(async () => {
+    const raw = await AsyncStorage.getItem(KEY);
+    if (!raw) return;
+    let storedOwner: unknown;
+    try { storedOwner = JSON.parse(raw)?.ownerUserId; } catch { /* Invalid legacy draft: remove, never restore. */ }
+    if (storedOwner && storedOwner !== ownerUserId) return;
+    await AsyncStorage.removeItem(KEY);
+  });
 }

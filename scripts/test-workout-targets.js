@@ -112,25 +112,29 @@ const storage = {
 const session = compile('src/utils/workoutSession.ts', {
   '@react-native-async-storage/async-storage': { __esModule: true, default: storage },
   './workoutTarget': target,
+  './accountCleanup': { async readPendingAccountCleanup() { return null; } },
 });
 const exercise = { name: 'Test', bodyPart: 'Legs', category: 'Strength', equipment: 'None',
   sets: 2, target: { kind: 'steps', value: 20 }, weight: '', selected: true };
 
 async function main() {
+  session.setWorkoutSessionOwner('test-user');
   await session.saveWorkoutSession({
+    ownerUserId: 'test-user',
     exerciseNames: ['Test'],
     completedSets: { 0: [1] },
     startTime: Date.now(),
     exercises: [exercise],
     bodyParts: ['Legs'],
   });
-  let resumed = await session.loadWorkoutSession();
+  let resumed = await session.loadWorkoutSession('test-user');
   assert.equal(resumed.exercises[0].target.kind, 'steps');
   assert.equal(resumed.exercises[0].target.value, 20);
   assert.deepEqual(Array.from(resumed.completedSets['0']), [1]);
 
   const key = '@beluga_active_workout_v1';
   stored.set(key, JSON.stringify({
+    ownerUserId: 'test-user',
     exerciseNames: ['Test'],
     completedSets: { 0: [1] },
     startTime: Date.now(),
@@ -138,7 +142,7 @@ async function main() {
     exercises: [{ ...exercise, reps: 12, target: undefined }],
     bodyParts: ['Legs'],
   }));
-  resumed = await session.loadWorkoutSession();
+  resumed = await session.loadWorkoutSession('test-user');
   assert.equal(resumed.exercises[0].target.kind, 'unknown');
   assert.equal(resumed.exercises[0].target.raw, '12');
   assert.equal(canSaveWorkoutTargets(resumed.exercises.map((ex) => ex.target)), false);

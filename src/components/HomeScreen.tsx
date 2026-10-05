@@ -316,8 +316,9 @@ export function HomeScreen({ navigation }: any) {
 
   const refreshResumeSession = async () => {
     const read = ++resumeReadRef.current;
+    if (resumeSession?.ownerUserId !== user?.id) setResumeSession(null);
     try {
-      const saved = await loadWorkoutSession();
+      const saved = await loadWorkoutSession(user?.id ?? null);
       if (read !== resumeReadRef.current) return;
       setResumeSession(saved);
       setResumeStorageError('');
@@ -330,13 +331,13 @@ export function HomeScreen({ navigation }: any) {
   };
 
   const confirmDiscardSession = async () => {
-    if (!resumeSession || discardInProgressRef.current) return;
+    if (!user || !resumeSession || resumeSession.ownerUserId !== user.id || discardInProgressRef.current) return;
     discardInProgressRef.current = true;
     setDiscardingSession(true);
     setDiscardStorageError('');
     ++resumeReadRef.current;
     try {
-      await clearWorkoutSession();
+      await clearWorkoutSession(user.id);
       setResumeSession(null);
       discardConfirmOpenRef.current = false;
       setPendingDiscardConfirm(false);
@@ -550,7 +551,7 @@ export function HomeScreen({ navigation }: any) {
           <Text style={styles.sessionNoticeText}>{discardStorageError}</Text>
         </View>
       )}
-      {resumeSession && !resumeStorageError && resumeSession.exercises?.length > 0 && (
+      {resumeSession && resumeSession.ownerUserId === user?.id && !resumeStorageError && resumeSession.exercises?.length > 0 && (
         <View>
         <View style={styles.resumeBanner}>
           <View style={styles.resumeBannerLeft}>

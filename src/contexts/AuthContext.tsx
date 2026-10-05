@@ -3,6 +3,11 @@ import { Linking } from 'react-native'
 import { Session, User, AuthError } from '@supabase/supabase-js'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '../lib/supabase'
+import { setWorkoutSessionOwner, clearWorkoutSessionForAccount } from '../utils/workoutSession'
+import {
+  PendingAccountCleanup, readPendingAccountCleanup,
+  beginAccountCleanup, removeAccountCleanupMarker,
+} from '../utils/accountCleanup'
 
 // ── Deep link scheme ──────────────────────────────────────────────────────────
 // Must match app.json "scheme" and the redirectTo passed to resetPasswordForEmail.
@@ -40,7 +45,7 @@ async function writeOnboardingCache(userId: string, completed: boolean): Promise
   } catch {}
 }
 
-async function resolveOnboardingCompleted(userId: string): Promise<boolean> {
+async function resolveOnboardingCompleted(userId: string, isCurrent: () => boolean = () => true): Promise<boolean> {
   const cached = await readOnboardingCache(userId)
 
   const run = () =>
@@ -80,7 +85,7 @@ async function resolveOnboardingCompleted(userId: string): Promise<boolean> {
   }
 
   const completed = data?.onboarding_completed === true
-  await writeOnboardingCache(userId, completed)
+  if (isCurrent()) await writeOnboardingCache(userId, completed)
   return completed
 }
 
@@ -131,6 +136,9 @@ interface AuthContextType {
   loading:            boolean
   needsOnboarding:    boolean
   isPasswordRecovery: boolean
+  accountCleanupError: string
+  accountCleanupBusy: boolean
+  retryAccountCleanup: () => Promise<void>
   signIn:             (email: string, password: string) => Promise<{ error: AuthError | null }>
   signUp:             (email: string, password: string) => Promise<{ error: AuthError | null }>
   signOut:            () => Promise<void>
@@ -151,13 +159,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading]                       = useState(true)
   const [needsOnboarding, setNeedsOnboarding]       = useState(false)
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false)
+  const [accountCleanupError, setAccountCleanupError] = useState('')
+  const [accountCleanupBusy, setAccountCleanupBusy] = useState(false)
+  const cleanupInProgressRef = useRef(false)
+  const pendingCleanupRef = useRef<PendingAccountCleanup | null>(null)
+  const authReadyRef = useRef(false)
+  const authMountedRef = useRef(true)
+  const currentUserIdRef = useRef<string | null>(null)
 
   // Tracks which user we last resolved onboarding for. Prevents redundant
   // Supabase round-trips on TOKEN_REFRESHED events for the same user.
   const resolvedUserRef = useRef<string | null>(null)
 
-  // Incremented on every auth event. Async onboarding resolution checks this
-  // before applying state — stale results from earlier events are discarded.
+  // Account epoch: async work checks this before applying state. Same-account
+  // token refreshes do not invalidate an already-running onboarding resolution.
   const authEventVersion = useRef(0)
 
   // ── Deep link handler ─────────────────────────────────────────────────────
@@ -169,7 +184,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let mounted = true
 
     const applyRecoveryUrl = async (url: string | null): Promise<void> => {
-      if (!url) return
+      if (!url || cleanupInProgressRef.current) return
       const tokens = parseRecoveryUrl(url)
       if (!tokens) return
 
@@ -188,6 +203,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // using the successfully-parsed recovery URL as the proof of intent.
       // The PASSWORD_RECOVERY branch in onAuthStateChange remains as a secondary
       // path for environments where the event does fire.
+      if (pendingCleanupRef.current && !currentUserIdRef.current) return
       setIsPasswordRecovery(true)
     }
 
@@ -205,91 +221,87 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // ── Auth state listener ───────────────────────────────────────────────────
 
-  useEffect(() => {
-    let mounted = true
+  const invalidateLocalAuth = () => {
+    ++authEventVersion.current
+    setWorkoutSessionOwner(null)
+    currentUserIdRef.current = null
+    resolvedUserRef.current = null
+    setSession(null)
+    setUser(null)
+    setNeedsOnboarding(false)
+    setIsPasswordRecovery(false)
+    setLoading(false)
+  }
 
-    // Initial session load. The finally block guarantees loading is always
-    // cleared even if getSession rejects (e.g. corrupted storage).
-    const init = async (): Promise<void> => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession()
+  const invalidateAccountAuth = (ownerUserId: string) => {
+    if (!currentUserIdRef.current || currentUserIdRef.current === ownerUserId) invalidateLocalAuth()
+  }
 
-        if (error) {
-          if (__DEV__) console.error('[Auth] getSession error:', error.message)
-          // Continue — user is simply unauthenticated.
-          return
-        }
-
-        if (!mounted) return
-
-        setSession(session)
-        setUser(session?.user ?? null)
-
-        if (session?.user) {
-          resolvedUserRef.current = session.user.id
-          const version   = ++authEventVersion.current
-          const completed = await resolveOnboardingCompleted(session.user.id)
-          if (mounted && authEventVersion.current === version) {
-            setNeedsOnboarding(!completed)
-          }
-        }
-      } catch (err) {
-        if (__DEV__) console.error('[Auth] init error:', err)
-      } finally {
-        if (mounted) setLoading(false)
-      }
+  const applyAuthSession = async (nextSession: Session | null, recovery = false): Promise<void> => {
+    if (!authReadyRef.current || !authMountedRef.current) return
+    const nextId = nextSession?.user?.id ?? null
+    // Same-account token refresh must not strand an in-flight onboarding load.
+    const version = nextId !== currentUserIdRef.current
+      ? ++authEventVersion.current : authEventVersion.current
+    if (!nextId || nextId === pendingCleanupRef.current?.ownerUserId) {
+      invalidateLocalAuth()
+      return
     }
+    setWorkoutSessionOwner(nextId)
+    currentUserIdRef.current = nextId
+    setSession(nextSession)
+    setUser(nextSession!.user)
+    if (recovery) setIsPasswordRecovery(true)
+    if (nextId === resolvedUserRef.current) return
+    resolvedUserRef.current = nextId
+    setNeedsOnboarding(false)
+    setLoading(true)
+    try {
+      const completed = await resolveOnboardingCompleted(nextId, () =>
+        authMountedRef.current && authEventVersion.current === version && currentUserIdRef.current === nextId)
+      if (authMountedRef.current && authEventVersion.current === version &&
+          currentUserIdRef.current === nextId) setNeedsOnboarding(!completed)
+    } catch (err) {
+      if (__DEV__) console.error('[Auth] onboarding resolve error:', err)
+    } finally {
+      if (authMountedRef.current && authEventVersion.current === version) setLoading(false)
+    }
+  }
 
-    init()
-
-    // onAuthStateChange callback is intentionally NOT async.
-    // Synchronous state updates are applied immediately; the one piece of
-    // async work (onboarding resolution) runs as a guarded promise chain.
-    // The authEventVersion counter ensures only the most recent event's
-    // async result is applied — earlier in-flight results are discarded.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        // ── Synchronous updates (always safe, last write wins) ──────────────
-        setSession(session)
-        setUser(session?.user ?? null)
-
-        if (event === 'PASSWORD_RECOVERY') {
-          setIsPasswordRecovery(true)
-          return
-        }
-
-        if (!session?.user) {
-          setNeedsOnboarding(false)
-          setIsPasswordRecovery(false)
-          resolvedUserRef.current = null
-          return
-        }
-
-        // ── Async onboarding resolution ────────────────────────────────────
-        // Only runs when the authenticated user actually changes. Skip
-        // TOKEN_REFRESHED and other events for the same user.
-        if (session.user.id === resolvedUserRef.current) return
-
-        resolvedUserRef.current = session.user.id
-        const version = ++authEventVersion.current
-
-        resolveOnboardingCompleted(session.user.id)
-          .then((completed) => {
-            if (mounted && authEventVersion.current === version) {
-              setNeedsOnboarding(!completed)
-            }
-          })
-          .catch((err) => {
-            if (__DEV__) console.error('[Auth] onboarding resolve error:', err)
-            if (mounted && authEventVersion.current === version) {
-              setNeedsOnboarding(false)
-            }
-          })
+  const restoreAuthSession = async (): Promise<void> => {
+    try {
+      // Read the durable suppression marker before accepting any SDK session.
+      pendingCleanupRef.current = await readPendingAccountCleanup()
+      authReadyRef.current = true
+      if (pendingCleanupRef.current) {
+        setAccountCleanupError('Local account cleanup is incomplete. The previous account’s workout is blocked. Retry local cleanup.')
+      } else {
+        setAccountCleanupError('')
       }
-    )
+      const version = authEventVersion.current
+      const { data: { session: restored }, error } = await supabase.auth.getSession()
+      if (error) throw error
+      if (authMountedRef.current && version === authEventVersion.current) await applyAuthSession(restored)
+    } catch {
+      authReadyRef.current = false
+      invalidateLocalAuth()
+      setAccountCleanupError('Couldn’t safely check local account data. Retry local cleanup before signing in.')
+    } finally {
+      if (authMountedRef.current && !currentUserIdRef.current) setLoading(false)
+    }
+  }
 
+  useEffect(() => {
+    authMountedRef.current = true
+    void restoreAuthSession()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      // Do not await Supabase work inside its auth callback.
+      void applyAuthSession(nextSession, event === 'PASSWORD_RECOVERY')
+    })
     return () => {
-      mounted = false
+      authMountedRef.current = false
+      ++authEventVersion.current
+      setWorkoutSessionOwner(null)
       subscription.unsubscribe()
     }
   }, [])
@@ -300,6 +312,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     email: string,
     password: string,
   ): Promise<{ error: AuthError | null }> => {
+    if (!authReadyRef.current || cleanupInProgressRef.current) throw new Error('Local account cleanup is not ready.')
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     return { error }
   }
@@ -308,13 +321,79 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     email: string,
     password: string,
   ): Promise<{ error: AuthError | null }> => {
+    if (!authReadyRef.current || cleanupInProgressRef.current) throw new Error('Local account cleanup is not ready.')
     const { error } = await supabase.auth.signUp({ email, password })
     return { error }
   }
 
+  const finishLocalAccountCleanup = async (cleanup: PendingAccountCleanup): Promise<boolean> => {
+    try {
+      const { data: { session: storedSession }, error: readError } = await supabase.auth.getSession()
+      if (readError) throw readError
+      // A retry for A must never sign out a newly authenticated B.
+      if (storedSession?.user.id === cleanup.ownerUserId) {
+        const { error } = await supabase.auth.signOut()
+        if (error) throw error
+      }
+      await clearWorkoutSessionForAccount(cleanup.ownerUserId)
+      if (cleanup.kind === 'delete-account') {
+        const keys = [onboardingKey(cleanup.ownerUserId)]
+        // Shared preference keys may now belong to B when retrying A's cleanup.
+        if (!currentUserIdRef.current || currentUserIdRef.current === cleanup.ownerUserId) {
+          keys.push('beluga_notif_prefs', 'beluga_notif_id')
+        }
+        await AsyncStorage.multiRemove(keys)
+      }
+      await removeAccountCleanupMarker()
+      pendingCleanupRef.current = null
+      setAccountCleanupError('')
+      return true
+    } catch {
+      setAccountCleanupError('Local account cleanup is incomplete. You are signed out of the previous account locally, but some saved data may remain blocked on this device. Retry local cleanup.')
+      return false
+    }
+  }
+
+  const retryAccountCleanup = async (): Promise<void> => {
+    if (cleanupInProgressRef.current) return
+    cleanupInProgressRef.current = true
+    setAccountCleanupBusy(true)
+    try {
+      const cleanup = pendingCleanupRef.current ?? await readPendingAccountCleanup()
+      if (cleanup) {
+        pendingCleanupRef.current = cleanup
+        if (!currentUserIdRef.current || currentUserIdRef.current === cleanup.ownerUserId) invalidateLocalAuth()
+        await finishLocalAccountCleanup(cleanup)
+      }
+      await restoreAuthSession()
+    } catch {
+      setAccountCleanupError('Couldn’t safely check local account data. Retry local cleanup.')
+    } finally {
+      cleanupInProgressRef.current = false
+      setAccountCleanupBusy(false)
+    }
+  }
+
   const signOut = async (): Promise<void> => {
-    const { error } = await supabase.auth.signOut()
-    if (error && __DEV__) console.error('[Auth] signOut error:', error.message)
+    if (!user || cleanupInProgressRef.current) return
+    if (pendingCleanupRef.current) {
+      setAccountCleanupError('Finish the pending local account cleanup before signing out. Retry local cleanup.')
+      return
+    }
+    cleanupInProgressRef.current = true
+    setAccountCleanupBusy(true)
+    const cleanup: PendingAccountCleanup = { ownerUserId: user.id, kind: 'sign-out' }
+    try {
+      await beginAccountCleanup(cleanup)
+      pendingCleanupRef.current = cleanup
+      invalidateAccountAuth(cleanup.ownerUserId)
+      await finishLocalAccountCleanup(cleanup)
+    } catch {
+      setAccountCleanupError('Couldn’t prepare local cleanup. Sign-out was not performed. Please retry.')
+    } finally {
+      cleanupInProgressRef.current = false
+      setAccountCleanupBusy(false)
+    }
   }
 
   const resetPassword = async (email: string): Promise<{ error: AuthError | null }> => {
@@ -336,6 +415,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const completeOnboarding = async (): Promise<void> => {
     if (!user) return
+    const version = authEventVersion.current
     const { error } = await supabase
       .from('profiles')
       .upsert({ id: user.id, onboarding_completed: true }, { onConflict: 'id' })
@@ -349,12 +429,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         '\nFull error:', JSON.stringify(error),
       )
     }
+    if (version !== authEventVersion.current || currentUserIdRef.current !== user.id) return
     await writeOnboardingCache(user.id, true)
-    setNeedsOnboarding(false)
+    if (authMountedRef.current && version === authEventVersion.current &&
+        currentUserIdRef.current === user.id) setNeedsOnboarding(false)
   }
 
   const triggerOnboarding = async (): Promise<void> => {
     if (!user) return
+    const version = authEventVersion.current
     const { error } = await supabase
       .from('profiles')
       .upsert({ id: user.id, onboarding_completed: false }, { onConflict: 'id' })
@@ -368,8 +451,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         '\nFull error:', JSON.stringify(error),
       )
     }
+    if (version !== authEventVersion.current || currentUserIdRef.current !== user.id) return
     await writeOnboardingCache(user.id, false)
-    setNeedsOnboarding(true)
+    if (authMountedRef.current && version === authEventVersion.current &&
+        currentUserIdRef.current === user.id) setNeedsOnboarding(true)
   }
 
   // ── Account deletion ──────────────────────────────────────────────────────
@@ -380,34 +465,63 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const userId = user.id
-
+    if (cleanupInProgressRef.current || pendingCleanupRef.current) {
+      return { error: { message: 'Finish local account cleanup before deleting the account.' } }
+    }
+    cleanupInProgressRef.current = true
+    setAccountCleanupBusy(true)
+    const cleanup: PendingAccountCleanup = { ownerUserId: userId, kind: 'delete-account' }
     try {
+      // If durable suppression cannot be recorded, do not start deletion.
+      await beginAccountCleanup(cleanup)
+    } catch (err: unknown) {
+      cleanupInProgressRef.current = false
+      setAccountCleanupBusy(false)
+      return { error: { message: 'Couldn’t prepare local cleanup. Your account was not deleted. Please retry.' } }
+    }
+    pendingCleanupRef.current = cleanup
+    if (currentUserIdRef.current === userId) setWorkoutSessionOwner(null)
+    let deletionRejected = false
+    try {
+      if (currentUserIdRef.current !== userId) {
+        deletionRejected = true
+        throw new Error('The signed-in account changed. Account deletion was not performed.')
+      }
       const { error: rpcError } = await supabase.rpc('delete_user')
-
       if (rpcError) {
-        if (__DEV__) console.error('[Auth] deleteAccount RPC error:', rpcError.message)
-        return { error: rpcError }
+        // A transport failure may occur after server deletion. Only an explicit
+        // server rejection permits releasing the durable suppression marker.
+        deletionRejected = !!rpcError.code && !/network|fetch|timeout|abort/i.test(rpcError.message)
+        throw rpcError
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Unexpected error during account deletion'
-      if (__DEV__) console.error('[Auth] deleteAccount error:', message)
+      if (!deletionRejected) {
+        invalidateAccountAuth(userId)
+        setAccountCleanupError('Account deletion could not be confirmed. You are signed out locally and the old workout is blocked. Retry local cleanup; this will not repeat account deletion.')
+        cleanupInProgressRef.current = false
+        setAccountCleanupBusy(false)
+        return { error: { message: 'Account deletion could not be confirmed. Local account data remains blocked.' } }
+      }
+      try {
+        await removeAccountCleanupMarker()
+        pendingCleanupRef.current = null
+        setWorkoutSessionOwner(currentUserIdRef.current)
+        await restoreAuthSession()
+      } catch {
+        invalidateAccountAuth(userId)
+        setAccountCleanupError('Account deletion was not confirmed, and local cleanup is incomplete. Retry local cleanup to sign out safely.')
+      }
+      cleanupInProgressRef.current = false
+      setAccountCleanupBusy(false)
+      const message = err && typeof err === 'object' && 'message' in err ? String(err.message) : 'Unexpected error during account deletion'
       return { error: { message } }
     }
-
-    // Deletion confirmed server-side. Clean up local state.
-    try {
-      await AsyncStorage.multiRemove([
-        onboardingKey(userId),
-        'beluga_notif_prefs',
-        'beluga_notif_id',
-      ])
-    } catch {}
-
-    // Session is already invalidated server-side; signOut may fail — ignore it.
-    try {
-      await supabase.auth.signOut()
-    } catch {}
-
+    // Server deletion succeeded. Never leave the deleted user in local context.
+    invalidateAccountAuth(userId)
+    const cleared = await finishLocalAccountCleanup(cleanup)
+    if (!cleared) setAccountCleanupError('Your account was deleted, but some local data could not be cleared. You are signed out locally and the old workout is blocked. Retry local cleanup.')
+    cleanupInProgressRef.current = false
+    setAccountCleanupBusy(false)
     return { error: null }
   }
 
@@ -419,6 +533,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     needsOnboarding,
     isPasswordRecovery,
+    accountCleanupError,
+    accountCleanupBusy,
+    retryAccountCleanup,
     signIn,
     signUp,
     signOut,

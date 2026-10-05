@@ -42,11 +42,16 @@ const adapter = {
     stored.delete(key);
   },
 };
+const accountCleanup = moduleFrom(read('src/utils/accountCleanup.ts'), {
+  '@react-native-async-storage/async-storage': { __esModule: true, default: adapter },
+});
 const storage = moduleFrom(read('src/utils/workoutSession.ts'), {
   '@react-native-async-storage/async-storage': { __esModule: true, default: adapter },
   './workoutTarget': target,
+  './accountCleanup': accountCleanup,
 });
 const draft = {
+  ownerUserId: 'test-user',
   exerciseNames: ['Saved lift', 'Omitted lift'],
   completedSets: { 0: [1], 1: [1] },
   startTime: Date.now() - 60_000,
@@ -77,10 +82,11 @@ function extractHandlers(source, names) {
 
 function makeHome() {
   const ctx = {
-    exports: {}, resumeSession: pending, resumeStorageError: '',
+    exports: {}, user: { id: 'test-user' }, resumeSession: pending, resumeStorageError: '',
     discardStorageError: '', pendingDiscardConfirm: false, discardingSession: false,
     discardInProgressRef: { current: false }, discardConfirmOpenRef: { current: false }, resumeReadRef: { current: 0 },
-    loadWorkoutSession: storage.loadWorkoutSession, clearWorkoutSession: storage.clearWorkoutSession,
+    loadWorkoutSession: storage.loadWorkoutSession,
+    clearWorkoutSession: storage.clearWorkoutSession,
   };
   for (const name of ['ResumeSession', 'ResumeStorageError', 'DiscardStorageError', 'PendingDiscardConfirm', 'DiscardingSession']) {
     const field = name[0].toLowerCase() + name.slice(1);
@@ -133,7 +139,7 @@ function renderHomeBanner(home) {
   const ast = ts.createSourceFile('home.tsx', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   let banner;
   function visit(node) {
-    if (ts.isJsxExpression(node) && node.expression?.getText(ast).startsWith('resumeSession && !resumeStorageError')) {
+    if (ts.isJsxExpression(node) && node.expression?.getText(ast).startsWith('resumeSession && resumeSession.ownerUserId')) {
       banner = node.expression.getText(ast);
     }
     ts.forEachChild(node, visit);
@@ -158,13 +164,14 @@ function bannerButton(home, label) {
 }
 
 async function run() {
+  storage.setWorkoutSessionOwner('test-user');
   stored.set(key, JSON.stringify(draft));
-  assert.equal(await storage.loadWorkoutSession(), null);
+  assert.equal(await storage.loadWorkoutSession('test-user'), null);
   assert.equal(stored.has(key), false); // ordinary 24-hour expiry unchanged
 
   const rawPending = JSON.stringify(pending);
   stored.set(key, rawPending);
-  const restored = await storage.loadWorkoutSession();
+  const restored = await storage.loadWorkoutSession('test-user');
   assert.equal(restored.saveOutcome.id, 'saved-session');
   assert.equal(restored.saveOutcome.partial, true);
   assert.equal(restored.exercises.length, 2);
@@ -177,7 +184,7 @@ async function run() {
   await storage.saveWorkoutSession(pending); // same-result persistence retry remains valid
 
   failures.read = true;
-  await assert.rejects(storage.loadWorkoutSession(), /Read rejected/);
+  await assert.rejects(storage.loadWorkoutSession('test-user'), /Read rejected/);
   assert.ok(stored.has(key));
   const home = makeHome();
   await home.refreshResumeSession();
@@ -211,7 +218,7 @@ async function run() {
   assert.ok(stored.has(key));
   await bannerButton(home, 'Discard').props.onPress();
   failures.clear = true;
-  await assert.rejects(storage.clearWorkoutSession(), /Clear rejected/);
+  await assert.rejects(storage.clearWorkoutSession('test-user'), /Clear rejected/);
   await home.confirmDiscardSession();
   assert.equal(home.ctx.resumeSession.saveOutcome.id, 'saved-session');
   assert.equal(home.ctx.pendingDiscardConfirm, true);
@@ -226,9 +233,9 @@ async function run() {
 
   await storage.saveWorkoutSession(pending);
   const ack = {
-    exports: {}, completedWorkout: pending.saveOutcome, resultWriteFailed: false,
+    exports: {}, user: { id: 'test-user' }, completedWorkout: pending.saveOutcome, resultWriteFailed: false,
     resultStorageError: '', saveInProgressRef: { current: false },
-    clearWorkoutSession: storage.clearWorkoutSession, navigations: [],
+    clearWorkoutSession: () => storage.clearWorkoutSession('test-user'), navigations: [],
     setCompletedWorkout(value) { ack.completedWorkout = value; },
     setResultStorageError(value) { ack.resultStorageError = value; },
     navigation: { navigate(...args) { ack.navigations.push(args); } },
@@ -341,8 +348,9 @@ async function run() {
   stored.set(key, JSON.stringify(draft));
   const originalGet = adapter.getItem;
   let finishRead;
-  adapter.getItem = () => new Promise(resolve => { finishRead = resolve; });
-  const cleanup = storage.loadWorkoutSession();
+  adapter.getItem = name => name === key
+    ? new Promise(resolve => { finishRead = resolve; }) : originalGet(name);
+  const cleanup = storage.loadWorkoutSession('test-user');
   const markerWrite = storage.saveWorkoutSession(pending);
   await new Promise(resolve => setImmediate(resolve));
   adapter.getItem = originalGet;
@@ -353,10 +361,10 @@ async function run() {
   // Expiry cleanup cannot overtake and erase a queued pending-result write.
 
   stored.set(key, JSON.stringify({ ...pending, exercises: [] }));
-  await assert.rejects(storage.loadWorkoutSession(), /could not be restored/);
+  await assert.rejects(storage.loadWorkoutSession('test-user'), /could not be restored/);
   assert.ok(stored.has(key)); // malformed pending result is not silently removed
   stored.set(key, JSON.stringify({ ...pending, saveOutcome: { id: '' } }));
-  await assert.rejects(storage.loadWorkoutSession(), /could not be read/);
+  await assert.rejects(storage.loadWorkoutSession('test-user'), /could not be read/);
   await assert.rejects(storage.saveWorkoutSession(draft), /must be acknowledged or discarded/);
   assert.ok(stored.has(key));
 
@@ -380,6 +388,22 @@ async function run() {
   const full = renderResultModal({ ...longResult, partial: false });
   full.tree.props.onRequestClose();
   assert.equal(full.count(), 1);
+  // Exercise Home's actual boundary path with its previous account's retained state.
+  stored.set(key, JSON.stringify(pending));
+  storage.setWorkoutSessionOwner('other-user');
+  const switchedHome = makeHome();
+  switchedHome.ctx.user = { id: 'other-user' };
+  assert.equal(renderHomeBanner(switchedHome), false);
+  failures.clear = true;
+  await switchedHome.refreshResumeSession();
+  assert.equal(switchedHome.ctx.resumeSession, null);
+  assert.match(switchedHome.ctx.resumeStorageError, /Couldn’t check/);
+  assert.equal(stored.get(key), JSON.stringify(pending));
+  failures.clear = false;
+  await switchedHome.refreshResumeSession();
+  assert.equal(switchedHome.ctx.resumeSession, null);
+  assert.equal(stored.has(key), false);
+  await require('./test-account-boundaries.js')();
   console.log('Workout storage: PASS — ordinary expiry, non-expiring pending results, restore, overwrite protection, zero/one-set and edited-draft confirmation, Cancel retention, confirmed discard, duplicate-discard blocking, no completed-workout discard prompt, pending-result confirmation, write/read/clear rejections, no false-cleared state, and fixed-footer warning with blocked partial Back.');
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });

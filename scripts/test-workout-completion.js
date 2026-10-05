@@ -88,11 +88,18 @@ function makeWorkout(kind = 'reps', failFirstInsert = false, options = {}) {
     },
     savedPayload: null,
     async saveWorkoutSession(payload) {
+      assert.equal(payload.ownerUserId, ctx.user.id, 'Every persisted active/result snapshot must include its owner');
       ctx.savedPayload = JSON.parse(JSON.stringify({ ...payload, savedAt: Date.now() }));
       events.snapshots.push(ctx.savedPayload);
     },
-    async loadWorkoutSession() { return ctx.savedPayload; },
-    async clearWorkoutSession() { events.clears++; ctx.savedPayload = null; },
+    async loadWorkoutSession(ownerUserId) {
+      assert.equal(ownerUserId, ctx.user.id);
+      return ctx.savedPayload;
+    },
+    async clearWorkoutSession(ownerUserId) {
+      assert.equal(ownerUserId, ctx.user.id);
+      events.clears++; ctx.savedPayload = null;
+    },
     scheduleInactivityReminder() { events.reminders++; },
     navigation: { navigate(...args) { events.navigations.push(args); } },
     Alert: { alert(...args) { events.alerts.push(args); } },
