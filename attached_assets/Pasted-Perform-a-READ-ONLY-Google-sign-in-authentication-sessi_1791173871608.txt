@@ -1,0 +1,119 @@
+Perform a READ-ONLY Google sign-in, authentication, session, and deep-link audit for Beluga Fit.
+
+This is inspection only:
+- Do not edit files.
+- Do not change code.
+- Do not add packages.
+- Do not change app.json, Android configuration, EAS configuration, Supabase settings, database functions, migrations, RLS, or OAuth provider settings.
+- Do not create test accounts.
+- Do not sign in or call authentication providers.
+- Do not commit or push.
+- Do not modify memory files.
+- Do not report speculative defects as confirmed defects.
+
+Project context:
+- React Native with Expo SDK 53 and TypeScript.
+- Supabase Auth.
+- Android is the current public-launch platform.
+- The Android package is com.belugafit.app.
+- Public launch and EAS production build remain paused.
+- Password-reset deep-link work exists historically, but it must be verified against the current code/configuration.
+- Inspect the currently checked-out source only.
+
+Inspect all relevant files, including:
+- App.tsx
+- app.json / app.config.* if present
+- eas.json
+- package.json
+- Android-specific config if present
+- src/lib/supabase.*
+- src/contexts/AuthContext.*
+- LoginScreen
+- RegisterScreen
+- ForgotPasswordScreen
+- ResetPasswordScreen
+- any Google sign-in component/hook/helper
+- navigators and route definitions
+- onboarding entry/persistence logic
+- logout and delete-account flows
+- deep-link listeners and URL handling
+- environment/config access
+- error, loading, cancellation, and retry states.
+
+Report the following:
+
+1. Authentication architecture
+- Exact auth providers actually implemented.
+- Whether Google sign-in is currently implemented, partially implemented, configured but unused, or absent.
+- Exact files, functions, and line numbers.
+- How sessions are persisted and restored.
+- How auth state changes affect navigation.
+
+2. Android OAuth and deep-link configuration
+- Current app scheme(s), package name, redirect URI construction, and any Android intent-filter configuration visible in source.
+- Whether the current source appears consistent with Supabase redirect handling.
+- Any configuration that must be verified manually in Supabase Dashboard, Google Cloud Console, Expo/EAS, or Play Console.
+- Separate source-confirmed facts from external configuration that cannot be verified from source.
+
+3. Google sign-in flow audit
+- Start action.
+- Browser/provider handoff.
+- Redirect return path.
+- Session exchange or token handling.
+- Success navigation.
+- Cancellation handling.
+- User-denied-permission handling.
+- Browser/deep-link failure handling.
+- Offline or provider-error behavior.
+- Duplicate-tap prevention.
+- Account-exists/linking behavior.
+- Any platform-specific Android concern.
+
+4. Email/password and recovery audit
+- Registration validation and success behavior.
+- Login error handling.
+- Password-reset request wording and behavior.
+- Reset-link deep-link route.
+- Expired/invalid reset-link behavior.
+- Password update/session handling.
+- Sign-out behavior.
+- App restart/session restore behavior.
+
+5. Security and privacy review
+- Whether tokens/secrets are exposed in source or logs.
+- Whether redirect URLs are allowlisted/validated in code where applicable.
+- Whether errors risk account enumeration.
+- Whether session data is cleared correctly on logout or deletion.
+- Whether authentication errors are safe and user-appropriate.
+
+6. Findings table
+For every confirmed or plausible issue:
+- ID.
+- Severity: Blocker, Major, Minor, Cosmetic, or Needs external verification.
+- Exact file path and line number.
+- Current behavior.
+- Evidence.
+- User impact.
+- Minimal recommended remediation.
+- Whether it is source-only, requires dashboard/config verification, or requires signed-in Android testing.
+
+7. Manual Android test plan
+Provide a concise test matrix for:
+- New Google user.
+- Existing Google user.
+- Google cancellation.
+- Google denial/provider failure.
+- Email registration.
+- Email login.
+- Wrong password.
+- Forgot password request.
+- Password reset from email on Android.
+- App restart after login.
+- Sign-out.
+- Delete account.
+- Offline/airplane mode during sign-in and recovery.
+
+8. Explicit conclusion
+- Confirm that no files changed.
+- List only actual test commands run, if any.
+- Do not implement fixes.
