@@ -90,6 +90,7 @@ function environment() {
       authReadyRef: { current: true }, authMountedRef: { current: true },
       cleanupInProgressRef: { current: false }, pendingCleanupRef: { current: null },
       accountTransitionInProgressRef: { current: false },
+      signOutScreenOwnerRef: { current: null },
       currentUserIdRef: { current: sdkSession?.user.id ?? null },
       resolvedUserRef: { current: null }, authEventVersion: { current: 0 },
     };
@@ -189,7 +190,7 @@ async function testAuthCleanup() {
   let e = environment();
   let a = e.auth();
   await e.storage.saveWorkoutSession(draftFor('A'));
-  await a.signOut();
+  assert.equal((await a.signOut()).ok, true);
   assert.equal(e.counts.signOut, 1);
   assert.equal(a.ctx.user, null);
   assert.equal(e.stored.has(DRAFT_KEY), false);
@@ -492,14 +493,47 @@ async function testAtomicAuthTransitions() {
   assert.deepEqual(owners, ['A']);
 }
 
+async function testSignOutResults() {
+  const e = environment();
+  const a = e.auth();
+  a.ctx.accountTransitionInProgressRef.current = true;
+  assert.equal((await a.signOut()).message, 'Please wait for the current account operation to finish.');
+  a.ctx.accountTransitionInProgressRef.current = false;
+  a.ctx.cleanupInProgressRef.current = true;
+  assert.equal((await a.signOut()).message, 'Please wait for the current account operation to finish.');
+  a.ctx.cleanupInProgressRef.current = false;
+  a.ctx.pendingCleanupRef.current = { ownerUserId: 'A', kind: 'sign-out' };
+  assert.equal((await a.signOut()).message, 'Finish local account cleanup before signing out.');
+  a.ctx.pendingCleanupRef.current = null;
+  assert.equal(e.counts.signOut, 0);
+  e.faults.signOut = true;
+  const result = await a.signOut();
+  assert.equal(result.ok, false);
+  assert.equal(result.message, 'Couldn’t finish signing out. Retry local account cleanup.');
+  assert.equal(a.ctx.user.id, 'A');
+  assert.ok(e.stored.has(MARKER_KEY));
+  await a.applyAuthSession(sessionFor('A'));
+  assert.equal(a.ctx.user.id, 'A'); // same-owner refresh cannot hide the notice
+  await assert.rejects(e.storage.loadWorkoutSession('A'), /cleanup must finish|account changed/);
+  e.faults.signOut = false;
+  await a.retryAccountCleanup();
+  assert.equal(a.ctx.user, null);
+  assert.equal(e.stored.has(MARKER_KEY), false);
+  const alreadyOut = await a.signOut();
+  assert.equal(alreadyOut.ok, true);
+  assert.equal(alreadyOut.message, 'You are already signed out.');
+}
+
 async function run() {
   await testStorageOwnership();
   await testAuthCleanup();
   await testOnboardingRaces();
   await testUnitsRaces();
   await testAtomicAuthTransitions();
+  await testSignOutResults();
   await require('./test-account-overlay.js')({ environment, moduleFrom, extract });
   console.log('Account boundaries: PASS — owned/legacy/pending drafts, failed cleanup suppression, safe retry, atomic A-read/B-login/sign-out and already-running-login races, cross-tab locks, mounted cleanup overlays, retained result guards, delayed deletion errors, and late units/onboarding responses. Auth/RPC calls were mocked.');
 }
 module.exports = run;
+module.exports.helpers = { environment, moduleFrom, extract };
 if (require.main === module) run().catch(error => { console.error(error); process.exitCode = 1; });

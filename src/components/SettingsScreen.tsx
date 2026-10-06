@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,8 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Constants from 'expo-constants';
@@ -98,6 +100,44 @@ export function SettingsScreen() {
   const [profileLoading, setProfileLoading] = useState(true);
   const [notifPrefs, setNotifPrefs] = useState<NotifPrefs>({ ...DEFAULT_PREFS });
   const [weeklyGoal, setWeeklyGoal] = useState<number>(DEFAULT_WEEKLY_GOAL);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const [signOutNotice, setSignOutNotice] = useState('');
+  const signOutInFlightRef = useRef(false);
+  const signOutConfirmationRef = useRef(false);
+
+  const handleSignOut = async () => {
+    // State alone cannot stop a second tap before React has re-rendered.
+    if (signOutInFlightRef.current) return;
+    signOutInFlightRef.current = true;
+    setIsSigningOut(true);
+    setSignOutNotice('');
+    try {
+      const result = await signOut();
+      setSignOutNotice(result.message ?? (result.ok ? '' : 'Couldn’t sign out. Please retry.'));
+    } catch {
+      setSignOutNotice('Couldn’t sign out. Please retry.');
+    } finally {
+      signOutInFlightRef.current = false;
+      setIsSigningOut(false);
+    }
+  };
+
+  const confirmSignOut = () => {
+    if (signOutInFlightRef.current || signOutConfirmationRef.current) return;
+    // React Native's Alert is a no-op on web. Logout itself is non-destructive.
+    if (Platform.OS === 'web') {
+      void handleSignOut();
+      return;
+    }
+    signOutConfirmationRef.current = true;
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel', onPress: () => { signOutConfirmationRef.current = false; } },
+      { text: 'Sign Out', style: 'destructive', onPress: () => {
+        signOutConfirmationRef.current = false;
+        void handleSignOut();
+      } },
+    ], { onDismiss: () => { signOutConfirmationRef.current = false; } });
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -283,21 +323,21 @@ export function SettingsScreen() {
       </View>
 
       {/* ── Sign Out ── */}
+      {signOutNotice !== '' && (
+        <Text testID="settings-sign-out-notice" accessibilityRole="alert" style={{ color: '#b91c1c', marginBottom: 12 }}>
+          {signOutNotice}
+        </Text>
+      )}
       <TouchableOpacity
+        testID="settings-sign-out-button"
         style={styles.signOutButton}
-        onPress={() =>
-          Alert.alert(
-            'Sign Out',
-            'Are you sure you want to sign out?',
-            [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Sign Out', style: 'destructive', onPress: signOut },
-            ]
-          )
-        }
+        onPress={confirmSignOut}
+        disabled={isSigningOut}
+        accessibilityState={{ disabled: isSigningOut, busy: isSigningOut }}
         activeOpacity={0.8}
       >
-        <Text style={styles.signOutText}>Sign Out</Text>
+        {isSigningOut && <ActivityIndicator color="#b91c1c" />}
+        <Text style={styles.signOutText}>{isSigningOut ? 'Signing out…' : 'Sign Out'}</Text>
       </TouchableOpacity>
 
       {/* ── App Version ── */}

@@ -21,6 +21,8 @@ export interface AppError {
   message: string
 }
 
+export type SignOutResult = { ok: boolean; message?: string }
+
 // ── Local onboarding cache ────────────────────────────────────────────────────
 
 function onboardingKey(userId: string) {
@@ -142,7 +144,7 @@ interface AuthContextType {
   retryAccountCleanup: () => Promise<void>
   signIn:             (email: string, password: string) => Promise<{ error: AuthError | null }>
   signUp:             (email: string, password: string) => Promise<{ error: AuthError | null }>
-  signOut:            () => Promise<void>
+  signOut:            () => Promise<SignOutResult>
   deleteAccount:      () => Promise<{ error: AppError | null }>
   resetPassword:      (email: string) => Promise<{ error: AuthError | null }>
   updatePassword:     (newPassword: string) => Promise<{ error: AuthError | null }>
@@ -164,6 +166,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [accountCleanupBusy, setAccountCleanupBusy] = useState(false)
   const cleanupInProgressRef = useRef(false)
   const accountTransitionInProgressRef = useRef(false)
+  const signOutScreenOwnerRef = useRef<string | null>(null)
   const pendingCleanupRef = useRef<PendingAccountCleanup | null>(null)
   const authReadyRef = useRef(false)
   const authMountedRef = useRef(true)
@@ -225,6 +228,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // ── Auth state listener ───────────────────────────────────────────────────
 
   const invalidateLocalAuth = () => {
+    signOutScreenOwnerRef.current = null
     ++authEventVersion.current
     setWorkoutSessionOwner(null)
     currentUserIdRef.current = null
@@ -246,11 +250,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Same-account token refresh must not strand an in-flight onboarding load.
     const version = nextId !== currentUserIdRef.current
       ? ++authEventVersion.current : authEventVersion.current
-    // Recording delete intent must not unmount the review screen on a same-user
-    // refresh before the RPC outcome is known. Writes remain marker-blocked.
+    // Keep the initiating screen while deletion is in flight, or while an SDK
+    // logout failure is being reported. Draft reads/writes remain marker-blocked.
     if (nextId && nextId === pendingCleanupRef.current?.ownerUserId &&
-        pendingCleanupRef.current.kind === 'delete-account' &&
-        cleanupInProgressRef.current && currentUserIdRef.current === nextId) return
+        currentUserIdRef.current === nextId &&
+        ((pendingCleanupRef.current.kind === 'sign-out' && signOutScreenOwnerRef.current === nextId) ||
+          (pendingCleanupRef.current.kind === 'delete-account' && cleanupInProgressRef.current))) return
     if (!nextId || nextId === pendingCleanupRef.current?.ownerUserId) {
       invalidateLocalAuth()
       return
@@ -377,7 +382,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAccountCleanupError('')
       return true
     } catch {
-      setAccountCleanupError('Local account cleanup is incomplete. You are signed out of the previous account locally, but some saved data may remain blocked on this device. Retry local cleanup.')
+      setAccountCleanupError(currentUserIdRef.current === cleanup.ownerUserId
+        ? 'Couldn’t finish signing out. Retry local account cleanup.'
+        : 'Local account cleanup is incomplete. You are signed out of the previous account locally, but some saved data may remain blocked on this device. Retry local cleanup.')
       return false
     }
   }
@@ -402,22 +409,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const signOut = async (): Promise<void> => {
-    if (!user || cleanupInProgressRef.current || accountTransitionInProgressRef.current) return
-    if (pendingCleanupRef.current) {
-      setAccountCleanupError('Finish the pending local account cleanup before signing out. Retry local cleanup.')
-      return
+  const signOut = async (): Promise<SignOutResult> => {
+    if (cleanupInProgressRef.current || accountTransitionInProgressRef.current) {
+      return { ok: false, message: 'Please wait for the current account operation to finish.' }
     }
+    if (pendingCleanupRef.current) {
+      const message = 'Finish local account cleanup before signing out.'
+      setAccountCleanupError(message)
+      return { ok: false, message }
+    }
+    if (!user) return { ok: true, message: 'You are already signed out.' }
     cleanupInProgressRef.current = true
     setAccountCleanupBusy(true)
     const cleanup: PendingAccountCleanup = { ownerUserId: user.id, kind: 'sign-out' }
     try {
       await beginAccountCleanup(cleanup)
       pendingCleanupRef.current = cleanup
+      signOutScreenOwnerRef.current = cleanup.ownerUserId
+      setWorkoutSessionOwner(null)
+      const cleared = await finishLocalAccountCleanup(cleanup)
+      if (!cleared) return {
+        ok: !currentUserIdRef.current,
+        message: !currentUserIdRef.current
+          ? 'You are signed out, but local cleanup is incomplete. Retry local account cleanup.'
+          : 'Couldn’t finish signing out. Retry local account cleanup.',
+      }
+      if (currentUserIdRef.current && currentUserIdRef.current !== cleanup.ownerUserId) {
+        return { ok: false, message: 'The signed-in account changed. Please try signing out again.' }
+      }
       invalidateAccountAuth(cleanup.ownerUserId)
-      await finishLocalAccountCleanup(cleanup)
+      return { ok: true }
     } catch {
-      setAccountCleanupError('Couldn’t prepare local cleanup. Sign-out was not performed. Please retry.')
+      const message = 'Couldn’t prepare local cleanup. Sign-out was not performed. Please retry.'
+      setAccountCleanupError(message)
+      return { ok: false, message }
     } finally {
       cleanupInProgressRef.current = false
       setAccountCleanupBusy(false)

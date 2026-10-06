@@ -1,0 +1,70 @@
+Fix the confirmed Logout UX bug only. Do not commit or push.
+
+Current behavior:
+- A signed-in user opens Settings and taps Logout.
+- Nothing visible happens.
+- The recent account-boundary changes can cause AuthContext.signOut() to return early when:
+  - cleanupInProgressRef.current is true,
+  - accountTransitionInProgressRef.current is true,
+  - pendingCleanupRef.current exists,
+  - or there is no current user.
+- Settings currently does not reliably surface those outcomes.
+
+Scope:
+- Do not bypass account-boundary cleanup.
+- Do not clear AsyncStorage blindly.
+- Do not change Google sign-in.
+- Do not change Supabase schema, RPC, RLS, OAuth, app.json, EAS config, or database code.
+- Do not modify memory files.
+- Do not commit or push.
+
+Implement:
+
+1. AuthContext signOut result
+- Change signOut() so it returns a structured result such as:
+  { ok: boolean; message?: string }
+  or throws a controlled, user-safe Error.
+- Do not silently return when cleanup or an account transition is active.
+- Return clear safe messages:
+  - Pending cleanup: “Finish local account cleanup before signing out.”
+  - Transition active: “Please wait for the current account operation to finish.”
+  - No user: “You are already signed out.”
+- Preserve the existing protection against signing out another account.
+- Preserve the existing cleanup/retry flow.
+
+2. SettingsScreen logout UX
+- Add local isSigningOut state.
+- Disable the Logout button while sign-out is in progress.
+- Show a visible loading state on the button.
+- Await the AuthContext signOut result.
+- Display returned errors/messages in the existing Settings error/notice UI.
+- Ensure a successful logout navigates to the auth stack through the existing auth state listener.
+- Ensure a failure leaves the user on Settings with the message visible.
+- Ensure rapid repeated taps do not trigger duplicate sign-out calls.
+
+3. Tests
+Add focused regressions for:
+- Normal sign-out succeeds and reaches signed-out state.
+- Pending cleanup blocks sign-out and shows a visible message.
+- Active account transition blocks sign-out and shows a visible message.
+- Sign-out SDK error is shown on Settings.
+- Logout button is disabled while pending.
+- Rapid repeated taps call sign-out only once.
+- Existing Account A/B isolation behavior remains unchanged.
+- Cleanup retry remains available when cleanup is the blocker.
+
+Run:
+node scripts/test-account-boundaries.js
+node scripts/test-account-overlay.js
+node scripts/test-workout-storage.js
+node scripts/test-account-summary.js
+npm run test:weight-units
+npx tsc --noEmit
+git diff --check
+
+Report:
+- Files changed.
+- Exact signOut result contract.
+- Exact visible messages.
+- Test output.
+- Confirm no commit or push.
