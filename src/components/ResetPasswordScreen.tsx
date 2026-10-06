@@ -12,9 +12,10 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
+import { recoveryActionError } from '../utils/passwordRecovery';
 
 export function ResetPasswordScreen() {
-  const { updatePassword } = useAuth();
+  const { updatePassword, cancelRecovery } = useAuth();
 
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -43,17 +44,17 @@ export function ResetPasswordScreen() {
     setLoading(true);
     setError('');
 
-    const { error: updateError } = await updatePassword(trimmed);
-
-    setLoading(false);
-
-    if (updateError) {
-      setError(updateError.message || 'Something went wrong. Please try again.');
-    } else {
-      setDone(true);
-      // updatePassword() sets isPasswordRecovery = false in AuthContext,
-      // which causes App.tsx to re-render and navigate to the main app.
-      // The done state shows a brief success message before that happens.
+    try {
+      const { error: updateError } = await updatePassword(trimmed);
+      if (updateError) {
+        setError(recoveryActionError(updateError, 'Couldn’t update your password. Check your connection and try again.'));
+      } else {
+        setDone(true);
+      }
+    } catch {
+      setError('Couldn’t update your password. Check your connection and try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -75,6 +76,10 @@ export function ResetPasswordScreen() {
             </View>
             <Text style={styles.appName}>Beluga Fit</Text>
           </View>
+          <TouchableOpacity accessibilityRole="button" disabled={loading} onPress={cancelRecovery}
+            style={{ alignItems: 'center', padding: 16 }}>
+            <Text style={{ color: '#2563eb', fontWeight: '600' }}>Cancel / Back</Text>
+          </TouchableOpacity>
 
           <View style={styles.card}>
             {done ? (
@@ -104,6 +109,7 @@ export function ResetPasswordScreen() {
                 <View style={styles.fieldGroup}>
                   <Text style={styles.label}>New password</Text>
                   <TextInput
+                    testID="password-recovery-new"
                     style={[styles.input, passwordFocused && styles.inputFocused]}
                     placeholder="At least 8 characters"
                     placeholderTextColor="#94a3b8"
@@ -123,6 +129,7 @@ export function ResetPasswordScreen() {
                 <View style={styles.fieldGroup}>
                   <Text style={styles.label}>Confirm password</Text>
                   <TextInput
+                    testID="password-recovery-confirm"
                     style={[
                       styles.input,
                       confirmFocused && styles.inputFocused,
@@ -146,6 +153,7 @@ export function ResetPasswordScreen() {
                 </View>
 
                 <TouchableOpacity
+                  testID="password-update-button"
                   style={[styles.primaryButton, loading && styles.primaryButtonDisabled]}
                   onPress={handleUpdate}
                   disabled={loading}

@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '../lib/supabase'
 import { setWorkoutSessionOwner, clearWorkoutSessionForAccount } from '../utils/workoutSession'
 import { withAccountTransitionLock } from '../utils/accountTransition'
+import { parseRecoveryUrl, recoverySessionFailure, RECOVERY_CLEANUP_MESSAGE, RecoveryLinkState } from '../utils/passwordRecovery'
 import {
   PendingAccountCleanup, readPendingAccountCleanup,
   beginAccountCleanup, removeAccountCleanupMarker,
@@ -92,45 +93,6 @@ async function resolveOnboardingCompleted(userId: string, isCurrent: () => boole
   return completed
 }
 
-// ── Deep link parser ──────────────────────────────────────────────────────────
-// Supabase password recovery emails redirect to:
-//   belugafit://reset-password#access_token=xxx&refresh_token=xxx&type=recovery
-//
-// React Native's Linking module does not expose URL fragments on Android, so
-// Supabase encodes the tokens as query params when using a custom scheme.
-// We parse both locations to be safe.
-
-function parseRecoveryUrl(url: string): {
-  accessToken: string
-  refreshToken: string
-} | null {
-  if (!url || !url.startsWith(APP_SCHEME)) return null
-
-  const hashIdx = url.indexOf('#')
-  const qIdx    = url.indexOf('?')
-
-  const paramStr = hashIdx !== -1
-    ? url.slice(hashIdx + 1)
-    : qIdx !== -1
-      ? url.slice(qIdx + 1)
-      : ''
-
-  if (!paramStr) return null
-
-  const params: Record<string, string> = {}
-  paramStr.split('&').forEach((pair) => {
-    const eqIdx = pair.indexOf('=')
-    if (eqIdx === -1) return
-    params[decodeURIComponent(pair.slice(0, eqIdx))] =
-      decodeURIComponent(pair.slice(eqIdx + 1))
-  })
-
-  if (params.type !== 'recovery') return null
-  if (!params.access_token || !params.refresh_token) return null
-
-  return { accessToken: params.access_token, refreshToken: params.refresh_token }
-}
-
 // ── Context types ─────────────────────────────────────────────────────────────
 
 interface AuthContextType {
@@ -139,6 +101,11 @@ interface AuthContextType {
   loading:            boolean
   needsOnboarding:    boolean
   isPasswordRecovery: boolean
+  recoveryOwnerId: string | null
+  recoveryLinkState: RecoveryLinkState
+  recoveryRequestMode: boolean
+  cancelRecovery: () => void
+  requestAnotherResetLink: () => void
   accountCleanupError: string
   accountCleanupBusy: boolean
   retryAccountCleanup: () => Promise<void>
@@ -147,7 +114,7 @@ interface AuthContextType {
   signOut:            () => Promise<SignOutResult>
   deleteAccount:      () => Promise<{ error: AppError | null }>
   resetPassword:      (email: string) => Promise<{ error: AuthError | null }>
-  updatePassword:     (newPassword: string) => Promise<{ error: AuthError | null }>
+  updatePassword:     (newPassword: string) => Promise<{ error: AppError | null }>
   completeOnboarding: () => Promise<void>
   triggerOnboarding:  () => Promise<void>
 }
@@ -161,7 +128,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser]                             = useState<User | null>(null)
   const [loading, setLoading]                       = useState(true)
   const [needsOnboarding, setNeedsOnboarding]       = useState(false)
-  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false)
+  const [recoveryOwnerId, setRecoveryOwnerId] = useState<string | null>(null)
+  const [recoveryLinkState, setRecoveryLinkState] = useState<RecoveryLinkState>({ status: 'idle', message: '' })
+  const [recoveryRequestMode, setRecoveryRequestMode] = useState(false)
+  const recoveryOwnerRef = useRef<string | null>(null)
+  const recoveryAttemptRef = useRef(0)
+  const authRestorePromiseRef = useRef<Promise<void> | null>(null)
+  const isPasswordRecovery = !!recoveryOwnerId && recoveryOwnerId === user?.id
   const [accountCleanupError, setAccountCleanupError] = useState('')
   const [accountCleanupBusy, setAccountCleanupBusy] = useState(false)
   const cleanupInProgressRef = useRef(false)
@@ -180,47 +153,124 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // token refreshes do not invalidate an already-running onboarding resolution.
   const authEventVersion = useRef(0)
 
-  // ── Deep link handler ─────────────────────────────────────────────────────
-  // Parses recovery tokens from belugafit:// URLs and calls setSession so that
-  // onAuthStateChange fires PASSWORD_RECOVERY. Handles both cold starts
-  // (app opened via tapping the link) and warm starts (app already open).
+  const bindRecoveryOwner = (owner: string | null) => {
+    recoveryOwnerRef.current = owner
+    setRecoveryOwnerId(owner)
+  }
+
+  const cancelRecovery = () => {
+    ++recoveryAttemptRef.current
+    bindRecoveryOwner(null)
+    setRecoveryLinkState({ status: 'idle', message: '' })
+    setRecoveryRequestMode(false)
+    // Never restore a previous owner's session/data on cancel.
+  }
+
+  const requestAnotherResetLink = () => {
+    cancelRecovery()
+    setRecoveryRequestMode(true)
+  }
+
+  const applyRecoveryUrl = async (url: string | null): Promise<void> => {
+    if (!url || !authMountedRef.current) return
+    // Linking.getInitialURL() also returns ordinary web/Expo launch URLs.
+    // Do not turn opening the app into an invalid-reset-link screen. A URL
+    // targeting the reset destination still receives controlled validation.
+    try {
+      const initial = new URL(url)
+      if (initial.protocol !== `${APP_SCHEME}:` && initial.hostname !== 'reset-password' &&
+          initial.pathname !== '/reset-password') return
+    } catch {
+      if (!url.startsWith(APP_SCHEME)) return
+    }
+    const attempt = ++recoveryAttemptRef.current
+    const current = () => authMountedRef.current && recoveryAttemptRef.current === attempt
+    bindRecoveryOwner(null)
+    setRecoveryRequestMode(false)
+    setRecoveryLinkState({ status: 'processing', message: '' })
+    let completed = false
+    try {
+      const parsed = parseRecoveryUrl(url)
+      if (parsed.status !== 'valid') {
+        completed = true
+        if (current()) setRecoveryLinkState(parsed)
+        return
+      }
+      if (!authReadyRef.current) await authRestorePromiseRef.current
+      if (!current()) return
+      if (!authReadyRef.current) throw new Error(RECOVERY_CLEANUP_MESSAGE)
+      if (cleanupInProgressRef.current || accountTransitionInProgressRef.current) {
+        throw new Error('Please wait for the current account operation to finish, then open your reset link again.')
+      }
+      await beginAccountTransition(async () => {
+        // Before importing credentials, the link owner is unverified. Block all
+        // imports on pending cleanup rather than trusting unverified JWT claims.
+        const cleanup = await readPendingAccountCleanup()
+        if (cleanup || pendingCleanupRef.current) {
+          if (cleanup) pendingCleanupRef.current = cleanup
+          setAccountCleanupError(RECOVERY_CLEANUP_MESSAGE)
+          throw new Error(RECOVERY_CLEANUP_MESSAGE)
+        }
+        if (!current()) return
+        const importVersion = authEventVersion.current
+        const { data, error } = await supabase.auth.setSession({
+          access_token: parsed.accessToken, refresh_token: parsed.refreshToken,
+        })
+        if (!current()) return
+        if (error) {
+          completed = true
+          bindRecoveryOwner(null)
+          setRecoveryLinkState(recoverySessionFailure(error))
+          return
+        }
+        const owner = data.session?.user?.id
+        if (!owner) throw new Error('Recovery session unavailable')
+        // A normal SDK import may already have applied this owner. An
+        // intervening different-owner event must not be overwritten by its
+        // older response (including sign-out or another-tab sign-in).
+        if (authEventVersion.current !== importVersion && currentUserIdRef.current !== owner) {
+          throw new Error('Recovery account changed')
+        }
+        // Apply identity before releasing the app lock; profile resolution may
+        // continue asynchronously with its existing owner/epoch guards.
+        void applyAuthSession(data.session)
+        if (currentUserIdRef.current !== owner) throw new Error('Recovery account changed')
+        bindRecoveryOwner(owner)
+        setRecoveryLinkState({ status: 'ready', message: '' })
+        completed = true
+      })
+    } catch (error) {
+      if (current()) {
+        completed = true
+        bindRecoveryOwner(null)
+        const message = error instanceof Error ? error.message : ''
+        setRecoveryLinkState(message === RECOVERY_CLEANUP_MESSAGE ||
+          message === 'Please wait for the current account operation to finish, then open your reset link again.'
+          ? { status: 'failed', message } : recoverySessionFailure({}))
+      }
+    } finally {
+      if (current() && !completed) {
+        bindRecoveryOwner(null)
+        setRecoveryLinkState(recoverySessionFailure({}))
+      }
+    }
+  }
 
   useEffect(() => {
     let mounted = true
-
-    const applyRecoveryUrl = async (url: string | null): Promise<void> => {
-      if (!url || cleanupInProgressRef.current || accountTransitionInProgressRef.current) return
-      const tokens = parseRecoveryUrl(url)
-      if (!tokens) return
-
-      const { data, error } = await beginAccountTransition(() => supabase.auth.setSession({
-        access_token:  tokens.accessToken,
-        refresh_token: tokens.refreshToken,
-      }))
-
-      if (error) {
-        if (__DEV__) console.error('[Auth] setSession error:', error.message)
-        return
+    const initialAttempt = recoveryAttemptRef.current
+    void Linking.getInitialURL().then(async url => {
+      if (mounted) await applyRecoveryUrl(url)
+    }).catch(() => {
+      if (mounted && recoveryAttemptRef.current === initialAttempt) {
+        bindRecoveryOwner(null)
+        setRecoveryLinkState(recoverySessionFailure({}))
       }
-
-      // setSession() with a recovery token emits SIGNED_IN (not PASSWORD_RECOVERY)
-      // when detectSessionInUrl is false. We therefore set the flag directly here,
-      // using the successfully-parsed recovery URL as the proof of intent.
-      // The PASSWORD_RECOVERY branch in onAuthStateChange remains as a secondary
-      // path for environments where the event does fire.
-      if (pendingCleanupRef.current && !currentUserIdRef.current) return
-      if (currentUserIdRef.current && data.session?.user.id !== currentUserIdRef.current) return
-      setIsPasswordRecovery(true)
-    }
-
-    Linking.getInitialURL()
-      .then((url) => { if (mounted) applyRecoveryUrl(url) })
-      .catch((err) => { if (__DEV__) console.warn('[Auth] getInitialURL error:', err) })
-
-    const linkSub = Linking.addEventListener('url', ({ url }) => { applyRecoveryUrl(url) })
-
+    })
+    const linkSub = Linking.addEventListener('url', ({ url }) => { void applyRecoveryUrl(url) })
     return () => {
       mounted = false
+      ++recoveryAttemptRef.current
       linkSub.remove()
     }
   }, [])
@@ -236,7 +286,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSession(null)
     setUser(null)
     setNeedsOnboarding(false)
-    setIsPasswordRecovery(false)
+    if (recoveryOwnerRef.current) cancelRecovery()
+    else bindRecoveryOwner(null)
     setLoading(false)
   }
 
@@ -247,6 +298,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const applyAuthSession = async (nextSession: Session | null, recovery = false): Promise<void> => {
     if (!authReadyRef.current || !authMountedRef.current) return
     const nextId = nextSession?.user?.id ?? null
+    if (recoveryOwnerRef.current && recoveryOwnerRef.current !== nextId) cancelRecovery()
     // Same-account token refresh must not strand an in-flight onboarding load.
     const version = nextId !== currentUserIdRef.current
       ? ++authEventVersion.current : authEventVersion.current
@@ -264,7 +316,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     currentUserIdRef.current = nextId
     setSession(nextSession)
     setUser(nextSession!.user)
-    if (recovery) setIsPasswordRecovery(true)
+    if (recovery && !cleanupInProgressRef.current && !pendingCleanupRef.current) {
+      bindRecoveryOwner(nextId)
+      setRecoveryLinkState({ status: 'ready', message: '' })
+    }
     if (nextId === resolvedUserRef.current) return
     resolvedUserRef.current = nextId
     setNeedsOnboarding(false)
@@ -306,7 +361,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     authMountedRef.current = true
-    void restoreAuthSession()
+    authRestorePromiseRef.current = restoreAuthSession()
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
       // Do not await Supabase work inside its auth callback.
       void applyAuthSession(nextSession, event === 'PASSWORD_RECOVERY')
@@ -458,17 +513,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updatePassword = async (
     newPassword: string,
-  ): Promise<{ error: AuthError | null }> => {
-    if (cleanupInProgressRef.current) throw new Error('Local account cleanup is in progress.')
+  ): Promise<{ error: AppError | null }> => {
+    if (cleanupInProgressRef.current) return { error: { message: RECOVERY_CLEANUP_MESSAGE } }
     const ownerUserId = currentUserIdRef.current
+    if (pendingCleanupRef.current?.ownerUserId === ownerUserId) {
+      return { error: { message: RECOVERY_CLEANUP_MESSAGE } }
+    }
     const version = authEventVersion.current
-    const { error } = await beginAccountTransition((currentSession) => {
+    const { error } = await beginAccountTransition(async (currentSession) => {
+      const cleanup = await readPendingAccountCleanup()
+      if (cleanup?.ownerUserId === ownerUserId) return { error: { message: RECOVERY_CLEANUP_MESSAGE } }
       if (!ownerUserId || currentSession?.user.id !== ownerUserId) {
-        throw new Error('The signed-in account changed. Password update was not performed.')
+        return { error: { message: 'The signed-in account changed. Password update was not performed.' } }
       }
       return supabase.auth.updateUser({ password: newPassword })
     }, true)
-    if (!error && currentUserIdRef.current === ownerUserId && authEventVersion.current === version) setIsPasswordRecovery(false)
+    if (!error && currentUserIdRef.current === ownerUserId && authEventVersion.current === version) cancelRecovery()
     return { error }
   }
 
@@ -597,6 +657,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     needsOnboarding,
     isPasswordRecovery,
+    recoveryOwnerId,
+    recoveryLinkState,
+    recoveryRequestMode,
+    cancelRecovery,
+    requestAnotherResetLink,
     accountCleanupError,
     accountCleanupBusy,
     retryAccountCleanup,

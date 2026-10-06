@@ -61,6 +61,7 @@ module.exports = async function testOverlay({ environment, moduleFrom, extract }
       '../lib/supabase': { supabase: sdk.ctx.supabase },
       '../utils/workoutSession': e.storage, '../utils/accountCleanup': e.cleanup,
       '../utils/accountTransition': { withAccountTransitionLock: sdk.ctx.withAccountTransitionLock },
+      '../utils/passwordRecovery': moduleFrom('src/utils/passwordRecovery.ts', {}, { URL, URLSearchParams }),
     });
     const counts = { mounted: 0, unmounted: 0, signOutRequests: 0 };
     const settings = settingsMode ? moduleFrom('src/components/SettingsScreen.tsx', {

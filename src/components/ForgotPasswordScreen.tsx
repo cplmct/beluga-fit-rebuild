@@ -11,14 +11,16 @@ import {
   ScrollView,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
+import { recoveryActionError } from '../utils/passwordRecovery';
 
-export function ForgotPasswordScreen({ navigation }: any) {
+export function ForgotPasswordScreen({ navigation, onBack }: { navigation?: any; onBack?: () => void }) {
   const { resetPassword } = useAuth();
   const [email, setEmail] = useState('');
   const [emailFocused, setEmailFocused] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [sent, setSent] = useState(false);
+  const goBack = () => onBack ? onBack() : navigation?.navigate('Login');
 
   const handleSend = async () => {
     const trimmed = email.trim();
@@ -34,14 +36,17 @@ export function ForgotPasswordScreen({ navigation }: any) {
     setLoading(true);
     setError('');
 
-    const { error: resetError } = await resetPassword(trimmed);
-
-    setLoading(false);
-
-    if (resetError) {
-      setError(resetError.message || 'Something went wrong. Please try again.');
-    } else {
-      setSent(true);
+    try {
+      const { error: resetError } = await resetPassword(trimmed);
+      if (resetError) {
+        setError(recoveryActionError(resetError, 'Couldn’t request a reset link. Check your connection and try again.'));
+      } else {
+        setSent(true);
+      }
+    } catch {
+      setError('Couldn’t request a reset link. Check your connection and try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -78,7 +83,7 @@ export function ForgotPasswordScreen({ navigation }: any) {
               </Text>
               <TouchableOpacity
                 style={styles.primaryButton}
-                onPress={() => navigation.navigate('Login')}
+                onPress={goBack}
                 activeOpacity={0.88}
               >
                 <Text style={styles.primaryButtonText}>Back to Sign In</Text>
@@ -100,6 +105,7 @@ export function ForgotPasswordScreen({ navigation }: any) {
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>Email</Text>
                 <TextInput
+                testID="reset-request-email"
                   style={[styles.input, emailFocused && styles.inputFocused]}
                   placeholder="your@email.com"
                   placeholderTextColor="#94a3b8"
@@ -117,6 +123,7 @@ export function ForgotPasswordScreen({ navigation }: any) {
               </View>
 
               <TouchableOpacity
+                testID="reset-request-button"
                 style={[styles.primaryButton, loading && styles.primaryButtonDisabled]}
                 onPress={handleSend}
                 disabled={loading}
@@ -135,7 +142,7 @@ export function ForgotPasswordScreen({ navigation }: any) {
         {!sent ? (
           <View style={styles.backRow}>
             <TouchableOpacity
-              onPress={() => navigation.navigate('Login')}
+              onPress={goBack}
               disabled={loading}
             >
               <Text style={styles.backLink}>Back to Sign In</Text>

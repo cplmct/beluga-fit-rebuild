@@ -48,6 +48,7 @@ const DRAFT_KEY = '@beluga_active_workout_v1';
 const MARKER_KEY = '@beluga_account_cleanup_v1';
 const authNames = [
   'onboardingKey', 'readOnboardingCache', 'writeOnboardingCache', 'resolveOnboardingCompleted',
+  'bindRecoveryOwner', 'cancelRecovery', 'requestAnotherResetLink',
   'invalidateLocalAuth', 'invalidateAccountAuth', 'applyAuthSession', 'restoreAuthSession', 'finishLocalAccountCleanup',
   'retryAccountCleanup', 'beginAccountTransition', 'signIn', 'signUp', 'signOut', 'deleteAccount', 'completeOnboarding', 'triggerOnboarding',
 ];
@@ -86,6 +87,8 @@ function environment() {
       setWorkoutSessionOwner: storage.setWorkoutSessionOwner,
       user: sdkSession?.user ?? null, session: sdkSession, sdkSession,
       loading: false, needsOnboarding: false, isPasswordRecovery: false,
+      recoveryOwnerId: null, recoveryLinkState: { status: 'idle', message: '' }, recoveryRequestMode: false,
+      recoveryOwnerRef: { current: null }, recoveryAttemptRef: { current: 0 },
       accountCleanupError: '', accountCleanupBusy: false,
       authReadyRef: { current: true }, authMountedRef: { current: true },
       cleanupInProgressRef: { current: false }, pendingCleanupRef: { current: null },
@@ -94,7 +97,7 @@ function environment() {
       currentUserIdRef: { current: sdkSession?.user.id ?? null },
       resolvedUserRef: { current: null }, authEventVersion: { current: 0 },
     };
-    for (const name of ['User', 'Session', 'Loading', 'NeedsOnboarding', 'IsPasswordRecovery', 'AccountCleanupError', 'AccountCleanupBusy']) {
+    for (const name of ['User', 'Session', 'Loading', 'NeedsOnboarding', 'IsPasswordRecovery', 'RecoveryOwnerId', 'RecoveryLinkState', 'RecoveryRequestMode', 'AccountCleanupError', 'AccountCleanupBusy']) {
       ctx[`set${name}`] = value => { ctx[name[0].toLowerCase() + name.slice(1)] = value; };
     }
     ctx.supabase = {

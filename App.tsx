@@ -9,6 +9,8 @@ import { AuthStackNavigator } from './src/components/AuthStackNavigator';
 import { BottomTabNavigator } from './src/components/BottomTabNavigator';
 import { OnboardingScreen } from './src/components/OnboardingScreen';
 import { ChangePasswordScreen } from './src/components/ChangePasswordScreen';
+import { RecoveryLinkScreen } from './src/components/RecoveryLinkScreen';
+import { ForgotPasswordScreen } from './src/components/ForgotPasswordScreen';
 import { LaunchScreen } from './src/components/LaunchScreen';
 import { scheduleInactivityReminder, setupNotificationHandler } from './src/utils/notifications';
 
@@ -18,7 +20,8 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function AppContent() {
   const { user, loading, needsOnboarding, completeOnboarding, isPasswordRecovery,
-    accountCleanupError, accountCleanupBusy, retryAccountCleanup } = useAuth();
+    accountCleanupError, accountCleanupBusy, retryAccountCleanup,
+    recoveryLinkState, recoveryOwnerId, recoveryRequestMode, cancelRecovery } = useAuth();
   const navigationRef = useNavigationContainerRef();
   const pendingTabRef = useRef<string | null>(null);
 
@@ -39,22 +42,22 @@ function AppContent() {
 
   // ── Dismiss launch screen once auth resolves + 1500ms have elapsed ────────
   useEffect(() => {
-    if (!loading) {
+    if (!loading || recoveryLinkState.status !== 'idle' || recoveryRequestMode) {
       const elapsed = Date.now() - launchStartRef.current;
       const remaining = Math.max(0, 7000 - elapsed);
       const timer = setTimeout(() => setLaunchShouldFade(true), remaining);
       return () => clearTimeout(timer);
     }
-  }, [loading]);
+  }, [loading, recoveryLinkState.status, recoveryRequestMode]);
 
   // ── App content (preserves all existing routing logic) ────────────────────
   const renderContent = () => {
-    if (loading) return null;
-
-    // ── Password recovery ──────────────────────────────────────────────────
-    if (isPasswordRecovery) {
-      return <ChangePasswordScreen />;
+    if (recoveryRequestMode) return <ForgotPasswordScreen onBack={cancelRecovery} />;
+    if (['processing', 'invalid', 'expired', 'failed'].includes(recoveryLinkState.status)) {
+      return <RecoveryLinkScreen />;
     }
+    if (isPasswordRecovery) return <ChangePasswordScreen key={recoveryOwnerId} />;
+    if (loading) return null;
 
     // ── Onboarding ─────────────────────────────────────────────────────────
     if (user && needsOnboarding) {
