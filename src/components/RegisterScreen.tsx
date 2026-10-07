@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -22,12 +22,15 @@ export function RegisterScreen({ navigation }: any) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [confirmationRequired, setConfirmationRequired] = useState(false);
+  const registrationRef = useRef(false);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [confirmFocused, setConfirmFocused] = useState(false);
   const { signUp } = useAuth();
 
   const handleRegister = async () => {
+    if (registrationRef.current) return;
     if (!email.trim() || !password || !confirmPassword) {
       setError('Please fill in all fields.');
       return;
@@ -40,17 +43,24 @@ export function RegisterScreen({ navigation }: any) {
       setError('Password must be at least 8 characters.');
       return;
     }
+    registrationRef.current = true;
     setLoading(true);
+    setConfirmationRequired(false);
     setError('');
     try {
-      const { error: signUpError } = await signUp(email.trim(), password);
+      const { data, error: signUpError } = await signUp(email.trim(), password);
       if (signUpError) {
-        setError(signUpError.message);
+        setError('Couldn’t create the account. Check your details and try again.');
+      } else if (!data.session) {
+        setConfirmationRequired(true);
+        setPassword('');
+        setConfirmPassword('');
       }
     } catch (err: any) {
       setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
+      registrationRef.current = false;
     }
   };
 
@@ -85,6 +95,14 @@ export function RegisterScreen({ navigation }: any) {
               <Text style={styles.errorText}>{error}</Text>
             </View>
           ) : null}
+          {confirmationRequired && (
+            <View accessibilityRole="alert" testID="signup-confirmation-required">
+              <Text>Check your email for a confirmation link before signing in. If it does not arrive, check your spam folder.</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                <Text>Back to login</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>Email</Text>

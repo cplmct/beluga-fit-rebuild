@@ -20,10 +20,20 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function AppContent() {
   const { user, loading, needsOnboarding, completeOnboarding, isPasswordRecovery,
+    startupError, retryStartup, onboardingBusy,
     accountCleanupError, accountCleanupBusy, retryAccountCleanup,
     recoveryLinkState, recoveryOwnerId, recoveryRequestMode, cancelRecovery } = useAuth();
   const navigationRef = useNavigationContainerRef();
-  const pendingTabRef = useRef<string | null>(null);
+  const pendingTabRef = useRef<{ ownerUserId: string; tab: string } | null>(null);
+  const currentOwnerRef = useRef(user?.id ?? null);
+  currentOwnerRef.current = user?.id ?? null;
+  const consumePendingTab = () => {
+    const intent = pendingTabRef.current;
+    pendingTabRef.current = null;
+    if (intent && intent.ownerUserId === currentOwnerRef.current) {
+      navigationRef.navigate(intent.tab as never);
+    }
+  };
 
   // ── Launch screen state ───────────────────────────────────────────────────
   const launchStartRef = useRef(Date.now());
@@ -57,17 +67,28 @@ function AppContent() {
       return <RecoveryLinkScreen />;
     }
     if (isPasswordRecovery) return <ChangePasswordScreen key={recoveryOwnerId} />;
-    if (loading) return null;
+    if (loading || startupError) return (
+      <View testID="startup-status" style={{ flex: 1, justifyContent: 'center', padding: 24 }}>
+        {loading ? <><ActivityIndicator /><Text>Checking your session…</Text></> :
+          <View accessibilityRole="alert"><Text>{startupError}</Text>
+            <TouchableOpacity onPress={() => { void retryStartup(); }}><Text>Retry</Text></TouchableOpacity>
+          </View>}
+      </View>
+    );
 
     // ── Onboarding ─────────────────────────────────────────────────────────
     if (user && needsOnboarding) {
       return (
         <OnboardingScreen
+          key={user.id}
+          busy={onboardingBusy}
           onComplete={async (goToPlans) => {
-            if (goToPlans) {
-              pendingTabRef.current = 'Workout';
+            const ownerUserId = user.id;
+            const completed = await completeOnboarding();
+            if (completed && goToPlans && currentOwnerRef.current === ownerUserId) {
+              pendingTabRef.current = { ownerUserId, tab: 'Workout' };
+              if (navigationRef.isReady()) consumePendingTab();
             }
-            await completeOnboarding();
           }}
         />
       );
@@ -77,12 +98,7 @@ function AppContent() {
     return (
       <NavigationContainer
         ref={navigationRef}
-        onReady={() => {
-          if (pendingTabRef.current) {
-            navigationRef.navigate(pendingTabRef.current as never);
-            pendingTabRef.current = null;
-          }
-        }}
+        onReady={consumePendingTab}
       >
         {user ? <BottomTabNavigator key={user.id} /> : <AuthStackNavigator />}
       </NavigationContainer>

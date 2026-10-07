@@ -1,0 +1,158 @@
+Implement the approved Beluga Fit onboarding/workout-safety fixes from the read-only audit.
+
+Do not:
+- Add Google sign-in.
+- Change Supabase schema, migrations, RLS, RPCs, OAuth, email templates, or Dashboard settings.
+- Change app.json, app.config.js, eas.json, Metro configuration, or dependencies.
+- Modify memory files.
+- Commit or push.
+- Make unrelated copy or polish changes.
+
+Preserve:
+- Account-bound workout drafts and pending results.
+- Account-transition locks.
+- Account A/B isolation.
+- Existing full/partial/unresolved save behavior.
+- Existing logout, deletion, cleanup-marker, and password-recovery protections.
+- Title Case exercise-name lookups.
+
+Implement only these findings:
+
+F01 — Resume prompt draft protection
+Files:
+- src/components/WorkoutChecklistScreen.tsx
+- relevant src/utils/workoutSession.ts helpers
+
+Required behavior:
+- When a retained draft is found and the Resume prompt is unresolved, do not write initial/empty workout state over it.
+- Do not autosave the new empty state while the prompt is visible.
+- Backgrounding, AppState changes, unmount cleanup, and delayed effects must preserve the retained draft until the user explicitly chooses Resume or Start Fresh.
+- Resume restores the retained draft.
+- Start Fresh explicitly discards/replaces it only after the existing confirmation rules are satisfied.
+- Preserve same-owner pending-result behavior.
+- A foreign or ownerless draft remains hidden and must never be restored.
+
+F02 — Save-time navigation protection
+Files:
+- src/components/WorkoutChecklistScreen.tsx
+- relevant workout navigator/screen files
+
+Required behavior:
+- Prevent Android Back and navigation removal while workout save, pending-result persistence, or required local cleanup is in progress.
+- Use the supported React Navigation removal-prevention mechanism already compatible with this project, preferably usePreventRemove where appropriate.
+- Do not rely only on a raw beforeRemove listener if the native stack does not support it reliably.
+- Keep the screen mounted until the operation resolves or fails.
+- After success, navigate to the correct result/details state.
+- After failure, keep the user on the screen with retry/error feedback.
+- Prevent duplicate saves and duplicate navigation.
+- Preserve partial-result Back blocking and existing acknowledgement behavior.
+
+F03 — Mismatched retained-draft handling
+Files:
+- src/components/WorkoutChecklistScreen.tsx
+- src/utils/workoutSession.ts
+
+Required behavior:
+- If the user opens a different workout while an ordinary retained draft exists, do not silently clear it.
+- Show an explicit choice:
+  - Resume retained workout.
+  - Discard retained workout and start the selected workout.
+  - Cancel and remain on the current screen.
+- Keep pending-result drafts non-discardable except through the existing acknowledgement/discard rules.
+- Never discard a foreign-owner or ownerless draft as if it belonged to the current user.
+- Preserve the existing duplicate-discard protection and storage-failure behavior.
+
+F04–F06 — Onboarding persistence and completion
+Files:
+- src/contexts/AuthContext.tsx
+- src/components/OnboardingScreen.tsx
+
+Required behavior:
+- Do not treat onboarding as complete locally when the server completion write returns an error.
+- Add an explicit onboarding completion busy state and synchronous duplicate-tap guard.
+- Show a safe retryable error when completion persistence fails.
+- Keep the user on onboarding until completion is persisted according to the chosen policy.
+- Bind completion to the current owner and auth-event/version.
+- Reject or safely stop completion if the account changes, cleanup marker is active, or deletion/sign-out begins.
+- Normalize thrown and returned profile-read failures into a deliberate fallback with visible loading/error/retry behavior.
+- Do not let an unresolved profile read silently skip onboarding.
+- Preserve successful local cache behavior only when it cannot falsely claim durable server completion.
+
+F07 — Signup confirmation feedback
+Files:
+- src/contexts/AuthContext.tsx
+- src/components/RegisterScreen.tsx
+
+Required behavior:
+- Preserve the signup result data.
+- If signup returns no session and no error, show a clear confirmation-required message telling the user to check email.
+- Provide a safe path back to login/resend if supported.
+- Keep generic account-safe error wording.
+- Add loading cleanup for returned and thrown errors.
+
+F08 — Units persistence feedback
+Files:
+- src/contexts/UnitsContext.tsx
+- SettingsScreen only if necessary
+
+Required behavior:
+- Do not leave an optimistic unit value appearing permanently after a returned persistence error.
+- Either roll back to the previous value or show a visible retry/error state.
+- Bind writes to the current owner and reject stale account responses.
+- Preserve existing metric/imperial behavior and database schema.
+
+F09 — Startup loading/error visibility
+Files:
+- App.tsx
+- AuthContext.tsx
+
+Required behavior:
+- Do not render a blank content area indefinitely after the launch overlay disappears.
+- Add a deliberate timeout/error/retry state for stalled auth/profile restoration.
+- Preserve recovery, cleanup, onboarding, and normal navigation precedence.
+- Do not alter the existing launch duration in this patch unless required for correctness.
+
+Tests required:
+- Resume prompt unanswered + background preserves checked sets.
+- Resume prompt unanswered + delayed effects preserves the retained draft.
+- Resume restores the same-owner draft.
+- Start Fresh explicitly replaces/discards according to existing rules.
+- Foreign/ownerless drafts never restore or get silently discarded.
+- Mismatched workout shows an explicit choice.
+- Back/removal during save is blocked.
+- Save failure keeps the screen mounted and retryable.
+- Successful save navigates once.
+- Duplicate Finish taps save once.
+- Partial result remains protected.
+- Onboarding server-write returned error does not mark completion true.
+- Onboarding server-write thrown error shows retryable feedback.
+- Duplicate completion taps call persistence once.
+- Account change during completion cannot complete the new account.
+- Pending cleanup blocks completion.
+- Profile read throw/error does not silently skip onboarding.
+- Signup confirmation-required branch is visible.
+- Units persistence failure rolls back or shows retry.
+- Startup timeout/error state is visible.
+- Existing recovery, logout, account-boundary, overlay, workout storage, and save tests remain passing.
+
+Run:
+node scripts/test-password-recovery.js
+node scripts/test-workout-targets.js
+node scripts/test-workout-completion.js
+node scripts/test-workout-storage.js
+node scripts/test-account-boundaries.js
+node scripts/test-account-overlay.js
+node scripts/test-account-summary.js
+npm run test:weight-units
+npx tsc --noEmit
+git diff --check
+
+Add focused test scripts only if existing scripts cannot cover the new behavior. Do not install dependencies.
+
+Report:
+- Exact files changed.
+- F01/F02/F03 behavior.
+- F04–F09 behavior.
+- All test commands and results.
+- Any remaining device-only limitations.
+- Confirm no commit or push.

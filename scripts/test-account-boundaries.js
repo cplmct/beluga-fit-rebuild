@@ -47,9 +47,9 @@ const draftFor = id => ({
 const DRAFT_KEY = '@beluga_active_workout_v1';
 const MARKER_KEY = '@beluga_account_cleanup_v1';
 const authNames = [
-  'onboardingKey', 'readOnboardingCache', 'writeOnboardingCache', 'resolveOnboardingCompleted',
+  'onboardingKey', 'readOnboardingCache', 'writeOnboardingCache', 'withAuthTimeout', 'resolveOnboardingCompleted',
   'bindRecoveryOwner', 'cancelRecovery', 'requestAnotherResetLink',
-  'invalidateLocalAuth', 'invalidateAccountAuth', 'applyAuthSession', 'restoreAuthSession', 'finishLocalAccountCleanup',
+  'invalidateLocalAuth', 'invalidateAccountAuth', 'applyAuthSession', 'restoreAuthSession', 'retryStartup', 'finishLocalAccountCleanup',
   'retryAccountCleanup', 'beginAccountTransition', 'signIn', 'signUp', 'signOut', 'deleteAccount', 'completeOnboarding', 'triggerOnboarding',
 ];
 const authCode = extract('src/contexts/AuthContext.tsx', authNames);
@@ -80,7 +80,7 @@ function environment() {
     const profileReads = new Map();
     const profileWrites = [];
     const ctx = {
-      exports: {}, __DEV__: false, console, setTimeout,
+      exports: {}, __DEV__: false, console, setTimeout, clearTimeout,
       AsyncStorage: adapter, ...cleanup,
       ...transition,
       clearWorkoutSessionForAccount: storage.clearWorkoutSessionForAccount,
@@ -96,8 +96,11 @@ function environment() {
       signOutScreenOwnerRef: { current: null },
       currentUserIdRef: { current: sdkSession?.user.id ?? null },
       resolvedUserRef: { current: null }, authEventVersion: { current: 0 },
+      onboardingInProgressRef: { current: false }, profileResolutionRef: { current: 0 },
+      restoreAttemptRef: { current: 0 }, onboardingBusy: false, startupError: '',
+      authRestorePromiseRef: { current: null },
     };
-    for (const name of ['User', 'Session', 'Loading', 'NeedsOnboarding', 'IsPasswordRecovery', 'RecoveryOwnerId', 'RecoveryLinkState', 'RecoveryRequestMode', 'AccountCleanupError', 'AccountCleanupBusy']) {
+    for (const name of ['User', 'Session', 'Loading', 'NeedsOnboarding', 'IsPasswordRecovery', 'RecoveryOwnerId', 'RecoveryLinkState', 'RecoveryRequestMode', 'AccountCleanupError', 'AccountCleanupBusy', 'StartupError', 'OnboardingBusy']) {
       ctx[`set${name}`] = value => { ctx[name[0].toLowerCase() + name.slice(1)] = value; };
     }
     ctx.supabase = {
@@ -147,22 +150,24 @@ async function testStorageOwnership() {
 
   e.storage.setWorkoutSessionOwner('B');
   e.faults.remove = true;
-  await assert.rejects(e.storage.loadWorkoutSession('B'), /remove failure/);
+  assert.equal(await e.storage.loadWorkoutSession('B'), null);
+  await assert.rejects(e.storage.loadWorkoutSession('B', true), /Protected workout/);
   assert.equal(JSON.parse(e.stored.get(DRAFT_KEY)).ownerUserId, 'A');
   await assert.rejects(e.storage.saveWorkoutSession(a), /account changed/);
   await assert.rejects(e.storage.clearWorkoutSession('A'), /account changed/);
   e.faults.remove = false;
   assert.equal(await e.storage.loadWorkoutSession('B'), null);
-  assert.equal(e.stored.has(DRAFT_KEY), false);
+  assert.equal(e.stored.has(DRAFT_KEY), true); // Hidden, not silently discarded.
 
   const { ownerUserId, ...legacy } = pending;
   e.stored.set(DRAFT_KEY, JSON.stringify(legacy));
   e.faults.remove = true;
-  await assert.rejects(e.storage.loadWorkoutSession('B'), /remove failure/);
+  assert.equal(await e.storage.loadWorkoutSession('B'), null);
+  await assert.rejects(e.storage.loadWorkoutSession('B', true), /Protected workout/);
   assert.equal(e.stored.get(DRAFT_KEY), JSON.stringify(legacy));
   e.faults.remove = false;
   assert.equal(await e.storage.loadWorkoutSession('B'), null);
-  assert.equal(e.stored.has(DRAFT_KEY), false); // Never auto-assign ownerless pending results.
+  assert.equal(e.stored.has(DRAFT_KEY), true); // Never assign or silently discard ownerless results.
   assert.equal(await e.storage.loadWorkoutSession(null), null);
 
   // An in-flight A read must not return A's data after the account changes.
@@ -184,6 +189,8 @@ async function testStorageOwnership() {
   e.storage.setWorkoutSessionOwner('A');
   await assert.rejects(staleWrite, /account changed/);
   e.storage.setWorkoutSessionOwner('B');
+  await assert.rejects(e.storage.saveWorkoutSession(draftFor('B')), /protected workout/);
+  await e.storage.clearWorkoutSessionForAccount('A'); // Explicit boundary cleanup, not inferred ownership.
   await e.storage.saveWorkoutSession(draftFor('B'));
   await e.storage.clearWorkoutSessionForAccount('A');
   assert.equal((await e.storage.loadWorkoutSession('B')).ownerUserId, 'B');
@@ -216,7 +223,8 @@ async function testAuthCleanup() {
   e.storage.setWorkoutSessionOwner('A');
   await assert.rejects(e.storage.loadWorkoutSession('A'), /cleanup must finish/);
   await restarted.applyAuthSession(sessionFor('B'));
-  await assert.rejects(e.storage.loadWorkoutSession('B'), /remove failure/);
+  assert.equal(await e.storage.loadWorkoutSession('B'), null);
+  await assert.rejects(e.storage.loadWorkoutSession('B', true), /Protected workout/);
   e.faults.remove = false;
   restarted.ctx.sdkSession = sessionFor('B');
   const signOuts = e.counts.signOut;
@@ -245,7 +253,8 @@ async function testAuthCleanup() {
   await blockedDeleted.restoreAuthSession();
   assert.equal(blockedDeleted.ctx.user, null);
   await blockedDeleted.applyAuthSession(sessionFor('B'));
-  await assert.rejects(e.storage.loadWorkoutSession('B'), /remove failure/);
+  assert.equal(await e.storage.loadWorkoutSession('B'), null);
+  await assert.rejects(e.storage.loadWorkoutSession('B', true), /Protected workout/);
   e.faults.remove = false;
   blockedDeleted.ctx.sdkSession = sessionFor('B');
   await blockedDeleted.retryAccountCleanup();

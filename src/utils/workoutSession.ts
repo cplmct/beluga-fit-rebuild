@@ -59,6 +59,8 @@ export interface WorkoutSessionPayload {
   exercises: ExerciseSelection[];
   /** Body parts for the workout — passed as route.params to WorkoutChecklistScreen. */
   bodyParts: string[];
+  /** Original selection identity, preserved when exercises are swapped. */
+  selectionKey?: string;
   /** Acknowledgement pending; do not save this workout again on resume. */
   saveOutcome?: WorkoutSaveOutcome;
 }
@@ -134,21 +136,23 @@ function normalizeCompletedSets(
 
 /** Persist the current workout state. Storage failures reject to the caller. */
 export async function saveWorkoutSession(
-  payload: Omit<WorkoutSessionPayload, 'savedAt'>
+  payload: Omit<WorkoutSessionPayload, 'savedAt'>,
+  canWrite: () => boolean = () => true,
 ): Promise<void> {
   const version = accountVersion;
   return withWorkoutStorage(async () => {
+    if (!canWrite()) return;
     await assertStorageOwner(payload.ownerUserId, version);
     const raw = await AsyncStorage.getItem(KEY);
     const previous: StoredWorkoutSession | null = raw ? JSON.parse(raw) : null;
     assertOwner(payload.ownerUserId, version);
     if (previous && previous.ownerUserId !== payload.ownerUserId) {
-      await AsyncStorage.removeItem(KEY);
-      assertOwner(payload.ownerUserId, version);
+      throw new Error('A protected workout from another account or an older version requires local account cleanup.');
     } else if (previous?.saveOutcome && (!payload.saveOutcome || previous.saveOutcome.id !== payload.saveOutcome.id)) {
       throw new Error('A pending workout result must be acknowledged or discarded before replacing its draft.');
     }
     const data: WorkoutSessionPayload = { ...payload, savedAt: Date.now() };
+    if (!canWrite()) return;
     await AsyncStorage.setItem(KEY, JSON.stringify(data));
     assertOwner(payload.ownerUserId, version);
   });
@@ -159,7 +163,7 @@ export async function saveWorkoutSession(
  * Returns null if nothing is saved, or an ordinary draft has expired.
  * Pending results never expire. Read/parse/cleanup failures reject.
  */
-export async function loadWorkoutSession(ownerUserId: string | null): Promise<WorkoutSessionPayload | null> {
+export async function loadWorkoutSession(ownerUserId: string | null, protectForeign = false): Promise<WorkoutSessionPayload | null> {
   if (!ownerUserId) return null;
   const version = accountVersion;
   return withWorkoutStorage(async () => {
@@ -169,10 +173,9 @@ export async function loadWorkoutSession(ownerUserId: string | null): Promise<Wo
     if (!raw) return null;
     const data: StoredWorkoutSession = JSON.parse(raw);
     // Check ownership before examining or returning any exercise/result data.
-    // Failed removal rejects; callers keep the foreign/legacy draft hidden.
+    // Never infer ownership or discard another account's/ownerless data.
     if (!data || data.ownerUserId !== ownerUserId) {
-      await AsyncStorage.removeItem(KEY);
-      assertOwner(ownerUserId, version);
+      if (protectForeign) throw new Error('Protected workout data requires local account cleanup before starting a workout.');
       return null;
     }
     if (data.saveOutcome && (
@@ -214,10 +217,20 @@ export async function loadWorkoutSession(ownerUserId: string | null): Promise<Wo
 }
 
 /** Delete the saved session on acknowledgement/discard. Failures reject. */
-export async function clearWorkoutSession(ownerUserId: string): Promise<void> {
+export async function clearWorkoutSession(ownerUserId: string, expectedDraft?: WorkoutSessionPayload): Promise<void> {
   const version = accountVersion;
   return withWorkoutStorage(async () => {
     await assertStorageOwner(ownerUserId, version);
+    const raw = await AsyncStorage.getItem(KEY);
+    const stored: StoredWorkoutSession | null = raw ? JSON.parse(raw) : null;
+    assertOwner(ownerUserId, version);
+    if (stored && stored.ownerUserId !== ownerUserId) {
+      throw new Error('The retained workout does not belong to this account.');
+    }
+    if (expectedDraft && stored && (stored.saveOutcome || stored.savedAt !== expectedDraft.savedAt ||
+        JSON.stringify(normalizeCompletedSets(stored.completedSets, stored.completedExercises, stored.exercises)) !== JSON.stringify(expectedDraft.completedSets))) {
+      throw new Error('The retained workout changed. Check storage again before discarding.');
+    }
     await AsyncStorage.removeItem(KEY);
     assertOwner(ownerUserId, version);
   });

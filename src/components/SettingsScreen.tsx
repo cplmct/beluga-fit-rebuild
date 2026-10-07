@@ -94,7 +94,7 @@ function SkeletonBlock({
 export function SettingsScreen() {
   const navigation = useNavigation();
   const { user, signOut } = useAuth();
-  const { unitSystem, updateUnitSystem } = useUnits();
+  const { unitSystem, updateUnitSystem, unitsError, unitsBusy } = useUnits();
 
   const [profileName, setProfileName] = useState('');
   const [profileLoading, setProfileLoading] = useState(true);
@@ -223,7 +223,8 @@ export function SettingsScreen() {
           <View style={styles.unitToggleRow}>
             <TouchableOpacity
               style={[styles.unitOption, unitSystem === 'metric' && styles.unitOptionActive]}
-              onPress={() => updateUnitSystem('metric')}
+              onPress={() => { void updateUnitSystem('metric'); }}
+              disabled={unitsBusy}
               activeOpacity={0.75}
             >
               <Text style={[styles.unitOptionText, unitSystem === 'metric' && styles.unitOptionTextActive]}>
@@ -232,7 +233,8 @@ export function SettingsScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.unitOption, unitSystem === 'imperial' && styles.unitOptionActive]}
-              onPress={() => updateUnitSystem('imperial')}
+              onPress={() => { void updateUnitSystem('imperial'); }}
+              disabled={unitsBusy}
               activeOpacity={0.75}
             >
               <Text style={[styles.unitOptionText, unitSystem === 'imperial' && styles.unitOptionTextActive]}>
@@ -241,6 +243,8 @@ export function SettingsScreen() {
             </TouchableOpacity>
           </View>
         </View>
+        {unitsBusy && <ActivityIndicator accessibilityLabel="Saving units" />}
+        {!!unitsError && <Text accessibilityRole="alert">{unitsError}</Text>}
         <RowDivider />
         <View style={styles.navRow}>
           <View style={styles.navRowLeft}>

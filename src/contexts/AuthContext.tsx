@@ -33,7 +33,8 @@ function onboardingKey(userId: string) {
 async function readOnboardingCache(userId: string): Promise<boolean | null> {
   try {
     const val = await AsyncStorage.getItem(onboardingKey(userId))
-    return val === 'true' ? true : null
+    // Older "true" values could have been written after a failed server save.
+    return val === 'server-confirmed:true' ? true : null
   } catch {
     return null
   }
@@ -42,11 +43,25 @@ async function readOnboardingCache(userId: string): Promise<boolean | null> {
 async function writeOnboardingCache(userId: string, completed: boolean): Promise<void> {
   try {
     if (completed) {
-      await AsyncStorage.setItem(onboardingKey(userId), 'true')
+      await AsyncStorage.setItem(onboardingKey(userId), 'server-confirmed:true')
     } else {
       await AsyncStorage.removeItem(onboardingKey(userId))
     }
   } catch {}
+}
+
+async function withAuthTimeout<T>(operation: Promise<T>, milliseconds = 15000): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  try {
+    return await Promise.race([
+      operation,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error('Session check timed out. Please retry.')), milliseconds)
+      }),
+    ])
+  } finally {
+    if (timer !== undefined) clearTimeout(timer)
+  }
 }
 
 async function resolveOnboardingCompleted(userId: string, isCurrent: () => boolean = () => true): Promise<boolean> {
@@ -59,33 +74,24 @@ async function resolveOnboardingCompleted(userId: string, isCurrent: () => boole
       .eq('id', userId)
       .maybeSingle()
 
-  let { data, error } = await run()
+  let result
+  try {
+    result = await run()
+    if (result.error?.code === 'PGRST002') {
+      await new Promise<void>((resolve) => setTimeout(resolve, 1500))
+      result = await run()
+    }
+  } catch {
+    if (cached === true) return true
+    throw new Error('Couldn’t check onboarding. Check your connection and retry.')
+  }
+  const { data, error } = result
 
   // PGRST002 = PostgREST schema-cache reload in progress (transient).
   // Wait 1.5 s and retry once before falling back to the local cache.
-  if (error?.code === 'PGRST002') {
-    if (__DEV__) {
-      console.warn(
-        '[Onboarding] PGRST002 on first attempt — retrying in 1.5 s.\n',
-        JSON.stringify(error),
-      )
-    }
-    await new Promise<void>((resolve) => setTimeout(resolve, 1500))
-    ;({ data, error } = await run())
-  }
-
   if (error) {
-    if (__DEV__) {
-      console.warn(
-        '[Onboarding] Supabase unavailable — falling back to cache:', cached,
-        '\nmessage:', error.message,
-        '| code:', error.code,
-        '| details:', error.details,
-        '| hint:', error.hint,
-        '\nFull error:', JSON.stringify(error),
-      )
-    }
-    return cached === true
+    if (cached === true) return true
+    throw new Error('Couldn’t check onboarding. Check your connection and retry.')
   }
 
   const completed = data?.onboarding_completed === true
@@ -99,6 +105,9 @@ interface AuthContextType {
   session:            Session | null
   user:               User | null
   loading:            boolean
+  startupError: string
+  retryStartup: () => Promise<void>
+  onboardingBusy: boolean
   needsOnboarding:    boolean
   isPasswordRecovery: boolean
   recoveryOwnerId: string | null
@@ -110,12 +119,12 @@ interface AuthContextType {
   accountCleanupBusy: boolean
   retryAccountCleanup: () => Promise<void>
   signIn:             (email: string, password: string) => Promise<{ error: AuthError | null }>
-  signUp:             (email: string, password: string) => Promise<{ error: AuthError | null }>
+  signUp:             (email: string, password: string) => ReturnType<typeof supabase.auth.signUp>
   signOut:            () => Promise<SignOutResult>
   deleteAccount:      () => Promise<{ error: AppError | null }>
   resetPassword:      (email: string) => Promise<{ error: AuthError | null }>
   updatePassword:     (newPassword: string) => Promise<{ error: AppError | null }>
-  completeOnboarding: () => Promise<void>
+  completeOnboarding: () => Promise<boolean>
   triggerOnboarding:  () => Promise<void>
 }
 
@@ -127,6 +136,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession]                       = useState<Session | null>(null)
   const [user, setUser]                             = useState<User | null>(null)
   const [loading, setLoading]                       = useState(true)
+  const [startupError, setStartupError] = useState('')
+  const [onboardingBusy, setOnboardingBusy] = useState(false)
+  const onboardingInProgressRef = useRef(false)
+  const profileResolutionRef = useRef(0)
+  const restoreAttemptRef = useRef(0)
   const [needsOnboarding, setNeedsOnboarding]       = useState(false)
   const [recoveryOwnerId, setRecoveryOwnerId] = useState<string | null>(null)
   const [recoveryLinkState, setRecoveryLinkState] = useState<RecoveryLinkState>({ status: 'idle', message: '' })
@@ -280,6 +294,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const invalidateLocalAuth = () => {
     signOutScreenOwnerRef.current = null
     ++authEventVersion.current
+    ++profileResolutionRef.current
+    setStartupError('')
     setWorkoutSessionOwner(null)
     currentUserIdRef.current = null
     resolvedUserRef.current = null
@@ -322,41 +338,67 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     if (nextId === resolvedUserRef.current) return
     resolvedUserRef.current = nextId
-    setNeedsOnboarding(false)
+    const attempt = ++profileResolutionRef.current
+    const current = () => authMountedRef.current && authEventVersion.current === version &&
+      currentUserIdRef.current === nextId && profileResolutionRef.current === attempt
+    setStartupError('')
+    setNeedsOnboarding(true)
     setLoading(true)
     try {
-      const completed = await resolveOnboardingCompleted(nextId, () =>
-        authMountedRef.current && authEventVersion.current === version && currentUserIdRef.current === nextId)
-      if (authMountedRef.current && authEventVersion.current === version &&
-          currentUserIdRef.current === nextId) setNeedsOnboarding(!completed)
-    } catch (err) {
-      if (__DEV__) console.error('[Auth] onboarding resolve error:', err)
+      const completed = await withAuthTimeout(resolveOnboardingCompleted(nextId, current))
+      if (current()) setNeedsOnboarding(!completed)
+    } catch {
+      if (current()) {
+        resolvedUserRef.current = null
+        setNeedsOnboarding(true)
+        setStartupError('Couldn’t check your onboarding status. Check your connection and retry.')
+      }
     } finally {
-      if (authMountedRef.current && authEventVersion.current === version) setLoading(false)
+      if (current()) {
+        setLoading(false)
+        ++profileResolutionRef.current
+      }
     }
   }
 
   const restoreAuthSession = async (): Promise<void> => {
+    const attempt = ++restoreAttemptRef.current
+    const version = authEventVersion.current
+    const current = () => authMountedRef.current && restoreAttemptRef.current === attempt &&
+      authEventVersion.current === version
+    setStartupError('')
+    // Background cleanup retry must not unmount an already-resolved B screen.
+    if (!currentUserIdRef.current || resolvedUserRef.current !== currentUserIdRef.current) setLoading(true)
     try {
       // Read the durable suppression marker before accepting any SDK session.
-      pendingCleanupRef.current = await readPendingAccountCleanup()
+      const cleanup = await withAuthTimeout(readPendingAccountCleanup())
+      if (!current()) return
+      pendingCleanupRef.current = cleanup
       authReadyRef.current = true
       if (pendingCleanupRef.current) {
         setAccountCleanupError('Local account cleanup is incomplete. The previous account’s workout is blocked. Retry local cleanup.')
       } else {
         setAccountCleanupError('')
       }
-      const version = authEventVersion.current
-      const { data: { session: restored }, error } = await supabase.auth.getSession()
+      const { data: { session: restored }, error } = await withAuthTimeout(supabase.auth.getSession())
       if (error) throw error
-      if (authMountedRef.current && version === authEventVersion.current) await applyAuthSession(restored)
+      if (current()) await applyAuthSession(restored)
     } catch {
+      if (!current()) return
       authReadyRef.current = false
       invalidateLocalAuth()
-      setAccountCleanupError('Couldn’t safely check local account data. Retry local cleanup before signing in.')
+      setStartupError('Couldn’t safely restore your session and local account state. Check your connection and retry.')
     } finally {
       if (authMountedRef.current && !currentUserIdRef.current) setLoading(false)
     }
+  }
+
+  const retryStartup = async (): Promise<void> => {
+    if (cleanupInProgressRef.current || accountTransitionInProgressRef.current) return
+    resolvedUserRef.current = null
+    ++profileResolutionRef.current
+    authRestorePromiseRef.current = restoreAuthSession()
+    await authRestorePromiseRef.current
   }
 
   useEffect(() => {
@@ -407,10 +449,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (
     email: string,
     password: string,
-  ): Promise<{ error: AuthError | null }> => {
+  ): ReturnType<typeof supabase.auth.signUp> => {
     if (!authReadyRef.current || cleanupInProgressRef.current) throw new Error('Local account cleanup is not ready.')
-    const { error } = await beginAccountTransition(() => supabase.auth.signUp({ email, password }))
-    return { error }
+    return await beginAccountTransition(() => supabase.auth.signUp({ email, password }))
   }
 
   const finishLocalAccountCleanup = async (cleanup: PendingAccountCleanup): Promise<boolean> => {
@@ -534,26 +575,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // ── Onboarding actions ────────────────────────────────────────────────────
 
-  const completeOnboarding = async (): Promise<void> => {
-    if (!user) return
+  const completeOnboarding = async (): Promise<boolean> => {
+    if (onboardingInProgressRef.current) return false
+    const ownerUserId = user?.id
     const version = authEventVersion.current
-    const { error } = await supabase
-      .from('profiles')
-      .upsert({ id: user.id, onboarding_completed: true }, { onConflict: 'id' })
-    if (error && __DEV__) {
-      console.warn(
-        '[Onboarding] completeOnboarding: Supabase write failed — local state will still update.',
-        '| message:', error.message,
-        '| code:', error.code,
-        '| details:', error.details,
-        '| hint:', error.hint,
-        '\nFull error:', JSON.stringify(error),
-      )
+    const current = () => authMountedRef.current && currentUserIdRef.current === ownerUserId &&
+      authEventVersion.current === version
+    if (!ownerUserId || !authReadyRef.current || !current() ||
+        cleanupInProgressRef.current || pendingCleanupRef.current || accountTransitionInProgressRef.current) {
+      throw new Error('Account state changed or cleanup is pending. Finish account cleanup and retry.')
     }
-    if (version !== authEventVersion.current || currentUserIdRef.current !== user.id) return
-    await writeOnboardingCache(user.id, true)
-    if (authMountedRef.current && version === authEventVersion.current &&
-        currentUserIdRef.current === user.id) setNeedsOnboarding(false)
+    onboardingInProgressRef.current = true
+    setOnboardingBusy(true)
+    try {
+      return await beginAccountTransition(async (storedSession) => {
+        const marker = await readPendingAccountCleanup()
+        if (!current() || marker || cleanupInProgressRef.current || pendingCleanupRef.current ||
+            storedSession?.user.id !== ownerUserId) throw new Error('Account state changed.')
+        const { error } = await supabase.from('profiles')
+          .upsert({ id: ownerUserId, onboarding_completed: true }, { onConflict: 'id' })
+        if (error) throw error
+        if (!current() || cleanupInProgressRef.current || pendingCleanupRef.current) throw new Error('Account state changed.')
+        await writeOnboardingCache(ownerUserId, true)
+        if (!current()) throw new Error('Account state changed.')
+        setNeedsOnboarding(false)
+        return true
+      }, true)
+    } catch {
+      throw new Error('Couldn’t save onboarding completion. Check your connection and retry.')
+    } finally {
+      onboardingInProgressRef.current = false
+      if (authMountedRef.current) setOnboardingBusy(false)
+    }
   }
 
   const triggerOnboarding = async (): Promise<void> => {
@@ -655,6 +708,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     session,
     user,
     loading,
+    startupError,
+    retryStartup,
+    onboardingBusy,
     needsOnboarding,
     isPasswordRecovery,
     recoveryOwnerId,

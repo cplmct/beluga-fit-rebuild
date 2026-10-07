@@ -42,6 +42,13 @@ function makeWorkout(kind = 'reps', failFirstInsert = false, options = {}) {
     saveInProgressRef: { current: false },
     workoutFinishedRef: { current: false },
     sessionRestoreBlockedRef: { current: false },
+    restoreVersionRef: { current: 0 },
+    workoutMountedRef: { current: true },
+    discardInProgressRef: { current: false },
+    finishPromptRef: { current: false },
+    resultNavigationDoneRef: { current: false },
+    draftStateRef: { current: null },
+    selectionKeyRef: { current: '' },
     startTimeRef: { current: Date.now() - 60_000 },
   };
   const ctx = {
@@ -60,6 +67,7 @@ function makeWorkout(kind = 'reps', failFirstInsert = false, options = {}) {
     completedCount: 1,
     totalCount: 1,
     bodyParts: ['Legs'],
+    setBodyParts() {},
     weightUnit: 'kg',
     isSaving: false,
     completedWorkout: null,
@@ -456,4 +464,5 @@ async function run() {
   console.log('Workout completion: PASS — reps/seconds/steps payloads, full/partial/unresolved saves, session-exercise resolution, lookup failure, retained drafts, restored outcomes, double-tap, navigation, retry, PR, rep volume, invalid-target blocking, observable write/read/clear failures, storage-only retry, and delayed-read save protection.');
 }
 
-run().catch((error) => { console.error(error); process.exitCode = 1; });
+module.exports.helpers = { makeWorkout };
+if (require.main === module) run().catch((error) => { console.error(error); process.exitCode = 1; });

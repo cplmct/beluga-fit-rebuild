@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
+import { withAccountTransitionLock } from '../utils/accountTransition';
+import { readPendingAccountCleanup } from '../utils/accountCleanup';
 
 type UnitSystem = 'metric' | 'imperial';
 
@@ -9,6 +11,8 @@ interface UnitsContextType {
   weightUnit: string;
   lengthUnit: string;
   updateUnitSystem: (system: UnitSystem) => Promise<void>;
+  unitsError: string;
+  unitsBusy: boolean;
 }
 
 const UnitsContext = createContext<UnitsContextType | undefined>(undefined);
@@ -21,6 +25,10 @@ export function UnitsProvider({ children }: { children: React.ReactNode }) {
   const currentUserIdRef = useRef(user?.id ?? null);
   currentUserIdRef.current = user?.id ?? null;
   const requestVersionRef = useRef(0);
+  const writeRef = useRef<{ ownerUserId: string; version: number } | null>(null);
+  const [writeStatus, setWriteStatus] = useState({ ownerUserId: '', busy: false, error: '' });
+  const unitsError = writeStatus.ownerUserId === user?.id ? writeStatus.error : '';
+  const unitsBusy = writeStatus.ownerUserId === user?.id && writeStatus.busy;
   const unitSystem = units.ownerUserId === (user?.id ?? null) ? units.system : 'imperial';
 
   useEffect(() => {
@@ -47,17 +55,35 @@ export function UnitsProvider({ children }: { children: React.ReactNode }) {
 
   const updateUnitSystem = async (system: UnitSystem) => {
     if (!user) return;
-    setUnits({ ownerUserId: user.id, system });
-    await supabase
-      .from('profiles')
-      .upsert({ id: user.id, unit_system: system });
+    const ownerUserId = user.id;
+    if (writeRef.current?.ownerUserId === ownerUserId) return;
+    const version = ++requestVersionRef.current;
+    const request = { ownerUserId, version };
+    writeRef.current = request;
+    const current = () => currentUserIdRef.current === ownerUserId && requestVersionRef.current === version;
+    setWriteStatus({ ownerUserId, busy: true, error: '' });
+    try {
+      await withAccountTransitionLock(async () => {
+        const marker = await readPendingAccountCleanup();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (!current() || marker || sessionError || session?.user.id !== ownerUserId) throw new Error('Account changed.');
+        const { error } = await supabase.from('profiles').upsert({ id: ownerUserId, unit_system: system });
+        if (error) throw error;
+        if (current()) setUnits({ ownerUserId, system });
+      });
+      if (current()) setWriteStatus({ ownerUserId, busy: false, error: '' });
+    } catch {
+      if (current()) setWriteStatus({ ownerUserId, busy: false, error: 'Couldn’t save units. Your previous units are unchanged. Tap the unit option to retry.' });
+    } finally {
+      if (writeRef.current === request) writeRef.current = null;
+    }
   };
 
   const weightUnit = unitSystem === 'metric' ? 'kg' : 'lbs';
   const lengthUnit = unitSystem === 'metric' ? 'cm' : 'in';
 
   return (
-    <UnitsContext.Provider value={{ unitSystem, weightUnit, lengthUnit, updateUnitSystem }}>
+    <UnitsContext.Provider value={{ unitSystem, weightUnit, lengthUnit, updateUnitSystem, unitsError, unitsBusy }}>
       {children}
     </UnitsContext.Provider>
   );

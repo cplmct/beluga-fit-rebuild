@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   SafeAreaView,
   Platform,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -54,13 +55,39 @@ const SLIDES: Slide[] = [
 ];
 
 type Props = {
-  onComplete: (goToPlans?: boolean) => void;
+  onComplete: (goToPlans?: boolean) => void | Promise<void>;
   fromSettings?: boolean;
+  busy?: boolean;
 };
 
-export function OnboardingScreen({ onComplete, fromSettings = false }: Props) {
+export function OnboardingScreen({ onComplete, fromSettings = false, busy = false }: Props) {
   const listRef = useRef<FlatList>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [completionPending, setCompletionPending] = useState(false);
+  const [completionError, setCompletionError] = useState('');
+  const completionRef = useRef(false);
+  const completionIntentRef = useRef(false);
+  const mountedRef = useRef(true);
+  const saving = busy || completionPending;
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+  const submitCompletion = useCallback(async (goToPlans: boolean) => {
+    if (completionRef.current || busy) return;
+    completionRef.current = true;
+    completionIntentRef.current = goToPlans;
+    setCompletionPending(true);
+    setCompletionError('');
+    try {
+      await onComplete(goToPlans);
+    } catch {
+      if (mountedRef.current) setCompletionError('Couldn’t save onboarding completion. Check your connection and retry.');
+    } finally {
+      completionRef.current = false;
+      if (mountedRef.current) setCompletionPending(false);
+    }
+  }, [onComplete, busy]);
 
   const goToSlide = useCallback((index: number) => {
     listRef.current?.scrollToIndex({ index, animated: true });
@@ -74,12 +101,12 @@ export function OnboardingScreen({ onComplete, fromSettings = false }: Props) {
   }, [activeIndex, goToSlide]);
 
   const handleSkip = useCallback(() => {
-    onComplete(false);
-  }, [onComplete]);
+    void submitCompletion(false);
+  }, [submitCompletion]);
 
   const handleFindPlan = useCallback(() => {
-    onComplete(true);
-  }, [onComplete]);
+    void submitCompletion(true);
+  }, [submitCompletion]);
 
   const handleDone = useCallback(() => {
     onComplete(false);
@@ -147,7 +174,7 @@ export function OnboardingScreen({ onComplete, fromSettings = false }: Props) {
         </View>
 
         {!isLastSlide && !fromSettings ? (
-          <TouchableOpacity onPress={handleSkip} activeOpacity={0.65} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <TouchableOpacity onPress={handleSkip} disabled={saving} activeOpacity={0.65} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
             <Text style={styles.skipText}>Skip</Text>
           </TouchableOpacity>
         ) : (
@@ -162,6 +189,7 @@ export function OnboardingScreen({ onComplete, fromSettings = false }: Props) {
         keyExtractor={(item) => item.key}
         renderItem={renderSlide}
         horizontal
+        scrollEnabled={!saving}
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         scrollEventThrottle={16}
@@ -177,6 +205,13 @@ export function OnboardingScreen({ onComplete, fromSettings = false }: Props) {
 
       {/* ── Bottom actions ── */}
       <View style={styles.bottomBar}>
+        {saving && <ActivityIndicator accessibilityLabel="Saving onboarding completion" />}
+        {completionError !== '' && <View accessibilityRole="alert">
+          <Text>{completionError}</Text>
+          <TouchableOpacity disabled={saving} onPress={() => { void submitCompletion(completionIntentRef.current); }}>
+            <Text>Retry</Text>
+          </TouchableOpacity>
+        </View>}
         <Text style={styles.progressLabel}>
           {activeIndex + 1} of {SLIDES.length}
         </Text>
@@ -185,6 +220,7 @@ export function OnboardingScreen({ onComplete, fromSettings = false }: Props) {
           <TouchableOpacity
             style={styles.primaryButton}
             onPress={isLastSlide ? handleDone : handleContinue}
+            disabled={saving}
             activeOpacity={0.88}
           >
             <Text style={styles.primaryButtonText}>
@@ -195,6 +231,7 @@ export function OnboardingScreen({ onComplete, fromSettings = false }: Props) {
           <TouchableOpacity
             style={styles.primaryButton}
             onPress={handleFindPlan}
+            disabled={saving}
             activeOpacity={0.88}
           >
             <Text style={styles.primaryButtonText}>Find a Plan</Text>
@@ -203,6 +240,7 @@ export function OnboardingScreen({ onComplete, fromSettings = false }: Props) {
           <TouchableOpacity
             style={styles.primaryButton}
             onPress={handleContinue}
+            disabled={saving}
             activeOpacity={0.88}
           >
             <Text style={styles.primaryButtonText}>Continue</Text>

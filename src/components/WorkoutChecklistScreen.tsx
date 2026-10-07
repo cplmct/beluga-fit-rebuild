@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+// React Navigation 6 exposes the supported native-stack hook under this name.
+import { useFocusEffect, UNSTABLE_usePreventRemove as usePreventRemove } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -86,7 +87,8 @@ function countCompletedSetsForExercise(
 }
 
 export function WorkoutChecklistScreen({ route, navigation }: any) {
-  const { exercises: initialExercises, bodyParts } = route.params;
+  const { exercises: initialExercises, bodyParts: initialBodyParts } = route.params;
+  const [bodyParts, setBodyParts] = useState<string[]>(initialBodyParts);
   const { user } = useAuth();
   const { weightUnit } = useUnits();
 
@@ -128,6 +130,25 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
   const saveInProgressRef = useRef(false);
   const sessionRestoreBlockedRef = useRef(true);
   const initialRestoreRef = useRef(true);
+  const restoreVersionRef = useRef(0);
+  const workoutMountedRef = useRef(true);
+  const discardInProgressRef = useRef(false);
+  const finishPromptRef = useRef(false);
+  const resultNavigationDoneRef = useRef(false);
+  const selectionKeyRef = useRef(JSON.stringify([
+    [...initialBodyParts].sort(), initialExercises.map((exercise: ExerciseSelection) => [exercise.name, exercise.sets, getTarget(exercise)]),
+  ]));
+  const draftStateRef = useRef({ exercises, completedSets, bodyParts });
+  draftStateRef.current = { exercises, completedSets, bodyParts };
+  usePreventRemove(isSaving || isRestoringSession || !!completedWorkout, () => {});
+  useEffect(() => {
+    workoutMountedRef.current = true;
+    return () => {
+      workoutMountedRef.current = false;
+      ++restoreVersionRef.current;
+      sessionRestoreBlockedRef.current = true;
+    };
+  }, []);
 
   // Save-confidence indicator — tracks the state of the most recent write.
   const saveStatus = useSaveStatus();
@@ -150,11 +171,17 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
   );
 
   const checkForSavedSession = async (offerResume = true) => {
+    if (discardInProgressRef.current || saveInProgressRef.current) return;
+    if (sessionRestoreBlockedRef.current) offerResume = true;
+    const version = ++restoreVersionRef.current;
+    const ownerUserId = user?.id ?? null;
+    const current = () => workoutMountedRef.current && restoreVersionRef.current === version;
     sessionRestoreBlockedRef.current = true;
     setIsRestoringSession(true);
     setSessionStorageError('');
     try {
-      const saved = await loadWorkoutSession(user?.id ?? null);
+      const saved = await loadWorkoutSession(ownerUserId, true);
+      if (!current()) return;
       if (!saved) {
         if (!offerResume) {
           setCompletedSets({});
@@ -167,6 +194,8 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
       // Restore pending outcomes before mismatch cleanup or resume prompts.
       if (saved.saveOutcome) {
         setExercises(saved.exercises);
+        setBodyParts(saved.bodyParts);
+        selectionKeyRef.current = saved.selectionKey ?? JSON.stringify([ [...saved.bodyParts].sort(), saved.exercises.map(exercise => [exercise.name, exercise.sets, getTarget(exercise)]) ]);
         setCompletedSets(saved.completedSets);
         startTimeRef.current = saved.startTime;
         workoutFinishedRef.current = true;
@@ -177,26 +206,57 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
         return;
       }
 
-      sessionRestoreBlockedRef.current = false;
-      if (!offerResume) return;
-
-      // Match body parts and count so mid-session swaps can still be restored.
-      const savedKey =
-        [...saved.bodyParts].sort().join(',') + ':' + saved.exercises.length;
-      const currentKey =
-        [...route.params.bodyParts].sort().join(',') + ':' + route.params.exercises.length;
-      const sessionMatches = savedKey === currentKey;
-
-      if (!sessionMatches) {
-        if (user) await clearWorkoutSession(user.id);
+      if (!offerResume) {
+        sessionRestoreBlockedRef.current = false;
         return;
       }
 
-      // Home's Resume action has already confirmed the user's intent.
-      if (route.params?.autoResume) {
+      // Persist original selection identity so swaps do not conceal a genuinely
+      // different selection with the same body parts and exercise count.
+      const savedKey = saved.selectionKey ?? JSON.stringify([ [...saved.bodyParts].sort(), saved.exercises.map(exercise => [exercise.name, exercise.sets, getTarget(exercise)]) ]);
+      const currentKey = JSON.stringify([
+        [...route.params.bodyParts].sort(), route.params.exercises.map((exercise: ExerciseSelection) => [exercise.name, exercise.sets, getTarget(exercise)]),
+      ]);
+      const sessionMatches = savedKey === currentKey;
+
+      const resume = () => {
+        if (!current() || discardInProgressRef.current) return;
+        draftStateRef.current = { exercises: saved.exercises, completedSets: saved.completedSets, bodyParts: saved.bodyParts };
         setExercises(saved.exercises);
+        setBodyParts(saved.bodyParts);
+        selectionKeyRef.current = savedKey;
         setCompletedSets(saved.completedSets);
         startTimeRef.current = saved.startTime;
+        sessionRestoreBlockedRef.current = false;
+        setSessionStorageError('');
+      };
+      const startFresh = async () => {
+        if (!current() || discardInProgressRef.current || !ownerUserId) return;
+        discardInProgressRef.current = true;
+        setIsSaving(true);
+        try {
+          await clearWorkoutSession(ownerUserId, saved);
+          if (!current()) return;
+          const selected = route.params.exercises.map((exercise: ExerciseSelection) => ({ ...exercise, target: getTarget(exercise) }));
+          selectionKeyRef.current = currentKey;
+          draftStateRef.current = { exercises: selected, completedSets: {}, bodyParts: route.params.bodyParts };
+          setExercises(selected);
+          setBodyParts(route.params.bodyParts);
+          setCompletedSets({});
+          startTimeRef.current = Date.now();
+          sessionRestoreBlockedRef.current = false;
+          setSessionStorageError('');
+        } catch {
+          if (current()) setSessionStorageError('Couldn’t discard the retained workout. It is still protected. Retry checking storage.');
+        } finally {
+          discardInProgressRef.current = false;
+          if (current()) setIsSaving(false);
+        }
+      };
+
+      // Home's Resume action has already confirmed the user's intent.
+      if (route.params?.autoResume) {
+        resume();
         return;
       }
 
@@ -207,36 +267,32 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
       );
       const total = saved.exercises.reduce((sum, exercise) => sum + exercise.sets, 0);
       Alert.alert(
-        'Resume workout?',
-        `You have an unfinished workout (${completed}/${total} sets checked off). Pick up where you left off?`,
+        sessionMatches ? 'Resume workout?' : 'Retained workout found',
+        sessionMatches
+          ? `You have an unfinished workout (${completed}/${total} sets checked off). Pick up where you left off?`
+          : 'A different unfinished workout is retained. Resume it, or explicitly discard it to start the selected workout.',
         [
           {
-            text: 'Start Fresh',
+            text: sessionMatches ? 'Start Fresh' : 'Discard and start selected',
             style: 'destructive',
-            onPress: () => {
-              if (!user) return;
-              void clearWorkoutSession(user.id).catch(() => {
-                sessionRestoreBlockedRef.current = true;
-                setSessionStorageError('Couldn’t clear the retained workout. It has not been discarded. Retry checking storage before saving.');
-              });
-            },
+            onPress: () => { void startFresh(); },
           },
           {
             text: 'Resume',
-            onPress: () => {
-              setExercises(saved.exercises);
-              setCompletedSets(saved.completedSets);
-              startTimeRef.current = saved.startTime;
-            },
+            onPress: resume,
           },
+          ...(!sessionMatches ? [{ text: 'Cancel', style: 'cancel' as const, onPress: () => {
+            if (current()) setSessionStorageError('The retained workout is preserved. Retry checking storage to choose Resume or Discard.');
+          } }] : []),
         ],
         { cancelable: false }
       );
     } catch {
+      if (!current()) return;
       sessionRestoreBlockedRef.current = true;
       setSessionStorageError('Couldn’t check the retained workout on this device. Saving is blocked to avoid repeating a previous save. Retry checking storage.');
     } finally {
-      setIsRestoringSession(false);
+      if (current()) setIsRestoringSession(false);
     }
   };
 
@@ -248,15 +304,18 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
     if (!user || workoutFinishedRef.current || sessionRestoreBlockedRef.current) return;
     // Skip the initial empty state — no point persisting a blank session.
     if (Object.keys(completedSets).length === 0 && exercises === initialTargetedExercises) return;
+    const version = restoreVersionRef.current;
+    const draft = draftStateRef.current;
     saveWorkoutSession({
       ownerUserId: user.id,
-      exerciseNames: exercises.map((ex: ExerciseSelection) => ex.name),
-      completedSets,
+      exerciseNames: draft.exercises.map((ex: ExerciseSelection) => ex.name),
+      completedSets: draft.completedSets,
       startTime: startTimeRef.current,
-      exercises,
-      bodyParts,
-    }).catch(error => saveStatus.setError(error));
-  }, [completedSets, exercises, isRestoringSession, user?.id]);
+      exercises: draft.exercises,
+      bodyParts: draft.bodyParts,
+      selectionKey: selectionKeyRef.current,
+    }, () => !sessionRestoreBlockedRef.current && !workoutFinishedRef.current && restoreVersionRef.current === version).catch(error => saveStatus.setError(error));
+  }, [completedSets, exercises, bodyParts, isRestoringSession, user?.id]);
 
   // ── Save session when app moves to background (belt + suspenders) ───────────
   useEffect(() => {
@@ -264,19 +323,22 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
       if (nextState === 'background' || nextState === 'inactive') {
         // Do not re-save if the workout has already been finished and cleared.
         if (!user || workoutFinishedRef.current || sessionRestoreBlockedRef.current) return;
+        const version = restoreVersionRef.current;
+        const draft = draftStateRef.current;
         saveWorkoutSession({
           ownerUserId: user.id,
-          exerciseNames: exercises.map((ex: ExerciseSelection) => ex.name),
-          completedSets,
+          exerciseNames: draft.exercises.map((ex: ExerciseSelection) => ex.name),
+          completedSets: draft.completedSets,
           startTime: startTimeRef.current,
-          exercises,
-          bodyParts,
-        }).catch(error => saveStatus.setError(error));
+          exercises: draft.exercises,
+          bodyParts: draft.bodyParts,
+          selectionKey: selectionKeyRef.current,
+        }, () => !sessionRestoreBlockedRef.current && !workoutFinishedRef.current && restoreVersionRef.current === version).catch(error => saveStatus.setError(error));
       }
     };
     const sub = AppState.addEventListener('change', handleAppStateChange);
     return () => sub.remove();
-  }, [completedSets, exercises, user?.id]);
+  }, [completedSets, exercises, bodyParts, user?.id]);
 
   const fetchLastTimeData = async () => {
     if (!user) {
@@ -991,7 +1053,7 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
 
   // Guard wrapper — confirms before saving a partial workout.
   const handleFinishWorkout = () => {
-    if (saveInProgressRef.current || workoutFinishedRef.current || sessionRestoreBlockedRef.current || isSaving || !user) return;
+    if (saveInProgressRef.current || finishPromptRef.current || workoutFinishedRef.current || sessionRestoreBlockedRef.current || isSaving || !user) return;
 
     if (exercises.length === 0) {
       haptic.error();
@@ -1006,13 +1068,15 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
     }
 
     if (completedCount < totalCount) {
+      finishPromptRef.current = true;
       Alert.alert(
         'Finish early?',
         `You've completed ${completedCount} of ${totalCount} sets. Save this workout anyway?`,
         [
-          { text: 'Keep going', style: 'cancel' },
-          { text: 'Save anyway', style: 'default', onPress: () => { void doSaveWorkout(); } },
-        ]
+          { text: 'Keep going', style: 'cancel', onPress: () => { finishPromptRef.current = false; } },
+          { text: 'Save anyway', style: 'default', onPress: () => { finishPromptRef.current = false; void doSaveWorkout(); } },
+        ],
+        { cancelable: false }
       );
       return;
     }
@@ -1043,8 +1107,9 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
   };
 
   const handleSavedWorkoutClose = async () => {
-    if (!completedWorkout || saveInProgressRef.current) return;
+    if (!completedWorkout || saveInProgressRef.current || resultNavigationDoneRef.current) return;
     saveInProgressRef.current = true;
+    setIsSaving(true);
     const workoutId = completedWorkout.id;
     try {
       if (!user) throw new Error('The workout account is unavailable.');
@@ -1055,7 +1120,9 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
       return;
     } finally {
       saveInProgressRef.current = false;
+      setIsSaving(false);
     }
+    resultNavigationDoneRef.current = true;
     setCompletedWorkout(null);
     navigation.navigate('WorkoutDetails', { workoutId });
   };
@@ -1292,6 +1359,11 @@ export function WorkoutChecklistScreen({ route, navigation }: any) {
       />
 
       {/* Save confidence indicator — visible only while saving or if an error occurred */}
+      <Modal transparent visible={isSaving && !completedWorkout} onRequestClose={() => {}}>
+        <View testID="workout-operation-overlay" style={{ flex: 1, backgroundColor: 'rgba(9,23,34,0.55)', justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#ffffff" accessibilityLabel="Finishing workout operation" />
+        </View>
+      </Modal>
       <SaveStatusBadge status={saveStatus.status} />
 
       {sessionStorageError !== '' && (

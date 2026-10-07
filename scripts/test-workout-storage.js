@@ -235,6 +235,7 @@ async function run() {
   const ack = {
     exports: {}, user: { id: 'test-user' }, completedWorkout: pending.saveOutcome, resultWriteFailed: false,
     resultStorageError: '', saveInProgressRef: { current: false },
+    resultNavigationDoneRef: { current: false }, setIsSaving() {},
     clearWorkoutSession: () => storage.clearWorkoutSession('test-user'), navigations: [],
     setCompletedWorkout(value) { ack.completedWorkout = value; },
     setResultStorageError(value) { ack.resultStorageError = value; },
@@ -397,12 +398,12 @@ async function run() {
   failures.clear = true;
   await switchedHome.refreshResumeSession();
   assert.equal(switchedHome.ctx.resumeSession, null);
-  assert.match(switchedHome.ctx.resumeStorageError, /Couldn’t check/);
+  assert.equal(switchedHome.ctx.resumeStorageError, '');
   assert.equal(stored.get(key), JSON.stringify(pending));
   failures.clear = false;
   await switchedHome.refreshResumeSession();
   assert.equal(switchedHome.ctx.resumeSession, null);
-  assert.equal(stored.has(key), false);
+  assert.equal(stored.get(key), JSON.stringify(pending)); // Hidden foreign draft is preserved.
   await require('./test-account-boundaries.js')();
   console.log('Workout storage: PASS — ordinary expiry, non-expiring pending results, restore, overwrite protection, zero/one-set and edited-draft confirmation, Cancel retention, confirmed discard, duplicate-discard blocking, no completed-workout discard prompt, pending-result confirmation, write/read/clear rejections, no false-cleared state, and fixed-footer warning with blocked partial Back.');
 }
