@@ -1,0 +1,163 @@
+Perform a READ-ONLY onboarding, first-launch, account-transition, and Android Back navigation audit for Beluga Fit.
+
+Do not edit files.
+Do not install packages.
+Do not change app.json, app.config.js, eas.json, Metro configuration, Supabase settings, schema, migrations, RLS, RPCs, or memory files.
+Do not create accounts, send emails, call live Supabase APIs, build, commit, or push.
+Inspect only the currently checked-out main branch.
+
+Project context:
+- React Native with Expo SDK 53 and TypeScript.
+- Supabase Auth.
+- Android package: com.belugafit.app.
+- Custom scheme: belugafit.
+- The app is being evaluated in Android Close testing.
+- A Pixel 9 Pro successfully completed password recovery, including opening the app from Gmail, setting a new password, rejection of the old password, and login with the new password.
+- Account logout and Account A/B local-data isolation were manually verified.
+- Password-recovery source hardening and tests are complete.
+- Production EAS build remains deferred.
+
+Inspect:
+- App.tsx
+- src/contexts/AuthContext.tsx
+- src/components/OnboardingScreen.tsx
+- all navigators and route definitions
+- AuthStackNavigator
+- BottomTabNavigator
+- HomeScreen
+- WorkoutChecklistScreen
+- active workout screens
+- SettingsScreen
+- DeleteAccountScreen
+- deep-link/recovery routing
+- AsyncStorage onboarding keys and cache helpers
+- UnitsContext and any account-scoped providers
+- workout draft/pending-result restoration
+- Android BackHandler usage
+- React Navigation beforeRemove/usePreventRemove usage
+- app.json/app.config.* only for relevant Android navigation/deep-link context
+- existing tests/scripts covering onboarding, navigation, cleanup, and account changes
+
+Report:
+
+1. First-launch flow
+- Exact route sequence from cold app launch with no session.
+- Loading/splash states and their exit conditions.
+- Registration → email-confirmation-required behavior.
+- Registration → authenticated session behavior.
+- Login → onboarding decision.
+- Existing account → main app decision.
+- Password recovery → password-change screen → post-reset route.
+- Logout → auth stack.
+- Account deletion → signed-out state.
+
+2. Onboarding state model
+- Source of truth for onboarding completion.
+- Exact profile/database field names.
+- Local AsyncStorage/cache keys.
+- User-ID ownership of cached state.
+- Resolution order between server profile, local cache, and auth state.
+- Behavior when server read fails.
+- Behavior when local cache read/write fails.
+- Behavior on slow network or app restart.
+- Behavior when Account A signs out and Account B signs in.
+- Whether a failed server persistence can incorrectly skip onboarding.
+- Whether onboarding can be completed for the wrong account.
+- Whether the current recovery/account-transition locks affect onboarding.
+
+3. Onboarding screen UX
+- Every screen and required field.
+- Which steps are required versus optional.
+- Whether a user can skip or go back.
+- Validation and error messages.
+- Loading states and thrown-error cleanup.
+- What the user sees when onboarding persistence fails.
+- Whether the first post-onboarding action is clear.
+- Whether a new user reaches a meaningful first workout quickly.
+- Identify any blocking, confusing, misleading, or dead controls.
+- Check whether unit selection is persisted and scoped to the correct account.
+
+4. Android Back audit
+For each route, report current behavior when pressing Android system Back:
+- Login.
+- Register.
+- Forgot password.
+- Recovery-link error screen.
+- Change password.
+- Onboarding step 1.
+- Onboarding subsequent steps.
+- Home.
+- History.
+- Settings.
+- Exercise detail.
+- Workout selection.
+- Workout checklist with no edits.
+- Workout checklist with an unfinished draft.
+- Active workout.
+- Active workout with checked sets.
+- Active workout during save.
+- Workout result/pending-save state.
+- Delete-account confirmation.
+- Modal/overlay states.
+- App root with no back stack.
+
+For every route:
+- Does Back pop, navigate, dismiss, confirm, or exit?
+- Is state preserved?
+- Can Back lose a draft or pending result?
+- Is confirmation shown exactly once?
+- Are partial/failed saves protected?
+- Does a blocking overlay prevent accidental interaction?
+- Are there Android-specific warnings or unsupported predictive-back assumptions?
+
+5. Race and account-boundary review
+Test or characterize:
+- Account A onboarding request finishing after Account B signs in.
+- Account A units request finishing after Account B signs in.
+- Logout during onboarding persistence.
+- Account deletion during onboarding persistence.
+- Recovery link arriving during onboarding.
+- App restart during onboarding save.
+- Duplicate completion taps.
+- Back during onboarding save.
+- Back during workout save.
+- Cleanup retry while another account is active.
+- Ensure no Account A onboarding/unit/workout state reaches Account B.
+
+6. Findings table
+For each finding:
+- ID.
+- Severity: Blocker, Major, Minor, Cosmetic, or Needs device verification.
+- Exact file and line number.
+- Current behavior.
+- Evidence.
+- User impact.
+- Minimal remediation.
+- Source-only, mocked-test, or Android-device verification required.
+
+7. Manual Pixel 9 Pro test matrix
+Provide exact steps for:
+- Fresh install, new account, complete onboarding.
+- Kill/reopen during onboarding.
+- Finish onboarding, kill/reopen, confirm it is not repeated.
+- Existing account login, confirm onboarding is skipped.
+- Account A logout → Account B login, confirm onboarding and units are B-specific.
+- Offline onboarding save.
+- Back on every onboarding step.
+- Back on untouched workout checklist.
+- Back with edited/unfinished workout.
+- Back during save.
+- Back with pending result.
+- Delete-account confirmation and cancellation.
+- Recovery-link error screen Back/Cancel.
+- App root Back behavior.
+- Rotation/activity restart if relevant to the Android build.
+
+8. Launch decision
+Conclude:
+- Whether onboarding is launch-ready.
+- Whether Android Back has a blocker.
+- Which fixes are required before the production EAS build.
+- Which items can be deferred as polish.
+- Which checks require a signed Android build.
+- Confirm no files changed and no live services were called.
