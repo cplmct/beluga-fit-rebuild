@@ -1,0 +1,81 @@
+We are preparing Beluga Fit for the production EAS Android build.
+
+Repository context:
+- React Native / Expo SDK 53
+- TypeScript
+- Supabase with RLS
+- Android package: com.belugafit.app
+- EAS builds use Node 22
+- Production Android builds must use app-bundle
+- Current main commit: 7f2b9e3
+- Do not change application code unless a real issue is found.
+- Do not start an EAS production build yet.
+
+Task: perform a read-only production-readiness audit.
+
+1. Inspect the repository configuration:
+   - package.json scripts
+   - app.json or app.config.* 
+   - eas.json
+   - Supabase configuration and migrations
+   - environment-variable usage
+   - Android package/version configuration
+
+2. Confirm that migration
+   supabase/migrations/20261001042810_add_session_sets_target_metadata.sql
+   exists and determine exactly what schema changes it makes to session_sets.
+
+3. Confirm that the current code supports:
+   - timed/seconds workout targets
+   - step targets
+   - saving target metadata
+   - restoring target metadata
+   - completing sessions with target metadata
+   - legacy sessions without target metadata
+   - authenticated Supabase access under RLS
+
+4. Check whether the production Supabase project can be verified from this environment.
+   - Do not apply migrations.
+   - Do not modify the database.
+   - Do not expose or print secrets.
+   - If production credentials or access are unavailable, state that clearly.
+   - If access is available, perform only safe read-only schema checks.
+
+5. Inspect production-build configuration and report:
+   - package identifier
+   - current Android version/versionCode
+   - EAS production profile
+   - Node version configuration
+   - buildType
+   - required production environment variables
+   - whether the version code must be incremented
+
+6. Inspect the recent authentication, onboarding, settings, and workout-safety changes and identify any remaining verification-only gaps:
+   - Google sign-in success, cancellation, redirect/deep link, sign-out, and account separation
+   - first-launch onboarding on a fresh install
+   - settings/units persistence and feedback
+   - Android Back during save
+   - retained-draft/recovery behavior
+   - sharing, if it is actually part of this release
+
+7. Run the existing local checks without modifying files:
+   npm run type-check
+   npm run test:weight-units
+   npm run validate:guidance
+   node scripts/test-workout-targets.js
+   node scripts/test-workout-completion.js
+
+8. Produce a concise report with these sections:
+   - PASS
+   - FAIL
+   - BLOCKED / REQUIRES MANUAL VERIFICATION
+   - Files inspected
+   - Exact next steps before eas build
+
+Important constraints:
+- This is an audit only.
+- Do not create a commit.
+- Do not push to GitHub.
+- Do not modify Supabase.
+- Do not run eas build.
+- Do not mark a check as passed based only on the existence of code; distinguish repository evidence from production-environment and physical-device verification.
