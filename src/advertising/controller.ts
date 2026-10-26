@@ -20,7 +20,7 @@ export interface AdsAdapter {
   getConsentInfo(): Promise<ConsentInfo>;
   loadAndShowConsentFormIfRequired(): Promise<ConsentInfo>;
   showPrivacyOptionsForm(): Promise<ConsentInfo>;
-  getGdprApplies(): Promise<boolean | undefined>;
+  getUserChoices(): Promise<unknown>;
   configure(): Promise<unknown>;
   initialize(): Promise<unknown>;
 }
@@ -38,15 +38,36 @@ export function readEmbeddedConfig(manifest: unknown): TestConfig {
   } catch { return {}; }
 }
 
-// canRequestAds/OBTAINED alone are not affirmative purpose/vendor acceptance.
-// This first phase cannot reliably prove all regulated permissions, so it
-// suppresses those cases even if UMP would allow limited ads.
-export function permitsBanner(info: ConsentInfo, gdpr: boolean | undefined): boolean {
-  return info.canRequestAds === true && info.status === 'NOT_REQUIRED'
-    && gdpr === false && info.privacyOptionsRequirementStatus === 'NOT_REQUIRED';
+// UMP readiness is distinct from our additional permission/refusal policy.
+// Privacy-options status controls its entry point, not request permission.
+export function consentFlowAllowsRequests(info: ConsentInfo): boolean {
+  return info.canRequestAds === true
+    && (info.status === 'OBTAINED' || info.status === 'NOT_REQUIRED');
 }
 
-const EMPTY = { privacyRequired: false, revision: 0, error: '' };
+export interface PermissionAssessment {
+  eligible: boolean;
+  reason: string;
+}
+
+// No positive purpose/vendor predicate is implemented. See the evidence and
+// missing capabilities in docs/admob-consent-and-audience.md.
+// False choice values may also result from the pinned decoder's fallback;
+// never label these as proof of an explicit user refusal.
+export function assessNpaPermission(choices: unknown): PermissionAssessment {
+  if (!choices || typeof choices !== 'object') {
+    return { eligible: false, reason: 'choice-information-unavailable' };
+  }
+  if (('storeAndAccessInformationOnDevice' in choices)
+    && choices.storeAndAccessInformationOnDevice === true) {
+    return { eligible: false, reason: 'vendor-legal-basis-and-applicability-unverified' };
+  }
+  return { eligible: false, reason: 'storage-permission-not-established' };
+}
+
+const EMPTY = {
+  privacyRequired: false, permissionBlock: 'not-evaluated', revision: 0, error: '',
+};
 
 export class AdvertisingController {
   private adapter?: AdsAdapter;
@@ -68,13 +89,14 @@ export class AdvertisingController {
     return () => { this.listeners.delete(listener); };
   };
 
-  private update(info?: ConsentInfo, error = '') {
+  private update(info?: ConsentInfo, error = '', permissionBlock = 'permission-recheck-required') {
     this.state = {
       privacyRequired: info
         ? info.privacyOptionsRequirementStatus === 'REQUIRED'
         : this.state.privacyRequired,
       revision: this.state.revision + 1,
       error,
+      permissionBlock,
     };
     this.listeners.forEach(listener => listener());
   }
@@ -108,7 +130,15 @@ export class AdvertisingController {
         finally { this.formBusy = false; }
       }
       this.update(info);
-      if (!isSafe() || !permitsBanner(info, await sdk.getGdprApplies())) return false;
+      if (!isSafe()) return false;
+      if (!consentFlowAllowsRequests(info)) {
+        this.update(info, '', 'ump-not-ready');
+        return false;
+      }
+      const assessment = assessNpaPermission(await sdk.getUserChoices());
+      if (!isSafe()) return false;
+      this.update(info, '', assessment.eligible ? '' : assessment.reason);
+      if (!assessment.eligible) return false;
       if (!isSafe()) return false;
       if (!this.initialization) {
         this.initialization = (async () => {
@@ -133,7 +163,8 @@ export class AdvertisingController {
     if (!this.enabled || !sdk || !isSafe() || this.formBusy || !this.state.privacyRequired) return;
     this.formBusy = true;
     // Notify consumers before the form: remove any eligible banner.
-    this.update({ privacyOptionsRequirementStatus: 'REQUIRED' } as ConsentInfo);
+    this.update({ privacyOptionsRequirementStatus: 'REQUIRED' } as ConsentInfo,
+      '', 'privacy-options-in-progress');
     try {
       await sdk.showPrivacyOptionsForm();
       if (isSafe()) this.update(await sdk.getConsentInfo());

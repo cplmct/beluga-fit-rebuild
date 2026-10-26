@@ -1,2 +1,3 @@
 - [Beluga Fit schema migration](beluga-fit-schema-migration.md) — old workouts/workout_exercises → workout_sessions/session_exercises/session_sets migration decisions and gotchas.
 - [Scoped npm overrides](scoped-npm-overrides.md) — version-qualified direct-parent overrides need an explicit reference to preserve the parent's declared range.
+- [Advertising audience](advertising-audience.md) — adult-only intended/Play audience, worldwide distribution; no age check and no verified individual age.

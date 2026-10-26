@@ -9,7 +9,10 @@ const mod = { exports: {} };
 vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/advertising/controller.ts', 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
 }).outputText, { exports: mod.exports, module: mod });
-const { AdvertisingController, permitsBanner, readEmbeddedConfig, isEnabled } = mod.exports;
+const {
+  AdvertisingController, consentFlowAllowsRequests, assessNpaPermission,
+  readEmbeddedConfig, isEnabled,
+} = mod.exports;
 
 const allowedConfig = { mode: 'test', appId: TEST_APP_ID, bannerId: TEST_BANNER_ID, audienceApproved: true };
 const noConsent = {
@@ -25,7 +28,14 @@ function fixture(overrides = {}) {
     async getConsentInfo() { calls.push('info'); return info; },
     async loadAndShowConsentFormIfRequired() { calls.push('form'); return info; },
     async showPrivacyOptionsForm() { calls.push('options'); return info; },
-    async getGdprApplies() { return false; },
+    async getUserChoices() {
+      calls.push('choices');
+      return {
+        storeAndAccessInformationOnDevice: true, selectBasicAds: true,
+        measureAdPerformance: true, applyMarketResearchToGenerateAudienceInsights: true,
+        developAndImproveProducts: true,
+      };
+    },
     async configure() { calls.push('configure'); },
     async initialize() { calls.push('initialize'); },
     ...overrides,
@@ -41,6 +51,13 @@ async function mountedLifecycle() {
   const host = dom.install();
   const root = createRoot(host);
   const f = fixture();
+  // UI-only permission stub, never the production evaluator. All native behavior
+  // remains mocked. A required Settings entry point must not hide a ready banner.
+  const simulatedEligible = {
+    privacyRequired: true, permissionBlock: '', revision: 0, error: '',
+  };
+  f.controller.getSnapshot = () => simulatedEligible;
+  f.controller.prepareHome = async isSafe => isSafe();
   let focused = true;
   let latestBanner;
   let mounted = 0;
@@ -95,12 +112,14 @@ async function mountedLifecycle() {
     await React.act(async () => {
       root.render(React.createElement(React.Fragment, null,
         React.createElement(loaded.HomeBanner, { blocked }),
+        React.createElement(loaded.AdvertisingPrivacyOptions, { blocked }),
         React.createElement('button', { onClick: () => workoutClicks++ }, 'Start workout')));
     });
   };
   try {
     await render(false);
     assert(host.textContent.includes('TEST BANNER'));
+    assert(host.textContent.includes('Advertising privacy options'));
     assert.equal(latestBanner.unitId, TEST_BANNER_ID);
     assert.equal(latestBanner.requestOptions.requestNonPersonalizedAdsOnly, true);
     assert.equal(mounted, 1);
@@ -109,7 +128,7 @@ async function mountedLifecycle() {
     assert(host.textContent.includes('Start workout'));
     assert(host.childNodes.some(node => node.attributes?.['data-height'] === '86'));
     // Invoke the rendered synthetic workout-control handler after ad failure.
-    const button = host.childNodes.find(node => node.tagName === 'BUTTON');
+    const button = host.childNodes.find(node => node.tagName === 'BUTTON' && node.textContent === 'Start workout');
     const reactProps = Object.keys(button).find(key => key.startsWith('__reactProps$'));
     button[reactProps].onClick();
     assert.equal(workoutClicks, 1);
@@ -133,8 +152,8 @@ async function mountedLifecycle() {
     await React.act(async () => { root.unmount(); }); // account boundary unmount
     assert.equal(mounted, unmounted);
     assert.equal(stateListeners.size, 0);
-    assert.equal(f.calls.filter(x => x === 'initialize').length, 1);
-    console.log('PASS: mounted React banner lifecycle — focus, foreground/background, blocking, no-fill, fixed slot, unmount cleanup; native SDK/view mocked.');
+    assert.equal(f.calls.filter(x => x === 'initialize').length, 0);
+    console.log('PASS: mounted React lifecycle — privacy-options REQUIRED alone does not hide a mocked eligible banner, focus/background/blocking/no-fill/fixed slot/unmount; eligibility and native SDK/view mocked.');
   } finally {
     dom.restore();
   }
@@ -168,31 +187,49 @@ async function main() {
     assert.equal(await c.prepareHome(() => true), false);
     await c.showPrivacyOptions(() => true);
   }
-  assert.equal(permitsBanner(noConsent, false), true);
-  for (const status of ['OBTAINED', 'REQUIRED', 'UNKNOWN']) {
-    assert.equal(permitsBanner({ ...noConsent, status }, false), false);
+  for (const status of ['OBTAINED', 'NOT_REQUIRED']) {
+    for (const privacyOptionsRequirementStatus of ['REQUIRED', 'NOT_REQUIRED', 'UNKNOWN']) {
+      assert.equal(consentFlowAllowsRequests({ ...noConsent, status, privacyOptionsRequirementStatus }), true);
+    }
   }
-  for (const gdpr of [true, undefined]) assert.equal(permitsBanner(noConsent, gdpr), false);
-  assert.equal(permitsBanner({ ...noConsent, canRequestAds: false }, false), false);
-  assert.equal(permitsBanner({ ...noConsent, privacyOptionsRequirementStatus: 'REQUIRED' }, false), false);
+  for (const status of ['REQUIRED', 'UNKNOWN']) {
+    assert.equal(consentFlowAllowsRequests({ ...noConsent, status }), false);
+  }
+  assert.equal(consentFlowAllowsRequests({ ...noConsent, canRequestAds: false }), false);
+  for (const choices of [undefined, null, {}, { storeAndAccessInformationOnDevice: false },
+    { storeAndAccessInformationOnDevice: 'true' }, { storeAndAccessInformationOnDevice: true },
+    { storeAndAccessInformationOnDevice: true, selectBasicAds: true, measureAdPerformance: true,
+      applyMarketResearchToGenerateAudienceInsights: true, developAndImproveProducts: true }]) {
+    assert.equal(assessNpaPermission(choices).eligible, false);
+    assert(!/refused|declined/.test(assessNpaPermission(choices).reason));
+  }
+  assert.equal(assessNpaPermission({ storeAndAccessInformationOnDevice: false }).reason,
+    'storage-permission-not-established');
 
   const f = fixture();
   await Promise.all([f.controller.refreshAtLaunch(), f.controller.refreshAtLaunch()]);
   assert.equal(f.calls.filter(x => x === 'refresh').length, 1);
   assert.equal(f.calls.includes('initialize'), false);
   assert.equal(await f.controller.prepareHome(() => false), false); // background/unfocused/cleanup
-  assert.equal(await f.controller.prepareHome(() => true), true);
-  assert.equal(await f.controller.prepareHome(() => true), true);
-  assert.equal(f.calls.filter(x => x === 'initialize').length, 1);
-  assert(f.calls.indexOf('configure') < f.calls.indexOf('initialize'));
-  f.setInfo({ status: 'OBTAINED' }); // refusal OR acceptance; neither assumed sufficient
-  assert.equal(await f.controller.prepareHome(() => true), false);
+  for (const status of ['OBTAINED', 'NOT_REQUIRED']) {
+    for (const privacyOptionsRequirementStatus of ['REQUIRED', 'NOT_REQUIRED', 'UNKNOWN']) {
+      f.setInfo({ status, privacyOptionsRequirementStatus });
+      assert.equal(await f.controller.prepareHome(() => true), false);
+      assert.equal(f.controller.getSnapshot().permissionBlock,
+        'vendor-legal-basis-and-applicability-unverified');
+      assert.equal(f.controller.getSnapshot().privacyRequired,
+        privacyOptionsRequirementStatus === 'REQUIRED');
+    }
+  }
+  assert.equal(f.calls.filter(x => x === 'choices').length, 6);
+  assert(!f.calls.includes('configure'));
+  assert(!f.calls.includes('initialize'));
 
   let safe = true;
   const stale = fixture({ async requestInfoUpdate() { safe = false; return noConsent; } });
   assert.equal(await stale.controller.prepareHome(() => safe), false);
   assert(!stale.calls.includes('initialize'));
-  for (const method of ['requestInfoUpdate', 'getConsentInfo', 'getGdprApplies', 'configure', 'initialize']) {
+  for (const method of ['requestInfoUpdate', 'getConsentInfo', 'getUserChoices']) {
     const failing = fixture({ async [method]() { throw Error('offline'); } });
     assert.equal(await failing.controller.prepareHome(() => true), false, method);
     assert(failing.controller.getSnapshot().error);
@@ -208,6 +245,23 @@ async function main() {
   assert(!required.calls.includes('options'));
   await required.controller.showPrivacyOptions(() => true);
   assert(required.calls.includes('options'));
+  assert.equal(required.controller.getSnapshot().permissionBlock, 'permission-recheck-required');
+  required.setInfo({ status: 'OBTAINED', privacyOptionsRequirementStatus: 'REQUIRED' });
+  assert.equal(await required.controller.prepareHome(() => true), false);
+  assert(required.calls.includes('choices'));
+  assert.equal(required.controller.getSnapshot().permissionBlock,
+    'vendor-legal-basis-and-applicability-unverified');
+  const unknownChoice = fixture({ async getUserChoices() { return {}; } });
+  assert.equal(await unknownChoice.controller.prepareHome(() => true), false);
+  assert.equal(unknownChoice.controller.getSnapshot().permissionBlock, 'storage-permission-not-established');
+  assert(!unknownChoice.calls.includes('initialize'));
+  let stillSafe = true;
+  const lateChoice = fixture({ async getUserChoices() {
+    stillSafe = false;
+    return { storeAndAccessInformationOnDevice: true };
+  } });
+  assert.equal(await lateChoice.controller.prepareHome(() => stillSafe), false);
+  assert(!lateChoice.calls.includes('initialize'));
   const brokenForm = fixture({ async loadAndShowConsentFormIfRequired() { throw Error('offline'); } });
   brokenForm.setInfo({ status: 'REQUIRED', isConsentFormAvailable: true });
   assert.equal(await brokenForm.controller.prepareHome(() => true), false);
@@ -242,8 +296,11 @@ async function main() {
   const native = fs.readFileSync('src/advertising/runtime.android.ts', 'utf8');
   assert(native.includes("requireOptionalNativeModule") && native.includes('embedded?.manifest'));
   assert(!native.split('\n').filter(line => !line.trim().startsWith('//')).join('\n').includes('Constants.expoConfig'));
+  assert(native.includes('AdsConsent.getUserChoices()'));
+  assert(!native.includes('getGdprApplies'));
+  assert(!fs.readFileSync('src/advertising/controller.ts', 'utf8').includes('getGdprApplies'));
   await mountedLifecycle();
-  console.log('PASS: exact test configuration, disabled audience/production, consent predicates, refresh/init ordering, stale lifecycle, SDK failures, privacy forms, synthetic manifest and isolation checks.');
-  console.log('NOT VERIFIED: native build, real UMP/SDK network, native banner no-fill/layout or actual vendor permissions. Audience gate remains false.');
+  console.log('PASS: disabled audience/production, documented UMP readiness vs permission, choices/false/unknown/all-true remain unestablished, privacy-option distinctions/re-evaluation, safe forms, stale lifecycle, SDK failures, no initialization, synthetic manifest and isolation.');
+  console.log('NOT VERIFIED: native build/startup/network, actual UMP/SDK behavior or complete vendor/legal-basis permissions. Audience gate and positive permission path remain disabled.');
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

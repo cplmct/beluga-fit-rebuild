@@ -38,7 +38,7 @@ export function HomeBanner({ blocked }: AdvertisingProps) {
   }, [safe]);
 
   if (!advertising.enabled) return null;
-  const visible = safe && ready && !failed && !state.error && !state.privacyRequired && width >= 320;
+  const visible = safe && ready && !failed && !state.error && !state.permissionBlock && width >= 320;
   const Banner = visible ? loadAndroidAds().BannerAd : null;
   return (
     <View style={styles.slot} onLayout={event => setWidth(event.nativeEvent.layout.width)}>

@@ -17,7 +17,7 @@ export const advertising = new AdvertisingController(config, () => {
     getConsentInfo: () => AdsConsent.getConsentInfo(),
     loadAndShowConsentFormIfRequired: () => AdsConsent.loadAndShowConsentFormIfRequired(),
     showPrivacyOptionsForm: () => AdsConsent.showPrivacyOptionsForm(),
-    getGdprApplies: () => AdsConsent.getGdprApplies(),
+    getUserChoices: () => AdsConsent.getUserChoices(),
     configure: () => mobileAds().setRequestConfiguration({ testDeviceIdentifiers: ['EMULATOR'] }),
     initialize: () => mobileAds().initialize(),
   };

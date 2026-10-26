@@ -30,9 +30,11 @@ The reviewed timetable lists 24.x deprecation June 30, 2027 and sunset June 30,
 import, UMP network request, Mobile Ads initialization or banner request is
 made through this integration while that gate is false.
 
-No age flags or age assumptions have been invented. Before any real test-device
-requests, separately review the audience, UMP messages and any necessary audience
-handling. Rebuilding an APK alone does not approve or open the gate.
+The owner confirms adults 18+ as the intended audience and Google Play target
+audience, with worldwide distribution. The app has no age check or DOB
+requirement. These facts do not verify every user's age. No age flags have been
+selected. Audience handling remains unresolved; rebuilding an APK alone does not
+approve or open the gate. See admob-consent-and-audience.md.
 
 The controller calls documented requestInfoUpdate/getConsentInfo,
 loadAndShowConsentFormIfRequired and showPrivacyOptionsForm APIs only after
@@ -40,14 +42,17 @@ the configuration/audience gate opens. Refresh is once per process at app launch
 forms are deferred to focused, foreground Home (or explicitly tapped Settings).
 Home blocks forms for retained workouts, recovery and account cleanup.
 
-`OBTAINED` and `canRequestAds` are not proof of affirmative purpose/vendor
-consent. In this first implementation, all REQUIRED/OBTAINED/UNKNOWN cases,
-required privacy-option regions, and unknown GDPR applicability remain
-**banner-disabled**, including users who accepted a regulated-region form.
-The supported high-level APIs do not establish every necessary vendor/purpose
-permission for our conservative policy. Only explicit NOT_REQUIRED, GDPR false,
-privacy-options NOT_REQUIRED and canRequestAds true pass the consent predicate.
-Do not weaken this to an OBTAINED or NPA-only check.
+`OBTAINED` and `NOT_REQUIRED`, with canRequestAds=true, pass the UMP readiness
+stage. Privacy-options REQUIRED controls the Settings entry point and is not a
+refusal signal. Available required forms can precede permission assessment on a
+safe Home surface, but the closed audience gate currently prevents all UMP calls.
+
+The additional NPA permission assessment remains **disabled for every request**:
+documented getUserChoices results alone do not establish the full Google/vendor,
+legal-basis, restriction and worldwide-applicability decision. False choices
+can also reflect decoder fallback, not a proven refusal. No positive
+purpose/vendor predicate is invented, and getGdprApplies is no longer used.
+See admob-consent-and-audience.md for the authoritative requirements and limits.
 
 The SDK's non-personalized request flag is set on the sole banner, but is never
 used as permission. Decline/unknown/error/no-fill does not block fitness access.
@@ -98,9 +103,12 @@ screen; navigation/background immediately removes the banner component.
    and Banner native classes. Verify actual Gradle GMA/UMP resolutions, RN
    architecture, Kotlin compilation and iOS exclusion. Do not override SDKs
    or disable shrinking to force success.
-5. On a device, verify zero UMP/ad requests with the gate closed. After a separate
-   approved audience change, use only test inventory and appropriately configured
-   UMP test geography/devices. Verify declined/unknown/regulated cases remain off.
+5. Inspect native providers, especially MobileAdsInitProvider. Delayed app
+   measurement and no explicit JS initialize() are not proof of zero native
+   traffic. Capture cold-start traffic before JS and correlate process/logcat
+   timing. After separately approved audience and permission changes, use only
+   test inventory and appropriate UMP test geography/devices. Required permissions
+   that are declined or unestablished must still block requests.
 6. Test Home focus, background/foreground, rapid navigation, retained draft,
    workout save, recovery, account cleanup, logout/account switch, no-fill,
    offline failures, Settings privacy changes, narrow screens and large fonts.
