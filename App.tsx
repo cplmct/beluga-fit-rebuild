@@ -13,6 +13,7 @@ import { RecoveryLinkScreen } from './src/components/RecoveryLinkScreen';
 import { ForgotPasswordScreen } from './src/components/ForgotPasswordScreen';
 import { LaunchScreen } from './src/components/LaunchScreen';
 import { scheduleInactivityReminder, setupNotificationHandler } from './src/utils/notifications';
+import { advertising } from './src/advertising/runtime';
 
 // Keep the native splash visible until auth state is resolved.
 // This eliminates the ActivityIndicator flash on startup.
@@ -42,6 +43,8 @@ function AppContent() {
 
   useEffect(() => {
     setupNotificationHandler();
+    // Refresh only; native forms are restricted to a safe Home/Settings surface.
+    void advertising.refreshAtLaunch();
   }, []);
 
   useEffect(() => {

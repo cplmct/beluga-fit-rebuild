@@ -331,6 +331,7 @@ async function testStartupTimeout() {
     View: host, Text: props => { if (typeof props.children === 'string' && props.children.includes('retry')) visibleError = props.children; return null; },
     TouchableOpacity: props => { retry = props.onPress; return null; }, ActivityIndicator: () => null,
     useNavigationContainerRef: () => ({ navigate() {} }), setupNotificationHandler() {}, scheduleInactivityReminder() {},
+    advertising: { refreshAtLaunch: async () => {} },
     NavigationContainer: host, BottomTabNavigator: () => null,
     LaunchScreen: () => null, setTimeout: () => 1, clearTimeout() {},
     require: () => require('react/jsx-runtime') };

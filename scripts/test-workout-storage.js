@@ -88,7 +88,7 @@ function makeHome() {
     loadWorkoutSession: storage.loadWorkoutSession,
     clearWorkoutSession: storage.clearWorkoutSession,
   };
-  for (const name of ['ResumeSession', 'ResumeStorageError', 'DiscardStorageError', 'PendingDiscardConfirm', 'DiscardingSession']) {
+  for (const name of ['ResumeSession', 'ResumeChecked', 'ResumeStorageError', 'DiscardStorageError', 'PendingDiscardConfirm', 'DiscardingSession']) {
     const field = name[0].toLowerCase() + name.slice(1);
     ctx[`set${name}`] = value => { ctx[field] = value; };
   }

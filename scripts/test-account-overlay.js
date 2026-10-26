@@ -143,6 +143,7 @@ module.exports = async function testOverlay({
             useUnits: () => ({ unitSystem: "imperial", updateUnitSystem() {} }),
           },
           "../lib/supabase": { supabase: sdk.ctx.supabase },
+          "../advertising/AdvertisingUi": { AdvertisingPrivacyOptions: () => null },
           "../utils/notifications": {
             DEFAULT_PREFS: { enabled: false },
             getPrefs: async () => ({ enabled: false }),
@@ -217,6 +218,7 @@ module.exports = async function testOverlay({
       OnboardingScreen: Screen,
       LaunchScreen: () => null,
       setupNotificationHandler() {},
+      advertising: { refreshAtLaunch: async () => {} },
       scheduleInactivityReminder() {},
       Date,
       setTimeout,

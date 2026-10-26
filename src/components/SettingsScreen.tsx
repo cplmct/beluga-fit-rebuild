@@ -12,6 +12,7 @@ import {
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Constants from 'expo-constants';
 import { useAuth } from '../contexts/AuthContext';
+import { AdvertisingPrivacyOptions } from '../advertising/AdvertisingUi';
 import { useUnits } from '../contexts/UnitsContext';
 import { supabase } from '../lib/supabase';
 import { getPrefs, formatTime, NotifPrefs, DEFAULT_PREFS } from '../utils/notifications';
@@ -93,7 +94,7 @@ function SkeletonBlock({
 
 export function SettingsScreen() {
   const navigation = useNavigation();
-  const { user, signOut } = useAuth();
+  const { user, signOut, accountCleanupBusy, accountCleanupError, isPasswordRecovery } = useAuth();
   const { unitSystem, updateUnitSystem, unitsError, unitsBusy } = useUnits();
 
   const [profileName, setProfileName] = useState('');
@@ -291,6 +292,7 @@ export function SettingsScreen() {
       {/* ── Privacy & Legal ── */}
       <SectionLabel title="Privacy & Legal" />
       <View style={styles.card}>
+        <AdvertisingPrivacyOptions blocked={accountCleanupBusy || !!accountCleanupError || isPasswordRecovery} />
         <NavRow
           label="Privacy Policy"
           onPress={() => navigation.navigate('PrivacyPolicy' as never)}

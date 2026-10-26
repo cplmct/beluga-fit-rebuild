@@ -9,6 +9,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { HomeBanner } from '../advertising/AdvertisingUi';
 import { useUnits } from '../contexts/UnitsContext';
 import { getActivePlan, ActivePlanState, getWeekNumber } from '../utils/activePlan';
 import { getPlanById, PLAN_CATEGORIES } from '../data/workoutPlans';
@@ -269,7 +270,7 @@ function HomeSkeleton() {
 }
 
 export function HomeScreen({ navigation }: any) {
-  const { user, isPasswordRecovery } = useAuth();
+  const { user, isPasswordRecovery, accountCleanupBusy, accountCleanupError } = useAuth();
 
   useEffect(() => {
     if (isPasswordRecovery) {
@@ -292,6 +293,7 @@ export function HomeScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [resumeSession, setResumeSession] = useState<WorkoutSessionPayload | null>(null);
+  const [resumeChecked, setResumeChecked] = useState(false);
   const [resumeStorageError, setResumeStorageError] = useState('');
   const [discardStorageError, setDiscardStorageError] = useState('');
   const [pendingDiscardConfirm, setPendingDiscardConfirm] = useState(false);
@@ -316,11 +318,13 @@ export function HomeScreen({ navigation }: any) {
 
   const refreshResumeSession = async () => {
     const read = ++resumeReadRef.current;
+    setResumeChecked(false);
     if (resumeSession?.ownerUserId !== user?.id) setResumeSession(null);
     try {
       const saved = await loadWorkoutSession(user?.id ?? null);
       if (read !== resumeReadRef.current) return;
       setResumeSession(saved);
+      setResumeChecked(true);
       setResumeStorageError('');
       discardConfirmOpenRef.current = false;
       setPendingDiscardConfirm(false);
@@ -885,6 +889,8 @@ export function HomeScreen({ navigation }: any) {
           )}
         </TouchableOpacity>
       </View>
+      <HomeBanner blocked={isPasswordRecovery || accountCleanupBusy || !!accountCleanupError
+        || !resumeChecked || !!resumeSession || !!resumeStorageError || pendingDiscardConfirm} />
     </ScrollView>
   );
 }
