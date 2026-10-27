@@ -1,5 +1,12 @@
 # Android Home banner: disabled test-only preparation
 
+Normal development/preview and production remain closed as described below.
+A separate owner-operated emulator rendering mode is documented in
+[admob-internal-rendering.md](admob-internal-rendering.md). Its explicit Start
+flow does not approve or enable the real-user consent controller. Statements
+below about no integration requests apply to the ordinary closed-gate path,
+not an explicitly started internal test session.
+
 ## Scope and baseline
 
 The accepted baseline already contains Node 22, tar 7.5.21, shell-quote 1.11.0

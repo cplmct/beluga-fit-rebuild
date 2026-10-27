@@ -102,6 +102,7 @@ async function mountedLifecycle() {
       if (name === '@react-navigation/native') return { useIsFocused: () => focused };
       if (name === './runtime.android') return {
         advertising: f.controller,
+        internalTestAdvertising: { enabled: false },
         loadAndroidAds: () => ({ BannerAd: Banner, BannerAdSize: { BANNER: 'BANNER' } }),
       };
       if (name === './controller') return mod.exports;
@@ -268,7 +269,9 @@ async function main() {
 
   // Android manifest mod exercised on a synthetic manifest, no prebuild/build.
   const plugin = require('../plugins/withAndroidTestAds');
-  let config = plugin({ name: 'Test', slug: 'test' });
+  let config = plugin({
+    name: 'Test', slug: 'test', extra: { belugaAdvertising: buildAdvertisingConfig('preview', 'test') },
+  });
   const result = await config.mods.android.manifest({
     ...config,
     modResults: { manifest: { $: {}, application: [{ $: { 'android:name': '.MainApplication' } }] } },

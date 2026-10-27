@@ -1,9 +1,10 @@
 const { withAndroidManifest, AndroidConfig } = require('expo/config-plugins');
-const { TEST_APP_ID } = require('../config/advertising');
+const { TEST_APP_ID, validateSampleIdentifiers } = require('../config/advertising');
 
 // Android-only equivalent of the pinned library plugin's two manifest settings.
 // Do not register any iOS mods or enable any additional ad SDKs.
 module.exports = function withAndroidTestAds(config) {
+  validateSampleIdentifiers(config.extra?.belugaAdvertising);
   return withAndroidManifest(config, mod => {
     const manifest = mod.modResults;
     AndroidConfig.Manifest.ensureToolsAvailable(manifest);

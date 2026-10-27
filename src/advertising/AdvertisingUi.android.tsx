@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { AppState, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
-import { advertising, loadAndroidAds } from './runtime.android';
+import { advertising, internalTestAdvertising, loadAndroidAds } from './runtime.android';
 import { TEST_BANNER_ID } from './controller';
 import type { AdvertisingProps } from './AdvertisingUi';
 
@@ -20,6 +20,57 @@ function useSafeSurface(blocked: boolean) {
 }
 
 export function HomeBanner({ blocked }: AdvertisingProps) {
+  return internalTestAdvertising.enabled
+    ? <InternalHomeTestBanner blocked={blocked} />
+    : <ConsentHomeBanner blocked={blocked} />;
+}
+
+function InternalHomeTestBanner({ blocked }: AdvertisingProps) {
+  const { safe, current } = useSafeSurface(blocked);
+  const state = useSyncExternalStore(internalTestAdvertising.subscribe, internalTestAdvertising.getSnapshot);
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    if (!safe) internalTestAdvertising.stop();
+    return () => internalTestAdvertising.stop();
+  }, [safe]);
+  const visible = safe && state.active && state.ready && !state.error && width >= 320;
+  const Banner = visible ? loadAndroidAds().BannerAd : null;
+  return (
+    <View style={styles.internal}>
+      <Text style={styles.link}>Internal test ads — not production consent validation</Text>
+      <Text style={styles.label}>
+        Adult owner-operated emulator only. Start permits Google SDK/network activity and any
+        required UMP form. Test IDs are not a privacy exemption.
+      </Text>
+      <TouchableOpacity accessibilityRole="button" testID="internal-test-ads-start"
+        disabled={!safe || state.busy || state.active}
+        onPress={() => { void internalTestAdvertising.start(() => current.current); }}>
+        <Text style={styles.link}>{state.busy ? 'Waiting for native SDK…' : 'Start test-banner session'}</Text>
+      </TouchableOpacity>
+      <TouchableOpacity accessibilityRole="button" testID="internal-test-ads-stop"
+        onPress={internalTestAdvertising.stop}>
+        <Text style={styles.link}>Stop test-banner session</Text>
+      </TouchableOpacity>
+      {state.privacyRequired && <TouchableOpacity accessibilityRole="button"
+        testID="internal-test-ads-privacy" disabled={!safe || state.busy}
+        onPress={() => { void internalTestAdvertising.showPrivacyOptions(() => current.current); }}>
+        <Text style={styles.link}>Test session privacy options</Text>
+      </TouchableOpacity>}
+      {!!state.error && <Text accessibilityRole="alert">{state.error}</Text>}
+      <View style={styles.slot} onLayout={event => setWidth(event.nativeEvent.layout.width)}>
+        <Text style={styles.label}>Google sample banner — internal test</Text>
+        <View style={styles.inventory}>
+          {Banner && <Banner unitId={TEST_BANNER_ID}
+            size={loadAndroidAds().BannerAdSize.BANNER}
+            requestOptions={{ requestNonPersonalizedAdsOnly: true }}
+            onAdFailedToLoad={internalTestAdvertising.failBanner} />}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function ConsentHomeBanner({ blocked }: AdvertisingProps) {
   const { safe, current } = useSafeSurface(blocked);
   const state = useSyncExternalStore(advertising.subscribe, advertising.getSnapshot);
   const [ready, setReady] = useState(false);
@@ -86,5 +137,6 @@ const styles = StyleSheet.create({
   label: { fontSize: 11, color: '#64748b', marginBottom: 8 },
   inventory: { height: 50, alignItems: 'center', justifyContent: 'center' },
   options: { padding: 16 },
+  internal: { marginTop: 32, padding: 16, gap: 16 },
   link: { color: '#2563eb', fontSize: 15 },
 });

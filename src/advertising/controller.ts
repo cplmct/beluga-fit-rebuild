@@ -3,6 +3,7 @@ export const TEST_BANNER_ID = 'ca-app-pub-3940256099942544/6300978111';
 
 export interface TestConfig {
   mode?: string;
+  buildProfile?: string;
   appId?: string;
   bannerId?: string;
   audienceApproved?: boolean;
