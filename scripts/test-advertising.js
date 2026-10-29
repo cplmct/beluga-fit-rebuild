@@ -103,6 +103,9 @@ async function mountedLifecycle() {
       if (name === './runtime.android') return {
         advertising: f.controller,
         internalTestAdvertising: { enabled: false },
+        publicFlow: {
+          enabled: false, getSnapshot: () => ({}), subscribe: () => () => {},
+        },
         loadAndroidAds: () => ({ BannerAd: Banner, BannerAdSize: { BANNER: 'BANNER' } }),
       };
       if (name === './controller') return mod.exports;
@@ -300,7 +303,7 @@ async function main() {
   assert(native.includes("requireOptionalNativeModule") && native.includes('embedded?.manifest'));
   assert(!native.split('\n').filter(line => !line.trim().startsWith('//')).join('\n').includes('Constants.expoConfig'));
   assert(native.includes('AdsConsent.getUserChoices()'));
-  assert(!native.includes('getGdprApplies'));
+  assert(native.includes('getGdprApplies: () => AdsConsent.getGdprApplies()'));
   assert(!fs.readFileSync('src/advertising/controller.ts', 'utf8').includes('getGdprApplies'));
   await mountedLifecycle();
   console.log('PASS: disabled audience/production, documented UMP readiness vs permission, choices/false/unknown/all-true remain unestablished, privacy-option distinctions/re-evaluation, safe forms, stale lifecycle, SDK failures, no initialization, synthetic manifest and isolation.');

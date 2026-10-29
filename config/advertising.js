@@ -2,9 +2,14 @@
 const TEST_APP_ID = 'ca-app-pub-3940256099942544~3347511713';
 const TEST_BANNER_ID = 'ca-app-pub-3940256099942544/6300978111';
 const INTERNAL_TEST_PROFILE = 'internal-ad-rendering';
+const PUBLIC_FLOW_TEST_PROFILE = 'public-ad-flow-test';
 
 function buildAdvertisingConfig(profile, requestedMode) {
   const internalTest = profile === INTERNAL_TEST_PROFILE && requestedMode === 'internal-test';
+  const publicFlowTest = profile === PUBLIC_FLOW_TEST_PROFILE && requestedMode === 'public-flow-test';
+  if (profile === PUBLIC_FLOW_TEST_PROFILE && !publicFlowTest) {
+    throw new Error('Public advertising flow tests require explicit public-flow-test mode.');
+  }
   if (profile === INTERNAL_TEST_PROFILE && !internalTest) {
     throw new Error('Internal ad rendering requires explicit internal-test mode.');
   }
@@ -12,11 +17,11 @@ function buildAdvertisingConfig(profile, requestedMode) {
   if (testProfile && requestedMode !== 'test') {
     throw new Error('Development/preview must explicitly select test advertising mode.');
   }
-  if (requestedMode && !['test', 'disabled', 'internal-test'].includes(requestedMode)) {
+  if (requestedMode && !['test', 'disabled', 'internal-test', 'public-flow-test'].includes(requestedMode)) {
     throw new Error('Unsupported advertising mode. Live advertising is not implemented.');
   }
   return {
-    mode: internalTest ? 'internal-test' : testProfile ? 'test' : 'disabled',
+    mode: publicFlowTest ? 'public-flow-test' : internalTest ? 'internal-test' : testProfile ? 'test' : 'disabled',
     buildProfile: profile || 'unknown',
     appId: TEST_APP_ID,
     bannerId: TEST_BANNER_ID,
@@ -33,4 +38,5 @@ function validateSampleIdentifiers(config) {
 
 module.exports = {
   TEST_APP_ID, TEST_BANNER_ID, INTERNAL_TEST_PROFILE, buildAdvertisingConfig, validateSampleIdentifiers,
+  PUBLIC_FLOW_TEST_PROFILE,
 };

@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { AppState, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
-import { advertising, internalTestAdvertising, loadAndroidAds } from './runtime.android';
+import { advertising, internalTestAdvertising, publicFlow, loadAndroidAds } from './runtime.android';
+import type { AgeDeclaration } from './ageDeclaration';
 import { TEST_BANNER_ID } from './controller';
 import type { AdvertisingProps } from './AdvertisingUi';
 
@@ -19,10 +20,98 @@ function useSafeSurface(blocked: boolean) {
   return { safe, current };
 }
 
-export function HomeBanner({ blocked }: AdvertisingProps) {
+export function HomeBanner(props: AdvertisingProps) {
+  if (publicFlow.enabled) return <PublicHomeBanner {...props} />;
   return internalTestAdvertising.enabled
-    ? <InternalHomeTestBanner blocked={blocked} />
-    : <ConsentHomeBanner blocked={blocked} />;
+    ? <InternalHomeTestBanner blocked={props.blocked} />
+    : <ConsentHomeBanner blocked={props.blocked} />;
+}
+
+export function AdvertisingAgeDeclaration({ blocked, ownerUserId }: AdvertisingProps) {
+  const { safe, current } = useSafeSurface(blocked);
+  const state = useSyncExternalStore(publicFlow.subscribe, publicFlow.getSnapshot);
+  if (!publicFlow.enabled || !ownerUserId || state.owner !== ownerUserId) return null;
+  const choices: [AgeDeclaration, string][] = [
+    ['adult', '18 or older'], ['under-18', 'Under 18'], ['prefer-not', 'Prefer not to answer'],
+  ];
+  return (
+    <View style={styles.options}>
+      <Text style={styles.link}>Advertising age declaration</Text>
+      <Text style={styles.explanation}>
+        This choice controls advertising only, not access to workout tracking.
+        It is self-declaration, not identity verification. No date of birth is collected.
+        You can review or change it in Settings.
+      </Text>
+      {choices.map(([value, label]) => (
+        <TouchableOpacity key={value} accessibilityRole="button"
+          accessibilityState={{ selected: state.loaded && state.declaration === value }}
+          testID={`advertising-age-${value}`} style={styles.choice}
+          disabled={!safe || state.saving}
+          onPress={() => {
+            if (current.current) void publicFlow.declare(ownerUserId, value);
+          }}>
+          <Text style={styles.link}>
+            {state.loaded && state.declaration === value ? 'Selected: ' : ''}{label}
+          </Text>
+        </TouchableOpacity>
+      ))}
+      {!state.loaded && <Text>{state.saving ? 'Saving your choice…' : 'Advertising remains off until your choice is available.'}</Text>}
+      {!!state.error && <Text accessibilityRole="alert">{state.error}</Text>}
+    </View>
+  );
+}
+
+function PublicHomeBanner(props: AdvertisingProps) {
+  const { safe, current } = useSafeSurface(props.blocked);
+  const state = useSyncExternalStore(publicFlow.subscribe, publicFlow.getSnapshot);
+  const [width, setWidth] = useState(0);
+  const owned = !!props.ownerUserId && state.owner === props.ownerUserId;
+  useEffect(() => {
+    let cancelled = false;
+    if (safe && owned) void publicFlow.prepareHome(() => !cancelled && current.current);
+    else publicFlow.suspend();
+    return () => { cancelled = true; publicFlow.suspend(); };
+  }, [safe, owned, state.trigger]);
+  if (!owned) return null;
+  if (!state.loaded || state.declaration !== 'adult') return <AdvertisingAgeDeclaration {...props} />;
+  const visible = safe && state.ready && !state.error && width >= 320;
+  const Banner = visible ? loadAndroidAds().BannerAd : null;
+  return (
+    <View>
+      {!!state.error && <Text accessibilityRole="alert">{state.error}</Text>}
+      {!!state.error && <TouchableOpacity accessibilityRole="button"
+        disabled={!safe || state.busy} onPress={publicFlow.retry}>
+        <Text style={styles.link}>Retry advertising privacy check</Text>
+      </TouchableOpacity>}
+      <View style={styles.slot} onLayout={event => setWidth(event.nativeEvent.layout.width)}>
+        <Text style={styles.label}>Advertisement</Text>
+        <View style={styles.inventory}>
+          {Banner && <Banner unitId={TEST_BANNER_ID}
+            size={loadAndroidAds().BannerAdSize.BANNER}
+            requestOptions={{ requestNonPersonalizedAdsOnly: true }}
+            onAdFailedToLoad={publicFlow.failBanner} />}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function PublicPrivacyOptions({ blocked, ownerUserId }: AdvertisingProps) {
+  const { safe, current } = useSafeSurface(blocked);
+  const state = useSyncExternalStore(publicFlow.subscribe, publicFlow.getSnapshot);
+  if (!ownerUserId || state.owner !== ownerUserId || !state.loaded
+    || state.declaration !== 'adult' || !state.privacyRequired) return null;
+  return (
+    <View style={styles.options}>
+      <TouchableOpacity accessibilityRole="button" testID="advertising-privacy-options"
+        disabled={!safe || state.busy} onPress={() => {
+          void publicFlow.showPrivacyOptions(() => current.current);
+        }}>
+        <Text style={styles.link}>Advertising privacy options</Text>
+      </TouchableOpacity>
+      {!!state.error && <Text accessibilityRole="alert">{state.error}</Text>}
+    </View>
+  );
 }
 
 function InternalHomeTestBanner({ blocked }: AdvertisingProps) {
@@ -106,7 +195,12 @@ function ConsentHomeBanner({ blocked }: AdvertisingProps) {
   );
 }
 
-export function AdvertisingPrivacyOptions({ blocked }: AdvertisingProps) {
+export function AdvertisingPrivacyOptions(props: AdvertisingProps) {
+  return publicFlow.enabled ? <PublicPrivacyOptions {...props} />
+    : <LegacyPrivacyOptions blocked={props.blocked} />;
+}
+
+function LegacyPrivacyOptions({ blocked }: AdvertisingProps) {
   const { safe, current } = useSafeSurface(blocked);
   const state = useSyncExternalStore(advertising.subscribe, advertising.getSnapshot);
   const [busy, setBusy] = useState(false);
@@ -138,5 +232,7 @@ const styles = StyleSheet.create({
   inventory: { height: 50, alignItems: 'center', justifyContent: 'center' },
   options: { padding: 16 },
   internal: { marginTop: 32, padding: 16, gap: 16 },
+  explanation: { marginVertical: 12, color: '#64748b', fontSize: 14 },
+  choice: { paddingVertical: 12 },
   link: { color: '#2563eb', fontSize: 15 },
 });

@@ -332,6 +332,7 @@ async function testStartupTimeout() {
     TouchableOpacity: props => { retry = props.onPress; return null; }, ActivityIndicator: () => null,
     useNavigationContainerRef: () => ({ navigate() {} }), setupNotificationHandler() {}, scheduleInactivityReminder() {},
     advertising: { refreshAtLaunch: async () => {} },
+    setAdvertisingOwner() {},
     NavigationContainer: host, BottomTabNavigator: () => null,
     LaunchScreen: () => null, setTimeout: () => 1, clearTimeout() {},
     require: () => require('react/jsx-runtime') };

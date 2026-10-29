@@ -143,7 +143,9 @@ module.exports = async function testOverlay({
             useUnits: () => ({ unitSystem: "imperial", updateUnitSystem() {} }),
           },
           "../lib/supabase": { supabase: sdk.ctx.supabase },
-          "../advertising/AdvertisingUi": { AdvertisingPrivacyOptions: () => null },
+          "../advertising/AdvertisingUi": {
+            AdvertisingPrivacyOptions: () => null, AdvertisingAgeDeclaration: () => null,
+          },
           "../utils/notifications": {
             DEFAULT_PREFS: { enabled: false },
             getPrefs: async () => ({ enabled: false }),
@@ -219,6 +221,7 @@ module.exports = async function testOverlay({
       LaunchScreen: () => null,
       setupNotificationHandler() {},
       advertising: { refreshAtLaunch: async () => {} },
+      setAdvertisingOwner() {},
       scheduleInactivityReminder() {},
       Date,
       setTimeout,

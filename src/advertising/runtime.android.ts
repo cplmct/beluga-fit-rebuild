@@ -2,6 +2,9 @@ import { requireOptionalNativeModule } from 'expo-modules-core';
 import { isDevice } from 'expo-device';
 import { AdvertisingController, readEmbeddedConfig } from './controller';
 import { InternalTestAdsController } from './internalTestController';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AgeDeclarationStore } from './ageDeclaration';
+import { PublicFlowController } from './publicFlowController';
 
 // Read the installed APK's asset directly. Constants.expoConfig/OTA extras are
 // deliberately not used: an OTA manifest must not enable a disabled binary.
@@ -20,6 +23,8 @@ function createAdapter() {
     loadAndShowConsentFormIfRequired: () => AdsConsent.loadAndShowConsentFormIfRequired(),
     showPrivacyOptionsForm: () => AdsConsent.showPrivacyOptionsForm(),
     getUserChoices: () => AdsConsent.getUserChoices(),
+    getGdprApplies: () => AdsConsent.getGdprApplies(),
+    getPurposeConsents: () => AdsConsent.getPurposeConsents(),
     configure: () => mobileAds().setRequestConfiguration({ testDeviceIdentifiers: ['EMULATOR'] }),
     initialize: () => mobileAds().initialize(),
   };
@@ -29,3 +34,10 @@ export const advertising = new AdvertisingController(config, createAdapter);
 export const internalTestAdvertising = new InternalTestAdsController(
   config, () => isDevice === false, createAdapter,
 );
+export const publicFlow = new PublicFlowController(
+  config, new AgeDeclarationStore(AsyncStorage), createAdapter,
+  () => new Promise<void>(resolve => requestAnimationFrame(() => { resolve(); })),
+);
+export function setAdvertisingOwner(owner: string | null) {
+  void publicFlow.setOwner(owner);
+}

@@ -889,7 +889,7 @@ export function HomeScreen({ navigation }: any) {
           )}
         </TouchableOpacity>
       </View>
-      <HomeBanner blocked={isPasswordRecovery || accountCleanupBusy || !!accountCleanupError
+      <HomeBanner ownerUserId={user?.id ?? null} blocked={isPasswordRecovery || accountCleanupBusy || !!accountCleanupError
         || !resumeChecked || !!resumeSession || !!resumeStorageError || pendingDiscardConfirm} />
     </ScrollView>
   );

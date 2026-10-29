@@ -93,6 +93,7 @@ async function mountedUi() {
     './runtime.android': {
       advertising: new real.AdvertisingController({}, () => { throw Error('Real controller MUST NOT load'); }),
       internalTestAdvertising: f.controller,
+      publicFlow: { enabled: false },
       loadAndroidAds: () => ({ BannerAd: Banner, BannerAdSize: { BANNER: 'BANNER' } }),
     },
     './controller': real,

@@ -4,3 +4,4 @@ import { AdvertisingController } from './controller';
 export const advertising = new AdvertisingController({}, () => {
   throw new Error('Advertising is Android-only.');
 });
+export function setAdvertisingOwner(_owner: string | null) {}

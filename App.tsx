@@ -13,7 +13,7 @@ import { RecoveryLinkScreen } from './src/components/RecoveryLinkScreen';
 import { ForgotPasswordScreen } from './src/components/ForgotPasswordScreen';
 import { LaunchScreen } from './src/components/LaunchScreen';
 import { scheduleInactivityReminder, setupNotificationHandler } from './src/utils/notifications';
-import { advertising } from './src/advertising/runtime';
+import { advertising, setAdvertisingOwner } from './src/advertising/runtime';
 
 // Keep the native splash visible until auth state is resolved.
 // This eliminates the ActivityIndicator flash on startup.
@@ -51,6 +51,11 @@ function AppContent() {
     if (user?.id) {
       scheduleInactivityReminder(user.id);
     }
+  }, [user?.id]);
+
+  useEffect(() => {
+    setAdvertisingOwner(user?.id ?? null);
+    return () => setAdvertisingOwner(null);
   }, [user?.id]);
 
   // ── Dismiss launch screen once auth resolves + 1500ms have elapsed ────────
