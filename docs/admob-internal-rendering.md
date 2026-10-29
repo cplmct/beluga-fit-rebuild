@@ -2,10 +2,20 @@
 
 ## Scope and status
 
-The owner reports the previous gate-closed preview APK compiled and passed an
-emulator smoke test without observed crashes/errors. That is not evidence that
-this new mode, banner rendering, UMP messages or native network behavior passed.
-This implementation has not started a native build or made real SDK requests.
+The owner reports that native emulator testing passed:
+
+- APK startup and general workout/navigation smoke testing.
+- Google sample banner rendering.
+- Stop removes the banner.
+- Switching tabs and returning leaves the banner stopped.
+- Backgrounding/reopening leaves the banner stopped.
+- Returning from either case requires another explicit Start tap.
+
+These are **owner-reported native emulator results**, not automated results or
+agent-performed native checks. They do not establish physical-device, network,
+native dependency/manifest inspection or production consent validation.
+Normal preview and production remain disabled. No further native build or real
+advertising request was initiated by the agent when recording these results.
 
 Use the new **internal-ad-rendering** EAS profile only for the adult owner's
 emulator tests. It extends preview: internal distribution, Android APK, Node
@@ -106,7 +116,9 @@ focus, foreground, workout/recovery/cleanup blocking, narrow layout, privacy
 options and unmount. The existing real-user controller tests remain unchanged
 except for the new runtime mock and manifest-validation fixture.
 
-Before native testing, separately authorize an internal-ad-rendering APK build.
+The following checklist remains available for additional testing; only the
+specific owner-reported checks above have been reported as passed.
+Before any further native build, separately authorize an internal-ad-rendering APK.
 Do not reuse an older normal-preview APK or change preview/production to enable
 the session. After building:
 

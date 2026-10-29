@@ -27,3 +27,13 @@ keeping normal preview and production advertising closed.
 
 **How to apply:** preserve that separation in future advertising changes; native
 rendering success does not establish production consent or zero SDK traffic.
+
+The owner specifies one Home banner, with core tracking remaining free.
+Internal developer test controls must not appear in the public release.
+Non-personalized advertising is the proposed initial configuration, not an
+approved activation.
+
+**Why:** the owner stated these product and release constraints.
+
+**How to apply:** keep public advertising proposals within that scope; do not
+treat internal testing success as authorization to enable real-user advertising.
