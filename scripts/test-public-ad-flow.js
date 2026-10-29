@@ -32,6 +32,7 @@ function fixture(overrides = {}, cfg = config, ioOverrides = {}) {
   const io = {
     async getItem(key) { return values.get(key) ?? null; },
     async setItem(key, value) { values.set(key, value); },
+    async removeItem(key) { values.delete(key); },
     ...ioOverrides,
   };
   const calls = [];
@@ -353,7 +354,55 @@ async function main() {
     await failed.controller.prepareHome(safe);
     assert(!failed.controller.getSnapshot().ready);
     assert(failed.controller.getSnapshot().error);
+    let finishDeleted;
+    const deleted = fixture({ [method]: () => new Promise(resolve => { finishDeleted = resolve; }) });
+    await adult(deleted);
+    const working = deleted.controller.prepareHome(safe);
+    await drain();
+    assert(finishDeleted, method);
+    const removing = deleted.controller.removeDeclaration('A');
+    assert.equal(deleted.controller.getSnapshot().owner, null, 'Invalidate synchronously before removal');
+    assert(!deleted.controller.getSnapshot().ready);
+    await removing;
+    const callsAtDeletion = deleted.calls.length;
+    finishDeleted(method === 'getGdprApplies' ? true : method === 'getPurposeConsents' ? '1111111111' : allowedInfo);
+    await working;
+    assert.equal(deleted.calls.length, callsAtDeletion, `${method}: no stale post-deletion SDK call`);
+    assert.equal(deleted.values.size, 0);
+    await deleted.controller.setOwner('A');
+    assert.equal(deleted.controller.getSnapshot().declaration, 'unknown');
+    assert(!deleted.controller.getSnapshot().loaded);
   }
+  const failedRemoval = fixture({}, config, { async removeItem() { throw Error('disk failure'); } });
+  await adult(failedRemoval);
+  await failedRemoval.controller.prepareHome(safe);
+  const callsBeforeFailure = failedRemoval.calls.length;
+  const removal = failedRemoval.controller.removeDeclaration('A');
+  assert(!failedRemoval.controller.getSnapshot().ready);
+  await assert.rejects(removal, /disk failure/);
+  await failedRemoval.controller.setOwner('A');
+  await failedRemoval.controller.declare('A', 'adult');
+  await failedRemoval.controller.prepareHome(safe);
+  assert.equal(failedRemoval.calls.length, callsBeforeFailure);
+  assert(failedRemoval.values.has('beluga:advertising-age:v1:A'));
+  const otherOwner = fixture();
+  await adult(otherOwner, 'B');
+  await otherOwner.controller.prepareHome(safe);
+  const beforeRemoval = otherOwner.controller.getSnapshot();
+  await otherOwner.controller.removeDeclaration('A');
+  assert.strictEqual(otherOwner.controller.getSnapshot(), beforeRemoval, 'A cleanup cannot invalidate B');
+  let finishWrite;
+  const raced = fixture({}, config, { setItem(key, value) {
+    return new Promise(resolve => { finishWrite = () => { raced.values.set(key, value); resolve(); }; });
+  } });
+  await raced.controller.setOwner('A');
+  const writing = raced.controller.declare('A', 'adult');
+  await drain();
+  const clearing = raced.controller.removeDeclaration('A');
+  finishWrite();
+  await Promise.all([writing, clearing]);
+  assert.equal(raced.values.size, 0, 'Removal follows the late write and leaves no declaration');
+  assert.equal(raced.controller.getSnapshot().owner, null);
   const appSource = fs.readFileSync('App.tsx', 'utf8');
   assert(appSource.includes('return () => setAdvertisingOwner(null)'));
   assert(!fs.readFileSync('src/advertising/runtime.android.ts', 'utf8').includes('gad_rdp'));

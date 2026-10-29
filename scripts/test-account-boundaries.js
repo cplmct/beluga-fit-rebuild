@@ -56,12 +56,15 @@ const authCode = extract('src/contexts/AuthContext.tsx', authNames);
 
 function environment() {
   const stored = new Map();
-  const faults = { remove: false, write: false, read: false, caches: false, signOut: false, rpc: false, rpcThrow: false };
+  const faults = { remove: false, advertisingRemove: false, write: false, read: false, caches: false, signOut: false, rpc: false, rpcThrow: false };
   const counts = { signOut: 0, rpc: 0 };
   const adapter = {
     async getItem(key) { if (faults.read) throw new Error('read failure'); return stored.get(key) ?? null; },
     async setItem(key, value) { if (faults.write) throw new Error('write failure'); stored.set(key, value); },
-    async removeItem(key) { if (faults.remove) throw new Error('remove failure'); stored.delete(key); },
+    async removeItem(key) {
+      if (faults.remove || (faults.advertisingRemove && key.startsWith('beluga:advertising-age:'))) throw new Error('remove failure');
+      stored.delete(key);
+    },
     async multiRemove(keys) {
       if (faults.caches) throw new Error('cache failure');
       for (const key of keys) stored.delete(key);
@@ -70,6 +73,18 @@ function environment() {
   const cleanup = moduleFrom('src/utils/accountCleanup.ts', {
     '@react-native-async-storage/async-storage': { __esModule: true, default: adapter },
   });
+  const age = moduleFrom('src/advertising/ageDeclaration.ts', {});
+  const makeDeclarations = () => moduleFrom('src/advertising/declarationStorage.ts', {
+    '@react-native-async-storage/async-storage': { __esModule: true, default: adapter },
+    '../utils/accountCleanup': cleanup, './ageDeclaration': age,
+  }).advertisingDeclarationStore;
+  const declarations = makeDeclarations();
+  const adEvents = [];
+  const advertisingRuntime = {
+    invalidateAdvertisingForAccountDeletion(owner) { adEvents.push(['invalidate', owner]); },
+    setAdvertisingOwner(owner) { adEvents.push(['restore', owner]); },
+    removeAdvertisingDeclaration(owner) { adEvents.push(['remove', owner]); return declarations.remove(owner); },
+  };
   const targets = moduleFrom('src/utils/workoutTarget.ts', {});
   const storage = moduleFrom('src/utils/workoutSession.ts', {
     '@react-native-async-storage/async-storage': { __esModule: true, default: adapter },
@@ -81,7 +96,7 @@ function environment() {
     const profileWrites = [];
     const ctx = {
       exports: {}, __DEV__: false, console, setTimeout, clearTimeout,
-      AsyncStorage: adapter, ...cleanup,
+      AsyncStorage: adapter, ...cleanup, ...advertisingRuntime,
       ...transition,
       clearWorkoutSessionForAccount: storage.clearWorkoutSessionForAccount,
       setWorkoutSessionOwner: storage.setWorkoutSessionOwner,
@@ -134,7 +149,77 @@ function environment() {
     storage.setWorkoutSessionOwner(sdkSession?.user.id ?? null);
     return { ctx, profileReads, profileWrites, ...ctx.exports.handlers };
   }
-  return { stored, faults, counts, adapter, cleanup, storage, auth };
+  return { stored, faults, counts, adapter, cleanup, storage, auth,
+    declarations, makeDeclarations, adEvents, advertisingRuntime };
+}
+
+async function testAdvertisingDeletion() {
+  const key = owner => `beluga:advertising-age:v1:${owner}`;
+  let e = environment();
+  await e.declarations.write('A', 'adult');
+  await e.declarations.write('B', 'under-18');
+  let a = e.auth();
+  await a.signOut();
+  assert.equal(await e.declarations.read('A'), 'adult', 'Logout preserves same-owner declaration');
+  assert.equal(await e.declarations.read('C'), 'unknown', 'No reuse by a different owner');
+  assert.equal(e.adEvents.length, 0, 'Logout never performs declaration deletion');
+  a = e.auth();
+  const bValue = e.stored.get(key('B'));
+  assert.equal((await a.deleteAccount()).error, null);
+  assert.equal(e.stored.has(key('A')), false);
+  assert.equal(e.stored.get(key('B')), bValue);
+  assert.deepEqual(e.adEvents, [['invalidate', 'A'], ['remove', 'A']]);
+  assert.equal(e.counts.rpc, 1);
+
+  e = environment();
+  await e.declarations.write('A', 'adult');
+  await e.declarations.write('B', 'under-18');
+  e.faults.advertisingRemove = true;
+  a = e.auth();
+  assert.equal((await a.deleteAccount()).error, null, 'Local failure cannot reverse successful server deletion');
+  assert.equal(a.ctx.user, null);
+  assert.match(a.ctx.accountCleanupError, /account was deleted.*local data could not be cleared/);
+  assert(e.stored.has(key('A')), 'Failure is surfaced, not falsely reported as erased');
+  assert(e.stored.has('@beluga_account_cleanup_v1'));
+  await assert.rejects(e.declarations.read('A'), /blocked/);
+  const restart = e.makeDeclarations();
+  await assert.rejects(restart.read('A'), /blocked/, 'Durable marker blocks restart reuse');
+  await assert.rejects(restart.write('A', 'adult'), /blocked/);
+  assert.equal(await restart.read('B'), 'under-18');
+  const b = e.auth(sessionFor('B'));
+  const beforeB = e.stored.get(key('B'));
+  await b.retryAccountCleanup();
+  assert.equal(b.ctx.user.id, 'B');
+  assert.equal(e.stored.get(key('B')), beforeB);
+  assert(e.stored.has('@beluga_account_cleanup_v1'));
+  e.faults.advertisingRemove = false;
+  await b.retryAccountCleanup();
+  assert.equal(b.ctx.user.id, 'B');
+  assert.equal(e.stored.has(key('A')), false);
+  assert.equal(e.stored.get(key('B')), beforeB);
+  assert.equal(e.stored.has('@beluga_account_cleanup_v1'), false);
+  assert.equal(e.counts.rpc, 1, 'Local retry never repeats server deletion');
+
+  for (const fault of ['write', 'rpc', 'rpcThrow']) {
+    e = environment();
+    await e.declarations.write('A', 'adult');
+    a = e.auth();
+    e.faults[fault] = true;
+    assert((await a.deleteAccount()).error);
+    assert(e.stored.has(key('A')), `${fault}: no declaration removal before deletion confirmation`);
+    assert(!e.adEvents.some(([event]) => event === 'remove'));
+    e.faults[fault] = false;
+    if (fault === 'rpcThrow') {
+      await assert.rejects(e.makeDeclarations().read('A'), /blocked/);
+      await a.retryAccountCleanup();
+      assert.equal(e.stored.has(key('A')), false, 'Unconfirmed outcome follows existing local-cleanup retry boundary');
+      assert.equal(e.counts.rpc, 1);
+    } else {
+      assert.equal(await e.declarations.read('A'), 'adult');
+      assert(e.adEvents.some(([event, owner]) => event === 'restore' && owner === 'A'));
+    }
+  }
+  console.log('Advertising deletion: PASS — logout retention, exact-owner removal, rejection/preflight preservation, unknown-outcome suppression, failed removal/restart blocking, B-safe local retry, and no repeated delete RPC.');
 }
 
 async function testStorageOwnership() {
@@ -537,6 +622,7 @@ async function testSignOutResults() {
 }
 
 async function run() {
+  await testAdvertisingDeletion();
   await testStorageOwnership();
   await testAuthCleanup();
   await testOnboardingRaces();

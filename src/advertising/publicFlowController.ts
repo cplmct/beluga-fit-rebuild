@@ -101,6 +101,15 @@ export class PublicFlowController {
     this.generation++;
     this.update({ ready: false });
   };
+  invalidateDeletedOwner = (owner: string) => {
+    // Do not disturb B while retrying A's cleanup. Invalidate both storage and
+    // SDK generations for A before any deletion/storage await.
+    if (this.state.owner === owner) void this.setOwner(null);
+  };
+  removeDeclaration = async (owner: string): Promise<void> => {
+    this.invalidateDeletedOwner(owner);
+    await this.store.remove(owner);
+  };
   retry = () => {
     if (!this.adult() || this.running) return;
     this.update({ refresh: 'needed', error: '', reason: 'consent-needed' });

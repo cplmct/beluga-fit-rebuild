@@ -29,16 +29,30 @@ performed by this implementation.
 - Storage is AsyncStorage, not encrypted storage: one versioned value per account,
   with matching owner checked inside the value. No ownerless legacy migration.
   Malformed/unreadable data fails closed with visible feedback.
-- Reads and writes are serialized per account. Owner/version checks reject late
+- Reads, writes and removal are serialized per account. Owner/version checks reject late
   A results after B signs in, including writes and return-to-A reads.
 - Changing the declaration invalidates banner eligibility immediately, before
   the write settles. A failed write leaves age unresolved and advertising off.
 - App auth-owner transitions reset in-memory state and refresh eligibility.
   Logout does not erase the saved category; only that account can restore it.
   Persistence contains age category/ownership/version, never consent permission.
-- Saved entries currently have no expiry and survive server account deletion
-  until local data is cleared. Account-deletion cleanup and retention duration
-  remain release-policy decisions, not a claim of automatic deletion.
+- Entries have no time-based expiry. Confirmed deletion removes only the deleted
+  owner's local entry, before completing the existing local account cleanup.
+  Ordinary logout preserves it. No Google UMP reset is involved.
+- Deletion starts by immediately invalidating that owner's eligibility and stale
+  SDK/storage callbacks. Preflight failure or explicit server rejection preserves
+  the entry and restores only the matching owner's normal eligibility checks.
+- If removal fails, its owner stays suppressed in memory; the existing durable
+  delete-account cleanup marker blocks reads/writes after restart. The failure is
+  visible, the marker is not cleared, and local retry does not repeat delete_user
+  or touch B's declaration/session. Server success still returns success; local
+  failure does not undo server deletion. Unconfirmed server outcomes follow the
+  existing local-only retry boundary without claiming server deletion succeeded.
+- Removal is queued after outstanding writes, so an old write cannot recreate an
+  entry after removal. An already-started native operation cannot be cancelled;
+  stale callbacks cannot trigger further integration calls or restore eligibility.
+  The cleanup in-memory block lasts for that process; restart still requires
+  successful marker cleanup, a readable entry/new explicit declaration and UMP.
 - Under-18, unanswered, unknown, pending or failed age state cannot enter this
   integration's UMP, explicit initialization or ad-request path. The separate
   owner-operated internal emulator session is unchanged.
@@ -83,7 +97,9 @@ Pinned react-native-google-mobile-ads 15.8.3 selects Android GMA 24.6.0 and UMP
 3.2.0 by default. Actual Gradle resolutions still require APK inspection.
 The pinned AdsConsent.ts accepts REGULATED_US_STATE and OTHER test geography
 values; Google documents regulated-US debugging for UMP >=3.1.0.
-No debug geography is forced by this implementation.
+The current profile has no supported test-only geography selector or consent-reset
+UI/configuration. Calls pass no debug geography and never invoke AdsConsent.reset.
+Library support for test APIs does not mean the profile exposes those controls.
 
 Google documents that UMP stores IABGPP_GppSID and IABGPP_HDR_GppString, and
 Mobile Ads respects the GPP signals. This requires the applicable US messages
@@ -153,7 +169,12 @@ native GPP compliance. All SDK, storage and native views are mocked.
    the needed message, stop. A dedicated owner test-app App ID and publishing
    test messages would need separate approval because the current authorization
    requires sample identifiers and forbids message publication/settings changes.
-5. Future US native testing should cover regulated-US and OTHER test geography,
+5. Deletion checks: remove A only after confirmation, preserve B and logout
+   retention, reject preflight/server failure without erasing the declaration,
+   simulate local removal failure and restart, then retry local cleanup without
+   a second server deletion. Compare explicit JS-call observation against native
+   startup/network behavior; do not equate those claims.
+6. Future US native testing should cover regulated-US and OTHER test geography,
    opt-out changes, stored GPP signals and Mobile Ads behavior. Until
    applicability is resolved through an approved supported route, verify the
    current blocking behavior; do not bypass it to request an ad.

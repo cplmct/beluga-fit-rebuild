@@ -41,6 +41,26 @@ the account's stored declaration. The same account may restore its category
 on this device; another account cannot reuse it. No declaration is sent to
 Supabase. No separate "Show ads" preference is included.
 
+After confirmed account deletion, the app removes only that account's declaration
+from this device as part of local account cleanup. Starting deletion immediately
+invalidates the account's in-memory advertising eligibility and outstanding work.
+An explicit server rejection or a failed deletion preflight preserves the saved
+declaration; normal eligibility checks must run again before advertising.
+
+If local removal fails, the declaration may remain physically stored. The app
+reports incomplete local cleanup and keeps the existing durable cleanup marker,
+which blocks reading or overwriting that account's declaration, including after
+restart. Retry local cleanup removes the entry without repeating server deletion
+or removing another account's declaration. A confirmed server deletion is not
+reversed by a device-storage failure. If the server outcome is unconfirmed, the
+existing local-cleanup retry also removes the declaration without claiming the
+server deletion succeeded. Google UMP consent is not reset by account cleanup.
+
+There is no time-based expiry. This describes app-managed local entry removal on
+the device performing cleanup, not forensic erasure or a remote wipe of other
+devices. These boundaries have automated mocked-storage/account tests; native
+device deletion behavior still requires inspection.
+
 Where applicable, Google's UMP consent flow would collect choices before
 permitted advertising. Advertising privacy options would be available in
 Settings when UMP requires the entry point. That requirement itself does not
@@ -73,9 +93,8 @@ is withdrawn. That behavior still requires native inspection.
 - Verify native startup/network behavior and exact SDK processing/disclosures.
 - Confirm Google's actual provider processing purposes, recipients, retention,
   deletion mechanisms and any international transfers for the intended release.
-- Decide the local declaration retention period and whether account deletion
-  must remove its device entry. Current storage has no time-based expiry and
-  is removed by clearing this app's local data, not a server account deletion.
+- Review the absence of time-based declaration expiry and the limits of
+  device-local deletion; verify native removal and failure/retry behavior.
 - Reconcile local declaration handling with the full account-deletion wording.
 - Reconcile the full policy, retention facts and Play Data safety declarations.
 

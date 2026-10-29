@@ -97,6 +97,7 @@ module.exports = async function testOverlay({
       "../lib/supabase": { supabase: sdk.ctx.supabase },
       "../utils/workoutSession": e.storage,
       "../utils/accountCleanup": e.cleanup,
+      "../advertising/runtime": e.advertisingRuntime,
       "../utils/accountTransition": {
         withAccountTransitionLock: sdk.ctx.withAccountTransitionLock,
       },

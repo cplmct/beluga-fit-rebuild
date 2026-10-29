@@ -49,6 +49,9 @@ Prefer not to answer. Minor, unanswered and unknown states get no advertising;
 tracking remains available. Do not collect DOB, infer age from fitness/profile
 data, share the declaration as targeting, or add a separate default-off Show ads
 preference. Keep choices account-isolated and changeable in Settings.
+Ordinary logout must preserve the account's local declaration; successful account
+deletion must remove only that account's declaration. A local cleanup failure
+must block stale reuse without misrepresenting server deletion or resetting UMP.
 
 **Why:** the owner explicitly approved this narrower product package while
 withholding live-production activation and dependency/native-adapter approval.

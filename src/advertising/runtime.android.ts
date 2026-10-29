@@ -2,8 +2,7 @@ import { requireOptionalNativeModule } from 'expo-modules-core';
 import { isDevice } from 'expo-device';
 import { AdvertisingController, readEmbeddedConfig } from './controller';
 import { InternalTestAdsController } from './internalTestController';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AgeDeclarationStore } from './ageDeclaration';
+import { advertisingDeclarationStore } from './declarationStorage';
 import { PublicFlowController } from './publicFlowController';
 
 // Read the installed APK's asset directly. Constants.expoConfig/OTA extras are
@@ -35,9 +34,11 @@ export const internalTestAdvertising = new InternalTestAdsController(
   config, () => isDevice === false, createAdapter,
 );
 export const publicFlow = new PublicFlowController(
-  config, new AgeDeclarationStore(AsyncStorage), createAdapter,
+  config, advertisingDeclarationStore, createAdapter,
   () => new Promise<void>(resolve => requestAnimationFrame(() => { resolve(); })),
 );
 export function setAdvertisingOwner(owner: string | null) {
   void publicFlow.setOwner(owner);
 }
+export const invalidateAdvertisingForAccountDeletion = publicFlow.invalidateDeletedOwner;
+export const removeAdvertisingDeclaration = publicFlow.removeDeclaration;

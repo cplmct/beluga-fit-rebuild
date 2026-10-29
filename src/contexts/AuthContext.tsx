@@ -3,6 +3,7 @@ import { Linking } from 'react-native'
 import { Session, User, AuthError } from '@supabase/supabase-js'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '../lib/supabase'
+import { invalidateAdvertisingForAccountDeletion, removeAdvertisingDeclaration, setAdvertisingOwner } from '../advertising/runtime'
 import { setWorkoutSessionOwner, clearWorkoutSessionForAccount } from '../utils/workoutSession'
 import { withAccountTransitionLock } from '../utils/accountTransition'
 import { parseRecoveryUrl, recoverySessionFailure, RECOVERY_CLEANUP_MESSAGE, RecoveryLinkState } from '../utils/passwordRecovery'
@@ -456,6 +457,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const finishLocalAccountCleanup = async (cleanup: PendingAccountCleanup): Promise<boolean> => {
     try {
+      if (cleanup.kind === 'delete-account') {
+        await removeAdvertisingDeclaration(cleanup.ownerUserId)
+      }
       await beginAccountTransition(async (storedSession) => {
         // Comparison and sign-out hold the same app lock. No supported login,
         // recovery, deletion or other-tab transition can change the owner here.
@@ -645,12 +649,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     cleanupInProgressRef.current = true
     setAccountCleanupBusy(true)
     const cleanup: PendingAccountCleanup = { ownerUserId: userId, kind: 'delete-account' }
+    invalidateAdvertisingForAccountDeletion(userId)
     try {
       // If durable suppression cannot be recorded, do not start deletion.
       await beginAccountCleanup(cleanup)
     } catch (err: unknown) {
       cleanupInProgressRef.current = false
       setAccountCleanupBusy(false)
+      if (currentUserIdRef.current === userId) setAdvertisingOwner(userId)
       return { error: { message: 'Couldn’t prepare local cleanup. Your account was not deleted. Please retry.' } }
     }
     pendingCleanupRef.current = cleanup
@@ -684,6 +690,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         pendingCleanupRef.current = null
         setWorkoutSessionOwner(currentUserIdRef.current)
         await restoreAuthSession()
+        if (currentUserIdRef.current === userId) setAdvertisingOwner(userId)
       } catch {
         invalidateAccountAuth(userId)
         setAccountCleanupError('Account deletion was not confirmed, and local cleanup is incomplete. Retry local cleanup to sign out safely.')
