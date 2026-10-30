@@ -97,6 +97,7 @@ async function mountedUi() {
       loadAndroidAds: () => ({ BannerAd: Banner, BannerAdSize: { BANNER: 'BANNER' } }),
     },
     './controller': real,
+    './publicFlowStatus': { publicFlowStatus: () => { throw Error('Public UI must stay disabled'); } },
   });
   const render = async (blocked = false) => React.act(async () => {
     root.render(React.createElement(React.Fragment, null,

@@ -22,11 +22,25 @@ export function purposeOneVeto(applies: unknown, purposes: unknown): string {
   return purposes[0] === '1' ? '' : 'purpose-one-refused';
 }
 
+export type PublicPhase = 'blocked' | 'refreshing' | 'awaiting-form' | 'checking'
+  | 'initializing' | 'eligible' | 'loading' | 'loaded' | 'failed';
+
+// Never expose raw SDK messages/codes (which can contain identifiers or URLs).
+export function publicErrorCode(error: unknown): string {
+  const code = error && typeof error === 'object' && 'code' in error ? error.code : null;
+  for (const known of ['no-fill', 'network-error', 'invalid-request', 'internal-error', 'timeout']) {
+    if (code === known || code === `googleMobileAds/${known}`
+      || code === `googleMobileAds/error-code-${known}`) return known;
+  }
+  return 'sdk-error';
+}
+
 const initialState = () => ({
   owner: null as string | null, declaration: 'unknown' as AgeDeclaration,
   loaded: false, saving: false, busy: false, ready: false, privacyRequired: false,
   refresh: 'needed' as 'needed' | 'ok' | 'failed',
   reason: 'age-unresolved', error: '', trigger: 0,
+  phase: 'blocked' as PublicPhase, errorCode: '', bannerAttempted: false,
 });
 
 export class PublicFlowController {
@@ -72,7 +86,8 @@ export class PublicFlowController {
       this.update({ declaration, loaded: true, reason: declaration === 'adult' ? 'consent-needed' : 'age-ineligible' });
     } catch {
       if (version === this.ownerVersion) {
-        this.update({ error: 'Could not read your advertising age choice. Tracking is unaffected.' });
+        this.update({ phase: 'failed', errorCode: 'storage-read-failed',
+          error: 'Could not read your advertising age choice. Tracking is unaffected.' });
       }
     }
     if (version === this.ownerVersion) this.trigger();
@@ -83,7 +98,8 @@ export class PublicFlowController {
     const version = ++this.ownerVersion;
     this.generation++;
     this.update({ ready: false, loaded: false, saving: true, declaration: 'unknown',
-      refresh: 'needed', error: '', reason: 'age-saving' });
+      refresh: 'needed', error: '', reason: 'age-saving', phase: 'blocked',
+      errorCode: '', bannerAttempted: false });
     try {
       await this.store.write(owner, declaration);
       if (version !== this.ownerVersion) return;
@@ -91,7 +107,8 @@ export class PublicFlowController {
         reason: declaration === 'adult' ? 'consent-needed' : 'age-ineligible' });
     } catch {
       if (version === this.ownerVersion) {
-        this.update({ saving: false, error: 'Could not save your advertising age choice. Advertising stays off.' });
+        this.update({ saving: false, phase: 'failed', errorCode: 'storage-write-failed',
+          error: 'Could not save your advertising age choice. Advertising stays off.' });
       }
     }
     if (version === this.ownerVersion) this.trigger();
@@ -99,7 +116,8 @@ export class PublicFlowController {
 
   suspend = () => {
     this.generation++;
-    this.update({ ready: false });
+    this.update({ ready: false, bannerAttempted: false,
+      phase: this.state.error ? 'failed' : 'blocked' });
   };
   invalidateDeletedOwner = (owner: string) => {
     // Do not disturb B while retrying A's cleanup. Invalidate both storage and
@@ -112,13 +130,29 @@ export class PublicFlowController {
   };
   retry = () => {
     if (!this.adult() || this.running) return;
-    this.update({ refresh: 'needed', error: '', reason: 'consent-needed' });
+    this.update({ refresh: 'needed', error: '', errorCode: '', reason: 'consent-needed', phase: 'blocked' });
     this.trigger();
   };
-  failBanner = () => {
+  failBanner = (error?: unknown) => {
     this.suspend();
-    this.update({ reason: 'banner-unavailable', error: 'Advertising is unavailable. Tracking is unaffected.' });
+    this.update({ phase: 'failed', bannerAttempted: true, errorCode: publicErrorCode(error),
+      reason: 'banner-unavailable', error: 'Advertising is unavailable. Tracking is unaffected.' });
   };
+  createBannerCallbacks = () => {
+    const generation = this.generation;
+    const valid = () => generation === this.generation && this.adult() && this.state.ready;
+    return {
+      onLoadStart: () => {
+        if (valid()) this.update({ bannerAttempted: true,
+          phase: this.state.phase === 'loaded' ? 'loaded' : 'loading' });
+      },
+      onAdLoaded: () => { if (valid()) this.update({ phase: 'loaded', bannerAttempted: true }); },
+      onAdFailedToLoad: (error: unknown) => { if (valid()) this.failBanner(error); },
+    };
+  };
+  private block(reason: string) {
+    this.update({ reason, phase: 'blocked', bannerAttempted: false });
+  }
   private privacy(info: ConsentInfo) {
     this.update({ privacyRequired: info.privacyOptionsRequirementStatus === 'REQUIRED' });
   }
@@ -128,50 +162,57 @@ export class PublicFlowController {
     const generation = this.generation;
     const valid = () => generation === this.generation && this.adult() && isSafe();
     this.running = true;
-    this.update({ busy: true, ready: false });
+    this.update({ busy: true, ready: false, phase: 'checking' });
     try {
       const sdk = this.sdk ??= this.load();
       if (this.state.refresh !== 'ok') {
         try {
+          this.update({ phase: 'refreshing' });
           const updated = await sdk.requestInfoUpdate();
           if (!valid()) return;
           this.privacy(updated);
           this.update({ refresh: 'ok' });
-        } catch {
-          if (valid()) this.update({ refresh: 'failed', reason: 'refresh-failed',
+        } catch (error) {
+          if (valid()) this.update({ refresh: 'failed', reason: 'refresh-failed', phase: 'failed',
+            bannerAttempted: false, errorCode: publicErrorCode(error),
             error: 'Advertising privacy refresh failed. Advertising stays off; tracking is unaffected.' });
           return;
         }
       }
       // This API decides whether a form is required; do not infer acceptance
       // from OBTAINED or bypass a required form after an update.
+      // This stage means the required-form API is pending, NOT proof a form is visible.
+      this.update({ phase: 'awaiting-form' });
       await sdk.loadAndShowConsentFormIfRequired();
       if (!valid()) return;
+      this.update({ phase: 'checking' });
       const info = await sdk.getConsentInfo();
       if (!valid()) return;
       this.privacy(info);
-      if (info.canRequestAds !== true) { this.update({ reason: 'ump-not-ready' }); return; }
+      if (info.canRequestAds !== true) { this.block('ump-not-ready'); return; }
       const applies = await sdk.getGdprApplies();
       if (!valid()) return;
       // NOT_REQUIRED plus a positive TCF flag is inconsistent, not an
       // invitation to use a possibly stale flag to enable requests.
       if (applies !== true || info.status !== 'OBTAINED') {
-        this.update({ reason: 'applicability-unresolved' }); return;
+        this.block('applicability-unresolved'); return;
       }
       const purposes = await sdk.getPurposeConsents();
       if (!valid()) return;
       const reason = purposeOneVeto(applies, purposes);
       this.update({ reason });
-      if (reason) return;
+      if (reason) { this.block(reason); return; }
+      this.update({ phase: 'initializing' });
       await sdk.configure();
       if (!valid()) return;
       if (!this.initialized) {
         await sdk.initialize();
         this.initialized = true;
       }
-      if (valid()) this.update({ ready: true });
-    } catch {
-      if (valid()) this.update({ reason: 'consent-or-sdk-error',
+      if (valid()) this.update({ ready: true, phase: 'eligible', errorCode: '' });
+    } catch (error) {
+      if (valid()) this.update({ reason: 'consent-or-sdk-error', phase: 'failed',
+        bannerAttempted: false, errorCode: publicErrorCode(error),
         error: 'Advertising is unavailable. Tracking is unaffected.' });
     } finally {
       this.running = false;
@@ -186,19 +227,22 @@ export class PublicFlowController {
     const generation = this.generation;
     const valid = () => generation === this.generation && this.adult() && isSafe();
     this.running = true;
-    this.update({ busy: true, refresh: 'needed', reason: 'privacy-options', error: '' });
+    this.update({ busy: true, refresh: 'needed', reason: 'privacy-options', error: '',
+      errorCode: '', phase: 'awaiting-form' });
     try {
       await this.afterBannerRemoval();
       if (!valid()) return;
       await this.sdk.showPrivacyOptionsForm();
       if (!valid()) return;
+      this.update({ phase: 'checking' });
       const info = await this.sdk.getConsentInfo();
       if (valid()) this.privacy(info);
-    } catch {
-      if (valid()) this.update({ error: 'Could not open advertising privacy options. Advertising stays off.' });
+    } catch (error) {
+      if (valid()) this.update({ phase: 'failed', errorCode: publicErrorCode(error),
+        error: 'Could not open advertising privacy options. Advertising stays off.' });
     } finally {
       this.running = false;
-      this.update({ busy: false });
+      this.update({ busy: false, phase: this.state.error ? 'failed' : 'blocked' });
       // Next Home must refresh and reassess, never reuse pre-form eligibility.
       this.trigger();
     }

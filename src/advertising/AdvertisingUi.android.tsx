@@ -1,10 +1,11 @@
-import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { AppState, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import { advertising, internalTestAdvertising, publicFlow, loadAndroidAds } from './runtime.android';
 import type { AgeDeclaration } from './ageDeclaration';
 import { TEST_BANNER_ID } from './controller';
 import type { AdvertisingProps } from './AdvertisingUi';
+import { publicFlowStatus } from './publicFlowStatus';
 
 function useSafeSurface(blocked: boolean) {
   const focused = useIsFocused();
@@ -72,28 +73,35 @@ function PublicHomeBanner(props: AdvertisingProps) {
     else publicFlow.suspend();
     return () => { cancelled = true; publicFlow.suspend(); };
   }, [safe, owned, state.trigger]);
-  if (!owned) return null;
-  if (!state.loaded || state.declaration !== 'adult') return <AdvertisingAgeDeclaration {...props} />;
+  const status = publicFlowStatus(state, owned, safe, width);
   const visible = safe && state.ready && !state.error && width >= 320;
-  const Banner = visible ? loadAndroidAds().BannerAd : null;
   return (
-    <View>
+    <View onLayout={event => setWidth(event.nativeEvent.layout.width)}>
+      <Text testID="public-ad-test-status">{status.text}</Text>
+      {owned && (!state.loaded || state.declaration !== 'adult')
+        && <AdvertisingAgeDeclaration {...props} />}
       {!!state.error && <Text accessibilityRole="alert">{state.error}</Text>}
-      {!!state.error && <TouchableOpacity accessibilityRole="button"
+      {owned && state.loaded && state.declaration === 'adult' && !!state.error && <TouchableOpacity accessibilityRole="button"
         disabled={!safe || state.busy} onPress={publicFlow.retry}>
         <Text style={styles.link}>Retry advertising privacy check</Text>
       </TouchableOpacity>}
-      <View style={styles.slot} onLayout={event => setWidth(event.nativeEvent.layout.width)}>
+      {status.reserve && <View style={styles.slot}>
         <Text style={styles.label}>Advertisement</Text>
         <View style={styles.inventory}>
-          {Banner && <Banner unitId={TEST_BANNER_ID}
-            size={loadAndroidAds().BannerAdSize.BANNER}
-            requestOptions={{ requestNonPersonalizedAdsOnly: true }}
-            onAdFailedToLoad={publicFlow.failBanner} />}
+          {owned && visible && <PublicBannerCreative />}
         </View>
-      </View>
+      </View>}
     </View>
   );
+}
+
+function PublicBannerCreative() {
+  const callbacks = useMemo(() => publicFlow.createBannerCallbacks(), []);
+  useEffect(() => { callbacks.onLoadStart(); }, [callbacks]);
+  const Banner = loadAndroidAds().BannerAd;
+  return <Banner unitId={TEST_BANNER_ID} size={loadAndroidAds().BannerAdSize.BANNER}
+    requestOptions={{ requestNonPersonalizedAdsOnly: true }}
+    onAdLoaded={callbacks.onAdLoaded} onAdFailedToLoad={callbacks.onAdFailedToLoad} />;
 }
 
 function PublicPrivacyOptions({ blocked, ownerUserId }: AdvertisingProps) {

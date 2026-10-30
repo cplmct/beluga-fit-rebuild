@@ -21,6 +21,7 @@ const publicModule = load('src/advertising/publicFlowController.ts', {
   './controller': original, './ageDeclaration': age,
 });
 const { PublicFlowController, purposeOneVeto, isPublicFlowTest } = publicModule;
+const statusModule = load('src/advertising/publicFlowStatus.ts');
 const config = buildAdvertisingConfig('public-ad-flow-test', 'public-flow-test');
 const allowedInfo = {
   status: 'OBTAINED', canRequestAds: true, isConsentFormAvailable: false,
@@ -58,13 +59,13 @@ async function adult(f, owner = 'A') {
 }
 const drain = async () => { for (let i = 0; i < 25; i++) await Promise.resolve(); };
 
-async function mountedUi() {
+async function mountedUi(overrides = {}, scenario) {
   const React = require('react');
   const { createRoot } = require('react-dom/client');
   const dom = require('./helpers/mock-dom');
   const host = dom.install();
   const root = createRoot(host);
-  const f = fixture();
+  const f = fixture(overrides);
   await f.controller.setOwner('A');
   let focused = true;
   let width = 360;
@@ -96,6 +97,7 @@ async function mountedUi() {
       internalTestAdvertising: { enabled: false },
       loadAndroidAds: () => ({ BannerAd: Banner, BannerAdSize: { BANNER: 'BANNER' } }) },
     './controller': original,
+    './publicFlowStatus': statusModule,
   });
   const render = async (blocked = false, ownerUserId = 'A') => React.act(async () => {
     root.render(React.createElement(React.Fragment, null,
@@ -118,22 +120,32 @@ async function mountedUi() {
     props.onClick();
   });
   try {
+    if (scenario) {
+      await scenario({ host, f, render, press, find, latest: () => latest, React });
+      return;
+    }
     await render();
     assert(host.textContent.includes('not identity verification'));
     assert(!host.textContent.includes('Start test-banner'));
     assert(!host.textContent.includes('Stop test-banner'));
     assert.equal(f.calls.length, 0);
+    assert(!host.textContent.includes('Advertisement'));
     await press('advertising-age-under-18');
     assert.equal(f.calls.length, 0);
+    assert(!host.textContent.includes('Advertisement'));
     await press('advertising-age-prefer-not');
     assert.equal(f.calls.length, 0);
     await press('advertising-age-adult');
     assert(host.textContent.includes('SAMPLE PUBLIC BANNER'));
+    assert(host.textContent.includes('controller=loading'), 'Mount is loading, not proof of loaded');
+    await React.act(async () => latest.onAdLoaded());
+    assert(host.textContent.includes('controller=loaded'));
     assert(host.textContent.includes('Advertising privacy options'), 'Required entry is not an ad veto');
     assert.equal(latest.unitId, TEST_BANNER_ID);
     assert.equal(latest.requestOptions.requestNonPersonalizedAdsOnly, true);
     await press('advertising-age-under-18');
     assert(!host.textContent.includes('SAMPLE PUBLIC BANNER'));
+    assert(!host.textContent.includes('Advertisement'));
     const minorCalls = f.calls.length;
     await render();
     assert.equal(f.calls.length, minorCalls);
@@ -143,6 +155,9 @@ async function mountedUi() {
     assert(f.calls.filter(x => x === 'requestInfoUpdate').length >= 3);
     await React.act(async () => latest.onAdFailedToLoad({ code: 'no-fill' }));
     assert(!host.textContent.includes('SAMPLE PUBLIC BANNER'));
+    assert(host.textContent.includes('controller=failed'));
+    assert(host.textContent.includes('error=no-fill'));
+    assert(host.textContent.includes('Advertisement'));
     assert(find(host, node => node.attributes?.['data-height'] === '86'));
     const failedCalls = f.calls.length;
     await render();
@@ -152,6 +167,7 @@ async function mountedUi() {
     focused = false;
     await render();
     assert(!host.textContent.includes('SAMPLE PUBLIC BANNER'));
+    assert(!host.textContent.includes('Advertisement'));
     focused = true;
     await render();
     assert(host.textContent.includes('SAMPLE PUBLIC BANNER'));
@@ -165,9 +181,11 @@ async function mountedUi() {
     assert(host.textContent.includes('SAMPLE PUBLIC BANNER'));
     await render(true); // workout/recovery/cleanup/retained draft gate
     assert(!host.textContent.includes('SAMPLE PUBLIC BANNER'));
+    assert(!host.textContent.includes('Advertisement'));
     width = 300;
     await render();
     assert(!host.textContent.includes('SAMPLE PUBLIC BANNER'));
+    assert(!host.textContent.includes('Advertisement'));
     await React.act(async () => f.controller.setOwner('B'));
     await render(false, 'B');
     assert(!host.textContent.includes('SAMPLE PUBLIC BANNER'));
@@ -176,6 +194,73 @@ async function mountedUi() {
     assert.equal(mounted, unmounted);
     assert.equal(listeners.size, 0);
   } finally { dom.restore(); }
+}
+
+async function testRenderedStages() {
+  for (const [overrides, reason] of [
+    [{ getGdprApplies: async () => false }, 'applicability-unresolved'],
+    [{ getPurposeConsents: async () => '0111111111' }, 'purpose-one-refused'],
+    [{ getPurposeConsents: async () => '' }, 'purpose-one-unresolved'],
+    [{ getConsentInfo: async () => ({ ...allowedInfo, canRequestAds: false }) }, 'ump-not-ready'],
+    [{ requestInfoUpdate: async () => { throw { code: 'secret-account-or-consent-string' }; } }, 'refresh-failed'],
+  ]) {
+    await mountedUi(overrides, async ({ host, render, press, find }) => {
+      await render();
+      await press('advertising-age-adult');
+      assert(host.textContent.includes(`reason=${reason}`));
+      assert(!host.textContent.includes('Advertisement'));
+      assert(!find(host, node => node.attributes?.['data-height'] === '86'));
+      assert(!host.textContent.includes('secret-account-or-consent-string'));
+      if (reason === 'refresh-failed') {
+        assert(host.textContent.includes('controller=failed'));
+        assert(host.textContent.includes('error=sdk-error'));
+      } else assert(host.textContent.includes('controller=blocked'));
+    });
+  }
+  let refreshed, formed, initialized;
+  await mountedUi({
+    requestInfoUpdate: () => new Promise(resolve => { refreshed = resolve; }),
+    loadAndShowConsentFormIfRequired: () => new Promise(resolve => { formed = resolve; }),
+    initialize: () => new Promise(resolve => { initialized = resolve; }),
+  }, async ({ host, f, render, press, React, latest }) => {
+    await render();
+    await press('advertising-age-adult');
+    assert(host.textContent.includes('controller=refreshing'));
+    assert(!host.textContent.includes('Advertisement'));
+    await React.act(async () => { refreshed(allowedInfo); });
+    assert(host.textContent.includes('controller=awaiting-form'));
+    assert(host.textContent.includes('visibility unverified'));
+    assert(!host.textContent.includes('Advertisement'));
+    await React.act(async () => { formed(allowedInfo); });
+    assert(host.textContent.includes('controller=initializing'));
+    assert(!host.textContent.includes('Advertisement'));
+    await React.act(async () => { initialized(); });
+    assert(host.textContent.includes('controller=loading'));
+    assert(host.textContent.includes('Advertisement'));
+    const stale = latest();
+    await React.act(async () => latest().onAdLoaded());
+    assert(host.textContent.includes('controller=loaded'));
+    await press('advertising-age-under-18');
+    const state = f.controller.getSnapshot();
+    await React.act(async () => {
+      stale.onAdLoaded();
+      stale.onAdFailedToLoad({ code: 'network-error' });
+    });
+    assert.strictEqual(f.controller.getSnapshot(), state, 'Stale native banner callbacks cannot change new state');
+    assert(!host.textContent.includes('Advertisement'));
+  });
+  const f = fixture();
+  await adult(f);
+  await f.controller.prepareHome(safe);
+  assert.equal(f.controller.getSnapshot().phase, 'eligible', 'Before native mount, not yet loading/loaded');
+  const rendered = statusModule.publicFlowStatus({
+    ...f.controller.getSnapshot(), owner: 'private-account-ID',
+    phase: 'private-consent-string', reason: 'private-consent-string',
+    errorCode: 'private-account-ID', error: 'private-message',
+  }, true, true, 360);
+  assert(!rendered.text.includes('private'));
+  assert(!statusModule.publicFlowStatus(f.controller.getSnapshot(), false, true, 360).reserve);
+  console.log('PASS: mounted blocked/refreshing/form-API/initializing/loading/loaded/failure diagnostics, no ineligible label/slot, stable no-fill reservation, callback freshness and sanitized state output.');
 }
 
 async function main() {
@@ -202,6 +287,8 @@ async function main() {
   }
   assert.equal(purposeOneVeto(true, '0111111111'), 'purpose-one-refused');
   assert.equal(purposeOneVeto(true, '1100111111'), ''); // Personalization purposes 3/4 refused.
+  assert.equal(publicModule.publicErrorCode({ code: 'googleMobileAds/error-code-no-fill' }), 'no-fill');
+  assert.equal(publicModule.publicErrorCode({ code: 'private-token', message: 'private-data' }), 'sdk-error');
   const f = fixture();
   await f.controller.setOwner('A');
   for (const choice of ['unknown', 'under-18', 'prefer-not']) {
@@ -343,6 +430,10 @@ async function main() {
     const pending = stale.controller.prepareHome(safe);
     await drain();
     assert(release, method);
+    const expectedPhase = method === 'requestInfoUpdate' ? 'refreshing'
+      : method === 'loadAndShowConsentFormIfRequired' ? 'awaiting-form'
+      : ['configure', 'initialize'].includes(method) ? 'initializing' : 'checking';
+    assert.equal(stale.controller.getSnapshot().phase, expectedPhase, method);
     await stale.controller.declare('A', 'under-18');
     const callsAtChange = stale.calls.length;
     release(method === 'getGdprApplies' ? true : method === 'getPurposeConsents' ? '1111111111' : allowedInfo);
@@ -354,6 +445,7 @@ async function main() {
     await failed.controller.prepareHome(safe);
     assert(!failed.controller.getSnapshot().ready);
     assert(failed.controller.getSnapshot().error);
+    assert.equal(failed.controller.getSnapshot().phase, 'failed');
     let finishDeleted;
     const deleted = fixture({ [method]: () => new Promise(resolve => { finishDeleted = resolve; }) });
     await adult(deleted);
@@ -408,6 +500,7 @@ async function main() {
   assert(!fs.readFileSync('src/advertising/runtime.android.ts', 'utf8').includes('gad_rdp'));
   assert(!fs.readFileSync('src/advertising/publicFlowController.ts', 'utf8').includes('getUserChoices()'));
   await mountedUi();
+  await testRenderedStages();
   console.log('PASS: public-test/sample-ID isolation, account-scoped age persistence/errors/races, no minor/unknown SDK calls, current-session refresh, Purpose 1 acceptance/refusal/ambiguity, no personalization veto, privacy withdrawal/reassessment, stale callbacks, mounted choices/lifecycle/no-fill/width/ownership cleanup.');
   console.log('US: native GPP handling documented, NOT simulated as an approved request path; false/unknown applicability stays blocked. All SDK/storage/native views mocked; no native/network verification.');
 }

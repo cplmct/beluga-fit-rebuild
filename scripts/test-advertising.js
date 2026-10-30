@@ -92,6 +92,7 @@ async function mountedLifecycle() {
   vm.runInNewContext(source, {
     exports: loaded,
     require(name) {
+      if (name === './publicFlowStatus') return { publicFlowStatus: () => { throw Error('Public UI must stay disabled'); } };
       if (name === 'react' || name === 'react/jsx-runtime') return require(name);
       if (name === 'react-native') return {
         AppState: appState, View,

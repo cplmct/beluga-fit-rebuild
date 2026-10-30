@@ -1,5 +1,20 @@
 # Public age/consent flow — sample-only test preparation
 
+## Owner-reported native UI observations
+
+The owner reports the following emulator observations for public-ad-flow-test:
+
+- Under 18 and Prefer not to answer selections are reflected in the UI.
+- Declaration controls appear on Home and in Settings.
+- Switching accounts does not inherit another account's declaration.
+- Switching screens caused no observed crash, freezing or workout issue.
+- Choosing 18 or older displayed "Advertisement" above an empty area.
+  No banner or consent success was confirmed.
+
+These are owner-reported native UI observations, not agent-performed native
+checks. They do not establish SDK-call suppression, consent acceptance, ad
+loading, the actual regional outcome or zero native traffic.
+
 ## Authorization and configuration
 
 The owner approved Google's UMP/Mobile Ads approach plus a supported Purpose 1
@@ -131,9 +146,37 @@ Native requests/forms already in flight cannot be cancelled by these JS gates;
 an initialized SDK cannot be shut down by withdrawing a declaration.
 MobileAdsInitProvider can execute before JS: no zero-native-traffic claim.
 
-No-fill/network failure removes the creative without collapsing its reserved
-slot or automatically retrying. Width under 320dp never mounts the banner.
+Previously, Home rendered the label and 86dp slot whenever an adult declaration
+was loaded, regardless of consent readiness or failure. Only the native creative
+checked readiness. The owner's blank area is consistent with that UI behavior,
+but it cannot identify which consent/error branch occurred on the emulator.
+
+The exact sample-only public-flow branch now displays sanitized TEST status:
+view state, controller phase, fixed reason and allowlisted error code. It never
+formats account identifiers, declaration categories, consent strings or raw SDK
+messages/codes. This display is absent from normal preview, production, web/iOS
+and the separate internal-rendering branch.
+
+Controller phases distinguish blocked, refreshing, awaiting-form, checking,
+initializing, eligible, loading, loaded and failed. Awaiting-form means the
+required-form/privacy-form API is pending, not proof a form is on screen.
+Eligible means checks/initialization finished, not that a banner loaded.
+Loading starts when the eligible native banner mounts; loaded requires its
+onAdLoaded callback. Those callbacks are guarded against stale account/lifecycle
+generations. A native loaded callback still does not prove an impression.
+
+The label/slot is hidden before eligibility, on deliberate ineligibility
+(including unknown applicability and Purpose 1 veto), unsafe surfaces and
+insufficient width. The zero-height measuring wrapper and concise status do not
+reserve banner space. An eligible load reserves 86dp; a subsequent no-fill/error
+removes the creative but keeps that reservation and shows failed status.
+An explicit retry starts another eligibility check; suspension/withdrawal hides
+the slot. There is no automatic retry. Width under 320dp never mounts the banner.
 Tracking and navigation controls remain independent of all advertising errors.
+
+A newly built/installed APK would be needed for the ordinary local native test
+workflow to see this status display. No APK was built by this change, and no
+outcome is inferred for the already tested binary.
 
 Local mocked tests:
 ```
