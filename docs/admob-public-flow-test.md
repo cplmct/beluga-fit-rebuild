@@ -15,6 +15,17 @@ These are owner-reported native UI observations, not agent-performed native
 checks. They do not establish SDK-call suppression, consent acceptance, ad
 loading, the actual regional outcome or zero native traffic.
 
+### Owner-reported diagnostic follow-up
+
+- Under 18 displayed `blocked / age-ineligible / error=none`.
+- The adult flow displayed `blocked / applicability-unresolved / error=none`.
+- The ineligible Advertisement label and reserved slot were hidden.
+
+These are owner-reported controller/UI observations only. They are not network
+verification, proof of regional applicability, consent acceptance or ad loading.
+The adult diagnostic does not distinguish a missing stored applicability value
+from an explicitly stored zero in the pinned wrapper.
+
 ## Authorization and configuration
 
 The owner approved Google's UMP/Mobile Ads approach plus a supported Purpose 1
