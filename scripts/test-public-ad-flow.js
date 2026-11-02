@@ -40,7 +40,7 @@ function fixture(overrides = {}, cfg = config, ioOverrides = {}) {
   const sdk = {};
   const defaults = { requestInfoUpdate: allowedInfo, loadAndShowConsentFormIfRequired: allowedInfo,
     getConsentInfo: allowedInfo, showPrivacyOptionsForm: allowedInfo,
-    getGdprApplies: true, getPurposeConsents: '1100111111' };
+    readGdprApplicability: 'applicable', getPurposeConsents: '1100111111' };
   for (const name of [...Object.keys(defaults), 'configure', 'initialize']) {
     sdk[name] = async (...args) => {
       assert.equal(args.length, 0, 'No account/age/fitness data is sent to SDK methods');
@@ -51,7 +51,7 @@ function fixture(overrides = {}, cfg = config, ioOverrides = {}) {
   const controller = new PublicFlowController(cfg, new age.AgeDeclarationStore(io),
     () => { calls.push('load'); return sdk; },
     async () => { assert(!controller.getSnapshot().ready, 'Banner must be removed before privacy form'); });
-  return { controller, calls, io, values };
+  return { controller, calls, io, values, sdk };
 }
 async function adult(f, owner = 'A') {
   await f.controller.setOwner(owner);
@@ -198,7 +198,9 @@ async function mountedUi(overrides = {}, scenario) {
 
 async function testRenderedStages() {
   for (const [overrides, reason] of [
-    [{ getGdprApplies: async () => false }, 'applicability-unresolved'],
+    [{ readGdprApplicability: async () => 'missing' }, 'applicability-unresolved'],
+    [{ readGdprApplicability: async () => 'not-applicable' }, 'non-tcf-blocked'],
+    [{ readGdprApplicability: async () => 'invalid' }, 'applicability-invalid'],
     [{ getPurposeConsents: async () => '0111111111' }, 'purpose-one-refused'],
     [{ getPurposeConsents: async () => '' }, 'purpose-one-unresolved'],
     [{ getConsentInfo: async () => ({ ...allowedInfo, canRequestAds: false }) }, 'ump-not-ready'],
@@ -263,7 +265,76 @@ async function testRenderedStages() {
   console.log('PASS: mounted blocked/refreshing/form-API/initializing/loading/loaded/failure diagnostics, no ineligible label/slot, stable no-fill reservation, callback freshness and sanitized state output.');
 }
 
+async function testApplicability() {
+  for (const [value, reason, ready] of [
+    ['missing', 'applicability-unresolved', false],
+    ['not-applicable', 'non-tcf-blocked', false],
+    ['invalid', 'applicability-invalid', false],
+    ['applicable', '', true],
+  ]) {
+    const f = fixture({ readGdprApplicability: async () => value });
+    await adult(f);
+    await f.controller.prepareHome(safe);
+    const state = f.controller.getSnapshot();
+    assert.equal(state.applicability, value);
+    assert.equal(state.ready, ready);
+    assert.equal(state.reason, reason);
+    assert.equal(state.errorCode, '');
+    const status = statusModule.publicFlowStatus(state, true, true, 360);
+    assert(status.text.includes(`applicability=${value}`));
+    assert.equal(status.reserve, ready);
+    assert.deepEqual(f.calls.slice(1, 5), ['requestInfoUpdate',
+      'loadAndShowConsentFormIfRequired', 'getConsentInfo', 'readGdprApplicability']);
+    if (!ready) assert(!f.calls.includes('configure') && !f.calls.includes('initialize'));
+  }
+  for (const code of ['applicability-unavailable', 'applicability-read-failed', 'secret']) {
+    const f = fixture({ async readGdprApplicability() { throw { code, message: 'private-data' }; } });
+    await adult(f);
+    await f.controller.prepareHome(safe);
+    const state = f.controller.getSnapshot();
+    assert(!state.ready);
+    assert.equal(state.applicability, null);
+    assert.equal(state.errorCode, code === 'applicability-unavailable' ? code : 'applicability-read-failed');
+    assert(!statusModule.publicFlowStatus(state, true, true, 360).text.includes('private'));
+    assert(!f.calls.includes('configure') && !f.calls.includes('initialize'));
+  }
+  // Missing adapter method is also unavailable evidence, never permission.
+  const unavailable = fixture();
+  delete unavailable.sdk.readGdprApplicability;
+  await adult(unavailable);
+  await unavailable.controller.prepareHome(safe);
+  assert(!unavailable.controller.getSnapshot().ready);
+  assert.equal(unavailable.controller.getSnapshot().errorCode, 'applicability-read-failed');
+  for (const previous of ['not-applicable', 'applicable']) {
+    const f = fixture({ async requestInfoUpdate() { throw Error('offline'); },
+      readGdprApplicability: async () => previous });
+    await adult(f);
+    await f.controller.prepareHome(safe);
+    assert.equal(f.controller.getSnapshot().applicability, null);
+    assert(!f.calls.includes('readGdprApplicability'), 'Never read persisted evidence after failed refresh');
+  }
+  for (const change of ['account', 'flow', 'declaration']) {
+    let release;
+    const f = fixture({ readGdprApplicability: () => new Promise(resolve => { release = resolve; }) });
+    await adult(f);
+    const pending = f.controller.prepareHome(safe);
+    await drain();
+    assert(release);
+    if (change === 'account') await f.controller.setOwner('B');
+    if (change === 'flow') f.controller.suspend();
+    if (change === 'declaration') await f.controller.declare('A', 'under-18');
+    const atChange = f.calls.length;
+    release('applicable');
+    await pending;
+    assert.equal(f.calls.length, atChange);
+    assert.equal(f.controller.getSnapshot().applicability, null);
+    assert(!f.controller.getSnapshot().ready);
+  }
+  console.log('PASS: four-state diagnostics, explicit-zero block, sanitized/unavailable bridge failures, refresh-failure exclusion and stale applicability cancellation.');
+}
+
 async function main() {
+  await testApplicability();
   assert(isPublicFlowTest(config));
   assert.equal(config.audienceApproved, false);
   for (const profile of [undefined, 'unknown', 'preview', 'production', 'internal-ad-rendering']) {
@@ -364,8 +435,10 @@ async function main() {
   assert.equal(delayedWrite.controller.getSnapshot().declaration, 'under-18');
   for (const overrides of [
     { getConsentInfo: async () => ({ ...allowedInfo, canRequestAds: false }) },
-    { getGdprApplies: async () => false }, // Missing OR explicit false: unresolved, including US cases.
-    { getGdprApplies: async () => undefined },
+    { readGdprApplicability: async () => 'missing' },
+    { readGdprApplicability: async () => 'not-applicable' },
+    { readGdprApplicability: async () => 'invalid' },
+    { readGdprApplicability: async () => undefined },
     { getConsentInfo: async () => ({ ...allowedInfo, status: 'NOT_REQUIRED' }) },
     { getPurposeConsents: async () => '' }, { getPurposeConsents: async () => 'bad' },
     { getPurposeConsents: async () => '0111111111' },
@@ -423,7 +496,7 @@ async function main() {
   assert.equal(latePrivacy.controller.getSnapshot().owner, 'B');
   assert(!latePrivacy.controller.getSnapshot().ready);
   for (const method of ['requestInfoUpdate', 'loadAndShowConsentFormIfRequired', 'getConsentInfo',
-    'getGdprApplies', 'getPurposeConsents', 'configure', 'initialize']) {
+    'readGdprApplicability', 'getPurposeConsents', 'configure', 'initialize']) {
     let release;
     const stale = fixture({ [method]: () => new Promise(resolve => { release = resolve; }) });
     await adult(stale);
@@ -436,7 +509,7 @@ async function main() {
     assert.equal(stale.controller.getSnapshot().phase, expectedPhase, method);
     await stale.controller.declare('A', 'under-18');
     const callsAtChange = stale.calls.length;
-    release(method === 'getGdprApplies' ? true : method === 'getPurposeConsents' ? '1111111111' : allowedInfo);
+    release(method === 'readGdprApplicability' ? 'applicable' : method === 'getPurposeConsents' ? '1111111111' : allowedInfo);
     await pending;
     assert.equal(stale.calls.length, callsAtChange, method);
     assert(!stale.controller.getSnapshot().ready);
@@ -457,7 +530,7 @@ async function main() {
     assert(!deleted.controller.getSnapshot().ready);
     await removing;
     const callsAtDeletion = deleted.calls.length;
-    finishDeleted(method === 'getGdprApplies' ? true : method === 'getPurposeConsents' ? '1111111111' : allowedInfo);
+    finishDeleted(method === 'readGdprApplicability' ? 'applicable' : method === 'getPurposeConsents' ? '1111111111' : allowedInfo);
     await working;
     assert.equal(deleted.calls.length, callsAtDeletion, `${method}: no stale post-deletion SDK call`);
     assert.equal(deleted.values.size, 0);
@@ -502,6 +575,6 @@ async function main() {
   await mountedUi();
   await testRenderedStages();
   console.log('PASS: public-test/sample-ID isolation, account-scoped age persistence/errors/races, no minor/unknown SDK calls, current-session refresh, Purpose 1 acceptance/refusal/ambiguity, no personalization veto, privacy withdrawal/reassessment, stale callbacks, mounted choices/lifecycle/no-fill/width/ownership cleanup.');
-  console.log('US: native GPP handling documented, NOT simulated as an approved request path; false/unknown applicability stays blocked. All SDK/storage/native views mocked; no native/network verification.');
+  console.log('US: native GPP handling documented, NOT simulated as an approved request path; explicit zero/missing/invalid applicability stays blocked. All SDK/storage/native views mocked; no native/network verification.');
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

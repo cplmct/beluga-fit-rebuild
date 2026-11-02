@@ -2,7 +2,7 @@ const { buildAdvertisingConfig } = require('./config/advertising');
 
 module.exports = ({ config }) => ({
   ...config,
-  plugins: [...(config.plugins || []), './plugins/withAndroidTestAds'],
+  plugins: [...(config.plugins || []), './plugins/withAndroidTestAds', './plugins/withGdprApplicability'],
   extra: {
     ...config.extra,
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL || '',

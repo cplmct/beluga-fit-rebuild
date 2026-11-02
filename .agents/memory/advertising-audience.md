@@ -54,7 +54,13 @@ deletion must remove only that account's declaration. A local cleanup failure
 must block stale reuse without misrepresenting server deletion or resetting UMP.
 
 **Why:** the owner explicitly approved this narrower product package while
-withholding live-production activation and dependency/native-adapter approval.
+withholding live-production activation, SDK upgrades and broader native adapters.
+Only a narrowly scoped read-only Android applicability presence reader is now
+approved for test-only validation; explicit non-applicability must remain blocked.
+
+Reading applicability after a successful UMP refresh does not prove that UMP
+rewrote that stored value during the refresh. Do not invent timestamp, account
+binding or provenance guarantees for the shared key.
 
 **How to apply:** preserve these boundaries in further advertising work; a
 successful test is not approval for live identifiers or production advertising.

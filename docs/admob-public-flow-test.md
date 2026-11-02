@@ -23,8 +23,9 @@ loading, the actual regional outcome or zero native traffic.
 
 These are owner-reported controller/UI observations only. They are not network
 verification, proof of regional applicability, consent acceptance or ad loading.
-The adult diagnostic does not distinguish a missing stored applicability value
-from an explicitly stored zero in the pinned wrapper.
+At the time of these observations the adult diagnostic did not distinguish a
+missing stored applicability value from an explicitly stored zero in the pinned
+wrapper. The new bridge has not been verified on this owner's device.
 
 ## Authorization and configuration
 
@@ -92,9 +93,11 @@ The Android factory calls only existing pinned APIs:
    A visible manual Retry is provided; there is no automatic retry loop.
 2. loadAndShowConsentFormIfRequired(), only on safe focused foreground Home.
 3. getConsentInfo(); require canRequestAds=true before initialization/request.
-4. getGdprApplies() reads IABTCF_gdprApplies. Only true is accepted as positive
-   TCF evidence. False includes missing native storage, so it is unresolved,
-   not proof that GDPR/TCF does not apply. NOT_REQUIRED plus a positive TCF flag
+4. The app-owned read-only Android bridge reads IABTCF_gdprApplies from one
+   application-default SharedPreferences snapshot. Missing, malformed and failed
+   reads block. Explicit integer zero is reported as not-applicable but the
+   non-TCF request path remains blocked. Only explicit integer one proceeds as
+   positive TCF evidence. NOT_REQUIRED plus a positive TCF flag
    is treated as inconsistent and also blocked.
 5. getPurposeConsents() reads IABTCF_PurposeConsents. Require a nonempty binary
    vector of at most 24 bits and Purpose 1 (first character) = 1. Missing,
@@ -105,7 +108,8 @@ The Android factory calls only existing pinned APIs:
 
 UMP is the status authority. Its own persisted consent data is not replaced with
 an application cache, generated TC string, decoder or invented expiry period.
-No getUserChoices fallback, purpose/vendor/LI evaluator or new native bridge.
+No getUserChoices fallback or purpose/vendor/LI evaluator. The bounded read-only
+test bridge is documented in admob-applicability-bridge-test.md.
 The bit-vector validation and no-refresh-error fallback are extra app safeguards,
 not claims that Google requires those exact application policies.
 This does not independently validate the entire TC string or all lawful bases.
@@ -133,9 +137,10 @@ and choices to be configured correctly; NPA alone is not an opt-out mechanism.
 No custom GPP parser, gad_rdp override, forced fallback or blanket
 "US opt-out means no banner" rule is implemented.
 
-However, this wrapper exposes no presence-aware non-TCF/applicability result.
-Its false GDPR result is ambiguous. The public flow therefore stops before
-initialization/banner requests in those cases, regardless of US choice.
+The pinned wrapper exposes no presence-aware applicability result: its false
+result is ambiguous. The app-owned test bridge now preserves key presence.
+Even an explicit zero stops before initialization/banner requests, regardless
+of US choice, because non-TCF eligibility is still unresolved.
 This is unresolved evidence blocking, not a country allowlist or proof of
 native GPP opt-out handling. US request-path support is NOT claimed complete.
 Do not enable it by equating false or NOT_REQUIRED with explicit non-applicability.

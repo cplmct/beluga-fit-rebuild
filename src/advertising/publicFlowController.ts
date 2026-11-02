@@ -1,8 +1,9 @@
 import { AdsAdapter, ConsentInfo, TestConfig, TEST_APP_ID, TEST_BANNER_ID } from './controller';
 import { AgeDeclaration, AgeDeclarationStore, isDeclaration } from './ageDeclaration';
+import type { GdprApplicability } from './gdprApplicability.android';
 
 export type PublicFlowAdapter = Omit<AdsAdapter, 'getUserChoices'> & {
-  getGdprApplies(): Promise<boolean>;
+  readGdprApplicability(): Promise<GdprApplicability>;
   getPurposeConsents(): Promise<string>;
 };
 
@@ -13,7 +14,7 @@ export function isPublicFlowTest(config: TestConfig): boolean {
 }
 
 // UMP remains status authority. This is ONLY an extra supported Purpose 1 veto,
-// not a purpose/vendor/LI/GPP engine. False includes absent native storage.
+// not a purpose/vendor/LI/GPP engine.
 export function purposeOneVeto(applies: unknown, purposes: unknown): string {
   if (applies !== true) return 'applicability-unresolved';
   if (typeof purposes !== 'string' || !/^[01]{1,24}$/.test(purposes)) {
@@ -41,6 +42,7 @@ const initialState = () => ({
   refresh: 'needed' as 'needed' | 'ok' | 'failed',
   reason: 'age-unresolved', error: '', trigger: 0,
   phase: 'blocked' as PublicPhase, errorCode: '', bannerAttempted: false,
+  applicability: null as GdprApplicability | null,
 });
 
 export class PublicFlowController {
@@ -99,7 +101,7 @@ export class PublicFlowController {
     this.generation++;
     this.update({ ready: false, loaded: false, saving: true, declaration: 'unknown',
       refresh: 'needed', error: '', reason: 'age-saving', phase: 'blocked',
-      errorCode: '', bannerAttempted: false });
+      errorCode: '', bannerAttempted: false, applicability: null });
     try {
       await this.store.write(owner, declaration);
       if (version !== this.ownerVersion) return;
@@ -116,7 +118,7 @@ export class PublicFlowController {
 
   suspend = () => {
     this.generation++;
-    this.update({ ready: false, bannerAttempted: false,
+    this.update({ ready: false, bannerAttempted: false, applicability: null,
       phase: this.state.error ? 'failed' : 'blocked' });
   };
   invalidateDeletedOwner = (owner: string) => {
@@ -130,7 +132,8 @@ export class PublicFlowController {
   };
   retry = () => {
     if (!this.adult() || this.running) return;
-    this.update({ refresh: 'needed', error: '', errorCode: '', reason: 'consent-needed', phase: 'blocked' });
+    this.update({ refresh: 'needed', error: '', errorCode: '', reason: 'consent-needed',
+      phase: 'blocked', applicability: null });
     this.trigger();
   };
   failBanner = (error?: unknown) => {
@@ -162,7 +165,7 @@ export class PublicFlowController {
     const generation = this.generation;
     const valid = () => generation === this.generation && this.adult() && isSafe();
     this.running = true;
-    this.update({ busy: true, ready: false, phase: 'checking' });
+    this.update({ busy: true, ready: false, phase: 'checking', applicability: null });
     try {
       const sdk = this.sdk ??= this.load();
       if (this.state.refresh !== 'ok') {
@@ -190,16 +193,37 @@ export class PublicFlowController {
       if (!valid()) return;
       this.privacy(info);
       if (info.canRequestAds !== true) { this.block('ump-not-ready'); return; }
-      const applies = await sdk.getGdprApplies();
+      let applicability: GdprApplicability;
+      try {
+        applicability = await sdk.readGdprApplicability();
+      } catch (error) {
+        if (valid()) this.update({ reason: 'applicability-unresolved', phase: 'failed',
+          bannerAttempted: false,
+          errorCode: error && typeof error === 'object' && 'code' in error
+            && error.code === 'applicability-unavailable'
+            ? 'applicability-unavailable' : 'applicability-read-failed',
+          error: 'Could not read advertising applicability. Advertising stays off.' });
+        return;
+      }
       if (!valid()) return;
+      // Defend the boundary even if a bridge or test adapter violates its type.
+      if (!['missing', 'not-applicable', 'applicable', 'invalid'].includes(applicability)) {
+        applicability = 'invalid';
+      }
+      this.update({ applicability });
+      if (applicability !== 'applicable') {
+        this.block(applicability === 'not-applicable' ? 'non-tcf-blocked'
+          : applicability === 'invalid' ? 'applicability-invalid' : 'applicability-unresolved');
+        return;
+      }
       // NOT_REQUIRED plus a positive TCF flag is inconsistent, not an
       // invitation to use a possibly stale flag to enable requests.
-      if (applies !== true || info.status !== 'OBTAINED') {
+      if (info.status !== 'OBTAINED') {
         this.block('applicability-unresolved'); return;
       }
       const purposes = await sdk.getPurposeConsents();
       if (!valid()) return;
-      const reason = purposeOneVeto(applies, purposes);
+      const reason = purposeOneVeto(true, purposes);
       this.update({ reason });
       if (reason) { this.block(reason); return; }
       this.update({ phase: 'initializing' });

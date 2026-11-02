@@ -4,6 +4,7 @@ import { AdvertisingController, readEmbeddedConfig } from './controller';
 import { InternalTestAdsController } from './internalTestController';
 import { advertisingDeclarationStore } from './declarationStorage';
 import { PublicFlowController } from './publicFlowController';
+import { readGdprApplicability } from './gdprApplicability.android';
 
 // Read the installed APK's asset directly. Constants.expoConfig/OTA extras are
 // deliberately not used: an OTA manifest must not enable a disabled binary.
@@ -34,7 +35,7 @@ export const internalTestAdvertising = new InternalTestAdsController(
   config, () => isDevice === false, createAdapter,
 );
 export const publicFlow = new PublicFlowController(
-  config, advertisingDeclarationStore, createAdapter,
+  config, advertisingDeclarationStore, () => ({ ...createAdapter(), readGdprApplicability }),
   () => new Promise<void>(resolve => requestAnimationFrame(() => { resolve(); })),
 );
 export function setAdvertisingOwner(owner: string | null) {
