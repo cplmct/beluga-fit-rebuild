@@ -25,7 +25,26 @@ These are owner-reported controller/UI observations only. They are not network
 verification, proof of regional applicability, consent acceptance or ad loading.
 At the time of these observations the adult diagnostic did not distinguish a
 missing stored applicability value from an explicitly stored zero in the pinned
-wrapper. The new bridge has not been verified on this owner's device.
+wrapper.
+
+### Owner-reported native bridge observation
+
+The owner subsequently reported this native emulator diagnostic:
+
+```
+view=blocked
+controller=blocked
+reason=non-tcf-blocked
+error=none
+applicability=not-applicable
+```
+
+This records a successful observed native bridge read returning explicit zero
+under the implemented mapping, with the non-TCF path remaining blocked as
+designed. It is owner-reported, not an agent-performed native check. It does not
+verify location, consent acceptance, network suppression, other fixture states
+or US compliance. No further bridge changes or bridge-only build are needed for
+this observation; separate consent-message testing remains outstanding.
 
 ## Authorization and configuration
 
