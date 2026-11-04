@@ -1,7 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
-
-const LAST_UPDATED = 'November 3, 2026';
+import { View, Text, ScrollView, StyleSheet, Linking } from 'react-native';
 
 type SectionProps = {
   title: string;
@@ -17,8 +15,17 @@ function Section({ title, children }: SectionProps) {
   );
 }
 
-function Body({ children }: { children: string }) {
+function Body({ children }: { children: React.ReactNode }) {
   return <Text style={styles.body}>{children}</Text>;
+}
+
+function ContactEmail() {
+  return (
+    <Text accessibilityRole="link"
+      onPress={() => { void Linking.openURL('mailto:Developer@tranbtc.com'); }}>
+      Developer@tranbtc.com
+    </Text>
+  );
 }
 
 function Bullet({ children }: { children: string }) {
@@ -34,7 +41,7 @@ export function PrivacyPolicyScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.pageTitle}>Privacy Policy</Text>
-      <Text style={styles.meta}>Last updated: {LAST_UPDATED}</Text>
+      <Text style={styles.meta}>Policy draft — not published</Text>
 
       <Body>
         This Privacy Policy explains how Beluga Fit ("we", "our", or "us") collects, uses, and protects your information when you use our mobile application. By using Beluga Fit, you agree to the practices described here.
@@ -78,7 +85,7 @@ export function PrivacyPolicyScreen() {
 
       <Section title="4. Data Retention and Deletion">
         <Body>
-          We retain account and fitness information as needed to provide the service, subject to applicable legal and security requirements. You may request account deletion through Settings then Delete Account, or contact developer@tranbtc.com. Follow the app's confirmation and error messages; an unconfirmed request is not proof that deletion succeeded.
+          We retain account and fitness information as needed to provide the service, subject to applicable legal and security requirements. You may request account deletion through Settings then Delete Account, or contact <ContactEmail />. Follow the app's confirmation and error messages; an unconfirmed request is not proof that deletion succeeded.
         </Body>
         <Body>
           Confirmed account deletion is not reversed by a later device-cleanup failure. We do not promise immediate removal from every system or a fixed backup expiry period. Deleting your Beluga Fit account does not automatically delete information held independently by Google or other providers; their retention and deletion practices are governed by their own policies.
@@ -127,7 +134,7 @@ export function PrivacyPolicyScreen() {
           The app performs these UMP operations before explicitly initializing Mobile Ads or requesting a banner; they may occur before you make a choice. Blocking ad requests does not mean that all Google SDK traffic is blocked.
         </Body>
         <Body>
-          Beluga Fit does not pass workout history, body measurements, injuries, goals, notes, profile details, names, email addresses, Beluga Fit account IDs, or the local advertising-age declaration to Google's consent or advertising request APIs. This describes arguments supplied by the app, not a complete inspection of native SDK payloads or network behavior.
+          Beluga Fit does not pass workout history, body measurements, injuries, goals, notes, profile details, names, email addresses, Beluga Fit account IDs, or the local advertising-age declaration to Google's consent or advertising services. Google may independently collect device and network information as described above.
         </Body>
         <Body>
           Where Google UMP requires privacy options, signed-in users with an adult declaration can open Settings then Privacy & Legal then Advertising privacy options after the app has obtained that requirement, normally on eligible Home. This is not an always-visible preference. The app suspends advertising eligibility while opening those options and reassesses it before requesting another ad.
@@ -136,7 +143,7 @@ export function PrivacyPolicyScreen() {
           Where the advertising-age declaration is enabled, it is a self-declaration, not age or identity verification. It is stored locally for each account without a time-based expiry and can be changed in Settings. Signing out preserves that account's declaration but clears active advertising eligibility. Another account cannot reuse it.
         </Body>
         <Body>
-          After confirmed account deletion, the app attempts to remove only that account's declaration on the device performing cleanup. If removal fails, the entry may remain stored, but cleanup remains pending and reuse is blocked until cleanup succeeds. A rejected deletion preserves the declaration. Local cleanup is not proof of server deletion when the server outcome is unconfirmed. It does not erase entries on other devices or reset or delete Google's consent records.
+          Following confirmed account deletion, the app attempts to remove that account's declaration from this device. If local cleanup fails, the declaration cannot be reused until cleanup succeeds. This does not erase declarations on other devices or reset or delete Google's consent records.
         </Body>
       </Section>
 
@@ -157,7 +164,7 @@ export function PrivacyPolicyScreen() {
           If you have questions or concerns about this Privacy Policy, please contact us:
         </Body>
         <Body>
-          Email: developer@tranbtc.com
+          Email: <ContactEmail />
         </Body>
       </Section>
     </ScrollView>

@@ -32,12 +32,11 @@ frequency capping, security and fraud prevention.
 
 Beluga Fit does not pass Beluga Fit account identifiers, the age declaration,
 profile details, names, email addresses, notes, workout history, measurements,
-injuries or goals to Google's consent or ad-request
-APIs. It does not derive advertising audiences or targeting from fitness data.
+injuries or goals to Google's consent or advertising
+services. It does not derive advertising audiences or targeting from fitness data.
 The local app uses an account identifier only to separate saved declarations on
 the device; this local ownership check is not advertising targeting.
-This finding concerns verified app-supplied API arguments, not a complete
-inspection of native SDK payloads or network behavior.
+Google may independently collect device and network information as described above.
 
 The declaration category is stored locally, separately for each account, and
 can be reviewed or changed in Settings. Changing it immediately invalidates
@@ -46,25 +45,11 @@ the account's stored declaration. The same account may restore its category
 on this device; another account cannot reuse it. No declaration is sent to
 Supabase. No separate "Show ads" preference is included.
 
-After confirmed account deletion, the app attempts to remove only that account's declaration
-from this device as part of local account cleanup. Starting deletion immediately
-invalidates the account's in-memory advertising eligibility and outstanding work.
-An explicit server rejection or a failed deletion preflight preserves the saved
-declaration; normal eligibility checks must run again before advertising.
-
-If local removal fails, the declaration may remain physically stored. The app
-reports incomplete local cleanup and keeps the existing durable cleanup marker,
-which blocks reading or overwriting that account's declaration, including after
-restart. Retry local cleanup removes the entry without repeating server deletion
-or removing another account's declaration. A confirmed server deletion is not
-reversed by a device-storage failure. If the server outcome is unconfirmed, the
-existing local-cleanup retry also removes the declaration without claiming the
-server deletion succeeded. Google UMP consent is not reset by account cleanup.
-
-There is no time-based expiry. This describes app-managed local entry removal on
-the device performing cleanup, not forensic erasure or a remote wipe of other
-devices. These boundaries have automated mocked-storage/account tests; native
-device deletion behavior still requires inspection.
+Following confirmed account deletion, the app attempts to remove that account's
+local advertising-age declaration from this device. If local cleanup fails, the
+declaration cannot be reused until cleanup succeeds. This does not erase
+declarations on other devices or reset or delete Google's consent records.
+There is no time-based expiry for the declaration.
 
 In builds where advertising consent management is enabled, Beluga Fit uses
 Google's User Messaging Platform (UMP) to update consent information and, where
@@ -82,19 +67,35 @@ not automatically delete information previously collected.
 
 The app performs these UMP operations before explicitly initializing Mobile Ads
 or requesting a banner; they may occur before a user makes a choice. Blocking ad
-requests does not mean that all Google SDK traffic is blocked. Source inspection
-establishes the app's call order, not observed native network traffic.
+requests does not mean that all Google SDK traffic is blocked.
 
-Advertising privacy options are implemented at Settings → Privacy & Legal →
-Advertising privacy options for the matching signed-in account with an adult
-declaration after UMP reports the entry point REQUIRED. That requirement itself does not
-mean a user refused advertising. A successful consent refresh in the current
+When UMP requires an advertising privacy-options entry point, signed-in users
+with an adult declaration can open Settings → Privacy & Legal → Advertising
+privacy options after the app has obtained that requirement, normally on eligible
+Home. The control is not an always-visible preference. Opening it suspends
+advertising eligibility, which is reassessed before another advertisement.
+
+For privacy questions, contact
+[Developer@tranbtc.com](mailto:Developer@tranbtc.com).
+
+## Internal implementation and verification notes — not public policy text
+
+Source inspection verifies app-supplied API arguments and explicit call order,
+not complete native SDK payloads or network behavior.
+
+Starting deletion invalidates eligibility and outstanding work. A rejected
+deletion or failed preflight preserves the declaration. Pending local cleanup
+blocks reuse, including after restart. Retrying local cleanup does not repeat
+server deletion or remove another account's declaration. An unconfirmed server
+outcome is not claimed as successful deletion; failed local cleanup does not
+reverse confirmed server deletion. Mocked tests are not native deletion evidence.
+
+The UMP requirement itself does not mean refusal. A successful consent refresh in the current
 app session is required; refresh failure blocks requests even if UMP has prior
 consent information. Applicable unresolved evidence also blocks requests.
 Opening privacy options invalidates eligibility; a new refresh and reassessment
-are required before another ad request. The requirement is normally first
-obtained on eligible Home; immediate access from Settings after a cold start
-has not been established on device and is not promised.
+are required before another ad request. Immediate access from Settings after a
+cold start has not been established on device and is not promised.
 
 Google's documented UMP/Mobile Ads approach remains the consent-status authority.
 Where TCF applicability is established, an additional supported Purpose 1

@@ -50,10 +50,9 @@ prevention.
 
 Beluga Fit does not pass workout history, body measurements, injuries, fitness
 goals, notes, profile details, names, email addresses, Beluga Fit account IDs, or
-the local advertising-age declaration to Google's consent or advertising request
-APIs. This describes information supplied by the app, not a complete inspection
-of native SDK payloads or network behavior. Google may independently collect
-information from the device.
+the local advertising-age declaration to Google's consent or advertising
+services. Google may independently collect device and network information as
+described above.
 
 For more information, see the [Google Privacy Policy](https://policies.google.com/privacy)
 and [How Google uses information from sites or apps that use its services](https://policies.google.com/technologies/partner-sites).
@@ -121,15 +120,12 @@ and error messages; an unconfirmed request is not proof that deletion succeeded.
 We do not promise immediate removal from every system or a fixed backup expiry
 period.
 
-Following confirmed account deletion, the app attempts to remove only that
-account's local advertising-age declaration on the device performing cleanup.
-If local removal fails, the entry may remain stored, but cleanup remains pending
-and reuse is blocked until cleanup succeeds. This does not reverse confirmed
-server deletion. A rejected deletion preserves the declaration; local cleanup
-is not proof of server deletion when the server outcome is unconfirmed.
+Following confirmed account deletion, the app attempts to remove that account's
+local advertising-age declaration from this device. If local cleanup fails, the
+declaration cannot be reused until cleanup succeeds. This does not erase
+declarations on other devices or reset or delete Google's consent records.
 
-Local cleanup does not erase declaration entries on other devices or reset or
-delete Google's consent records. Deleting your Beluga Fit account does not
+Deleting your Beluga Fit account does not
 automatically delete information held independently by Google or other
 providers. Their retention and deletion practices are governed by their own
 policies.
@@ -187,3 +183,7 @@ For privacy questions or requests:
   guarantees, or transfer safeguards without supporting facts.
 - Native declaration deletion and storage-failure/retry behavior still need
   device validation; automated mocked-storage tests are not native evidence.
+- A rejected deletion preserves the declaration. Local cleanup does not prove
+  server deletion when its outcome is unconfirmed, and failed local cleanup does
+  not reverse confirmed server deletion. Pending cleanup blocks declaration reuse.
+- Contact links must resolve to mailto:Developer@tranbtc.com, not a project URL.
