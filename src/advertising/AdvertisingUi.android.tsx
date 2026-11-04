@@ -122,6 +122,28 @@ function PublicPrivacyOptions({ blocked, ownerUserId }: AdvertisingProps) {
   );
 }
 
+function ConsentTestReset({ blocked, ownerUserId }: AdvertisingProps) {
+  const { safe, current } = useSafeSurface(blocked);
+  const state = useSyncExternalStore(publicFlow.subscribe, publicFlow.getSnapshot);
+  if (!publicFlow.resetEnabled) return null;
+  if (state.restartRequired) return (
+    <Text testID="consent-test-restart-required">
+      Consent reset requested. Restart the app to begin a fresh consent test.
+      This is not confirmation of native completion or erasure.
+    </Text>
+  );
+  if (!ownerUserId || state.owner !== ownerUserId || !state.loaded
+    || state.declaration !== 'adult') return null;
+  return (
+    <TouchableOpacity accessibilityRole="button" testID="consent-test-reset"
+      disabled={!safe || state.busy} onPress={() => {
+        void publicFlow.requestConsentReset(() => current.current);
+      }}>
+      <Text style={styles.link}>Request consent reset — test only; restart required</Text>
+    </TouchableOpacity>
+  );
+}
+
 function InternalHomeTestBanner({ blocked }: AdvertisingProps) {
   const { safe, current } = useSafeSurface(blocked);
   const state = useSyncExternalStore(internalTestAdvertising.subscribe, internalTestAdvertising.getSnapshot);
@@ -204,7 +226,7 @@ function ConsentHomeBanner({ blocked }: AdvertisingProps) {
 }
 
 export function AdvertisingPrivacyOptions(props: AdvertisingProps) {
-  return publicFlow.enabled ? <PublicPrivacyOptions {...props} />
+  return publicFlow.enabled ? <><PublicPrivacyOptions {...props} /><ConsentTestReset {...props} /></>
     : <LegacyPrivacyOptions blocked={props.blocked} />;
 }
 

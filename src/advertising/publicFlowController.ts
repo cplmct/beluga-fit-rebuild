@@ -5,12 +5,20 @@ import type { GdprApplicability } from './gdprApplicability.android';
 export type PublicFlowAdapter = Omit<AdsAdapter, 'getUserChoices'> & {
   readGdprApplicability(): Promise<GdprApplicability>;
   getPurposeConsents(): Promise<string>;
+  reset?(): void;
 };
 
-export function isPublicFlowTest(config: TestConfig): boolean {
-  return config.mode === 'public-flow-test' && config.buildProfile === 'public-ad-flow-test'
+export function isConsentEeaTest(config: TestConfig): boolean {
+  return config.mode === 'public-flow-test' && config.buildProfile === 'consent-eea-test'
     && config.audienceApproved === false
-    && config.appId === TEST_APP_ID && config.bannerId === TEST_BANNER_ID;
+    && config.appId === 'ca-app-pub-5534915161634783~8443553999'
+    && config.bannerId === TEST_BANNER_ID;
+}
+
+export function isPublicFlowTest(config: TestConfig): boolean {
+  return isConsentEeaTest(config) || (config.mode === 'public-flow-test' && config.buildProfile === 'public-ad-flow-test'
+    && config.audienceApproved === false
+    && config.appId === TEST_APP_ID && config.bannerId === TEST_BANNER_ID);
 }
 
 // UMP remains status authority. This is ONLY an extra supported Purpose 1 veto,
@@ -43,6 +51,7 @@ const initialState = () => ({
   reason: 'age-unresolved', error: '', trigger: 0,
   phase: 'blocked' as PublicPhase, errorCode: '', bannerAttempted: false,
   applicability: null as GdprApplicability | null,
+  restartRequired: false,
 });
 
 export class PublicFlowController {
@@ -53,6 +62,8 @@ export class PublicFlowController {
   private sdk?: PublicFlowAdapter;
   private initialized = false;
   private running = false;
+  // Process-lifetime latch: never reset by owner/declaration/navigation changes.
+  private resetRequested = false;
   constructor(
     private config: TestConfig,
     private store: AgeDeclarationStore,
@@ -60,6 +71,7 @@ export class PublicFlowController {
     private afterBannerRemoval: () => Promise<void> = () => Promise.resolve(),
   ) {}
   get enabled() { return isPublicFlowTest(this.config); }
+  get resetEnabled() { return isConsentEeaTest(this.config); }
   getSnapshot = () => this.state;
   subscribe = (listener: () => void) => {
     this.listeners.add(listener);
@@ -67,11 +79,18 @@ export class PublicFlowController {
   };
   private update(patch: Partial<ReturnType<typeof initialState>>) {
     this.state = { ...this.state, ...patch };
+    this.applyRestartLock();
     this.listeners.forEach(listener => listener());
+  }
+  private applyRestartLock() {
+    if (!this.resetRequested) return;
+    this.state = { ...this.state, restartRequired: true, ready: false,
+      refresh: 'needed', phase: 'blocked', reason: 'reset-restart-required',
+      bannerAttempted: false, applicability: null, privacyRequired: false };
   }
   private trigger() { this.update({ trigger: this.state.trigger + 1 }); }
   private adult() {
-    return this.enabled && !!this.state.owner && this.state.loaded
+    return !this.resetRequested && this.enabled && !!this.state.owner && this.state.loaded
       && !this.state.saving && this.state.declaration === 'adult';
   }
 
@@ -80,6 +99,7 @@ export class PublicFlowController {
     const version = ++this.ownerVersion;
     this.generation++;
     this.state = { ...initialState(), owner, busy: this.running, trigger: this.state.trigger + 1 };
+    this.applyRestartLock();
     this.listeners.forEach(listener => listener());
     if (!owner) return;
     try {
@@ -120,6 +140,29 @@ export class PublicFlowController {
     this.generation++;
     this.update({ ready: false, bannerAttempted: false, applicability: null,
       phase: this.state.error ? 'failed' : 'blocked' });
+  };
+  requestConsentReset = async (isSafe: () => boolean): Promise<void> => {
+    if (!this.resetEnabled || this.resetRequested || !this.adult() || this.running
+      || !isSafe()) return;
+    this.resetRequested = true;
+    this.running = true;
+    this.generation++;
+    const generation = this.generation;
+    this.update({ busy: true, error: '', errorCode: '' });
+    try {
+      await this.afterBannerRemoval();
+      // The process lock persists even if the surface/account changed while waiting.
+      if (!isSafe() || generation !== this.generation) return;
+      const sdk = this.sdk ??= this.load();
+      if (!sdk.reset) throw new Error('reset-unavailable');
+      sdk.reset(); // Pinned native API is void, NOT a completion acknowledgment.
+    } catch {
+      this.update({ errorCode: 'reset-request-failed',
+        error: 'Could not request consent reset. Advertising stays blocked; restart before testing again.' });
+    } finally {
+      this.running = false;
+      this.update({ busy: false });
+    }
   };
   invalidateDeletedOwner = (owner: string) => {
     // Do not disturb B while retrying A's cleanup. Invalidate both storage and

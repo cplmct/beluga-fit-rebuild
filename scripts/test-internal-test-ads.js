@@ -268,7 +268,11 @@ async function main() {
   assert(native.includes("from 'expo-device'"));
   assert(native.includes('isDevice === false'));
   assert(native.includes('embedded?.manifest'));
-  assert(!native.includes('AdsConsent.reset'));
+  // Reset is now authorized only in the distinct, exactly gated EEA adapter.
+  // The internal controller/base adapter must still never expose or call it.
+  assert(!native.split('export const publicFlow')[0].includes('AdsConsent.reset'));
+  assert(native.includes('if (!isConsentEeaTest(config)) return'));
+  assert(!fs.readFileSync('src/advertising/internalTestController.ts', 'utf8').includes('.reset('));
   await mountedUi();
   console.log('PASS: internal-profile/sample-ID/emulator isolation, explicit start/stop, documented UMP blocking, single initialization, all async stop boundaries/failures, mounted no-fill/navigation/background/blocked/narrow/unmount checks.');
   console.log('MOCKED ONLY: no native SDK rendering, real UMP message, APK or network behavior verified.');

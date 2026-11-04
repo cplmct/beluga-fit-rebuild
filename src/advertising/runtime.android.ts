@@ -3,7 +3,7 @@ import { isDevice } from 'expo-device';
 import { AdvertisingController, readEmbeddedConfig } from './controller';
 import { InternalTestAdsController } from './internalTestController';
 import { advertisingDeclarationStore } from './declarationStorage';
-import { PublicFlowController } from './publicFlowController';
+import { PublicFlowController, isConsentEeaTest } from './publicFlowController';
 import { readGdprApplicability } from './gdprApplicability.android';
 
 // Read the installed APK's asset directly. Constants.expoConfig/OTA extras are
@@ -35,7 +35,18 @@ export const internalTestAdvertising = new InternalTestAdsController(
   config, () => isDevice === false, createAdapter,
 );
 export const publicFlow = new PublicFlowController(
-  config, advertisingDeclarationStore, () => ({ ...createAdapter(), readGdprApplicability }),
+  config, advertisingDeclarationStore, () => {
+    const adapter = createAdapter();
+    if (!isConsentEeaTest(config)) return { ...adapter, readGdprApplicability };
+    const { AdsConsent, AdsConsentDebugGeography } = loadAndroidAds();
+    return { ...adapter, readGdprApplicability,
+      // UMP >=2.2 recognizes Android emulators automatically. No invented hash.
+      requestInfoUpdate: () => AdsConsent.requestInfoUpdate({
+        debugGeography: AdsConsentDebugGeography.EEA,
+      }),
+      reset: () => { AdsConsent.reset(); },
+    };
+  },
   () => new Promise<void>(resolve => requestAnimationFrame(() => { resolve(); })),
 );
 export function setAdvertisingOwner(owner: string | null) {

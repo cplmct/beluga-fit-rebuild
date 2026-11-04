@@ -4,10 +4,10 @@ type Snapshot = ReturnType<PublicFlowController['getSnapshot']>;
 const reasons = new Set(['age-unresolved', 'age-ineligible', 'age-saving', 'consent-needed',
   'refresh-failed', 'ump-not-ready', 'applicability-unresolved', 'purpose-one-unresolved',
   'purpose-one-refused', 'consent-or-sdk-error', 'privacy-options', 'banner-unavailable',
-  'non-tcf-blocked', 'applicability-invalid', '']);
+  'non-tcf-blocked', 'applicability-invalid', 'reset-restart-required', '']);
 const errors = new Set(['', 'storage-read-failed', 'storage-write-failed', 'sdk-error',
   'no-fill', 'network-error', 'invalid-request', 'internal-error', 'timeout',
-  'applicability-unavailable', 'applicability-read-failed']);
+  'applicability-unavailable', 'applicability-read-failed', 'reset-request-failed']);
 const applicabilityValues = new Set(['missing', 'not-applicable', 'applicable', 'invalid']);
 const phases = new Set(['blocked', 'refreshing', 'awaiting-form', 'checking', 'initializing',
   'eligible', 'loading', 'loaded', 'failed']);

@@ -298,7 +298,12 @@ async function main() {
   for (const path of fs.readdirSync('src/advertising')) {
     const text = fs.readFileSync(`src/advertising/${path}`, 'utf8');
     assert(!/from ['"].*(?:AuthContext|supabase)|keywords:|customTargeting:/.test(text), path);
-    assert(!text.includes('5534915161634783'), path);
+    if (path === 'publicFlowController.ts') {
+      const ownerIds = text.match(/ca-app-pub-5534915161634783[~/]\d+/g) || [];
+      assert.deepEqual(ownerIds, ['ca-app-pub-5534915161634783~8443553999'],
+        'Only the exact consent-test App ID may appear in its runtime predicate');
+      assert(text.includes("config.buildProfile === 'consent-eea-test'"));
+    } else assert(!text.includes('5534915161634783'), path);
   }
   const native = fs.readFileSync('src/advertising/runtime.android.ts', 'utf8');
   assert(native.includes("requireOptionalNativeModule") && native.includes('embedded?.manifest'));
