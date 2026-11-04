@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 
-const LAST_UPDATED = 'May 1, 2025';
+const LAST_UPDATED = 'November 3, 2026';
 
 type SectionProps = {
   title: string;
@@ -50,7 +50,7 @@ export function PrivacyPolicyScreen() {
         <Bullet>Body measurements — measurement entries you record over time for progress tracking</Bullet>
         <Bullet>Workout plan data — any workout plans or templates you create or save</Bullet>
         <Body>
-          We do not collect payment information, location data, contacts, or any information unrelated to your fitness activity.
+          Beluga Fit does not ask for payment information, contacts, or precise device location for fitness tracking. Where advertising or consent management is enabled, Google may independently process device and network information as described below.
         </Body>
       </Section>
 
@@ -63,13 +63,13 @@ export function PrivacyPolicyScreen() {
         <Bullet>To display your progress and history within the app</Bullet>
         <Bullet>To allow you to manage and delete your data at any time</Bullet>
         <Body>
-          We do not sell your personal information to third parties. We do not use your data for advertising or marketing purposes.
+          We do not supply your fitness records or Beluga Fit account identifiers to advertising services. Google's consent and advertising services may independently process device and network information as described below.
         </Body>
       </Section>
 
       <Section title="3. Data Storage and Security">
         <Body>
-          Your data is stored securely using Supabase, a cloud database provider that uses industry-standard encryption for data in transit (TLS) and at rest (AES-256). Access to your data is protected by authenticated sessions and row-level security policies that ensure only you can access your records.
+          We use Supabase for account authentication and database hosting, with encrypted connections and access controls, including authenticated sessions and row-level security. No method of storage or transmission is completely secure.
         </Body>
         <Body>
           We implement reasonable technical and organizational measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction.
@@ -78,10 +78,10 @@ export function PrivacyPolicyScreen() {
 
       <Section title="4. Data Retention and Deletion">
         <Body>
-          Your data is retained for as long as your account is active. You may delete your account and all associated data at any time directly within the app by navigating to Settings then Delete Account. Deletion is permanent and cannot be reversed.
+          We retain account and fitness information as needed to provide the service, subject to applicable legal and security requirements. You may request account deletion through Settings then Delete Account, or contact developer@tranbtc.com. Follow the app's confirmation and error messages; an unconfirmed request is not proof that deletion succeeded.
         </Body>
         <Body>
-          Data deleted through the app is removed from our primary database immediately. Encrypted database backups may retain data for up to 30 days before automatic expiry.
+          Confirmed account deletion is not reversed by a later device-cleanup failure. We do not promise immediate removal from every system or a fixed backup expiry period. Deleting your Beluga Fit account does not automatically delete information held independently by Google or other providers; their retention and deletion practices are governed by their own policies.
         </Body>
       </Section>
 
@@ -104,24 +104,55 @@ export function PrivacyPolicyScreen() {
         </Body>
         <Bullet>Supabase — database and authentication (supabase.com/privacy)</Bullet>
         <Bullet>Expo / React Native — app framework and build infrastructure (expo.dev/privacy)</Bullet>
+        <Bullet>Google UMP and AdMob — consent management and advertising in builds where enabled (policies.google.com/privacy; policies.google.com/technologies/partner-sites)</Bullet>
         <Body>
-          Each of these services has its own privacy policy governing the data they process on our behalf.
+          These services have their own privacy policies. Google may independently process information as described below and in its privacy documentation.
         </Body>
       </Section>
 
-      <Section title="7. Children's Privacy">
+      <Section title="7. Advertising and Privacy Choices">
         <Body>
-          Beluga Fit is not directed at children under the age of 13. We do not knowingly collect personal information from children. If you believe a child has provided us with personal information, please contact us so we can remove it.
+          In Android builds where advertising is enabled, Beluga Fit may request one non-personalized Google AdMob banner on Home after eligibility and applicable privacy checks. Non-personalized does not mean anonymous or consent-free. Google may process IP addresses, device identifiers, ad interactions, and diagnostic information for delivery, reporting, security, and fraud prevention.
+        </Body>
+        <Body>
+          In builds where advertising consent management is enabled, Beluga Fit uses Google's User Messaging Platform (UMP) to update consent information and, where required, present privacy messages. This process communicates with Google and may occur before any advertisement is requested, including when no advertisement is ultimately displayed.
+        </Body>
+        <Body>
+          Consent information and privacy-choice signals may be stored on your device and used to determine whether advertisements may be requested. Declining consent does not prevent access to Beluga Fit's core workout-tracking features.
+        </Body>
+        <Body>
+          Where applicable, you can revisit your choices through the app's advertising privacy options. Changing your choices affects subsequent processing but does not automatically delete information previously collected.
+        </Body>
+        <Body>
+          The app performs these UMP operations before explicitly initializing Mobile Ads or requesting a banner; they may occur before you make a choice. Blocking ad requests does not mean that all Google SDK traffic is blocked.
+        </Body>
+        <Body>
+          Beluga Fit does not pass workout history, body measurements, injuries, goals, notes, profile details, names, email addresses, Beluga Fit account IDs, or the local advertising-age declaration to Google's consent or advertising request APIs. This describes arguments supplied by the app, not a complete inspection of native SDK payloads or network behavior.
+        </Body>
+        <Body>
+          Where Google UMP requires privacy options, signed-in users with an adult declaration can open Settings then Privacy & Legal then Advertising privacy options after the app has obtained that requirement, normally on eligible Home. This is not an always-visible preference. The app suspends advertising eligibility while opening those options and reassesses it before requesting another ad.
+        </Body>
+        <Body>
+          Where the advertising-age declaration is enabled, it is a self-declaration, not age or identity verification. It is stored locally for each account without a time-based expiry and can be changed in Settings. Signing out preserves that account's declaration but clears active advertising eligibility. Another account cannot reuse it.
+        </Body>
+        <Body>
+          After confirmed account deletion, the app attempts to remove only that account's declaration on the device performing cleanup. If removal fails, the entry may remain stored, but cleanup remains pending and reuse is blocked until cleanup succeeds. A rejected deletion preserves the declaration. Local cleanup is not proof of server deletion when the server outcome is unconfirmed. It does not erase entries on other devices or reset or delete Google's consent records.
         </Body>
       </Section>
 
-      <Section title="8. Changes to This Policy">
+      <Section title="8. Intended Audience">
+        <Body>
+          Beluga Fit is intended for adults aged 18 and over. The advertising declaration does not verify age or identity or collect a date of birth. Under-18, unanswered, or unavailable declarations keep advertising off without preventing core workout tracking. If you believe a child has provided personal information, contact us so we can investigate and take appropriate action.
+        </Body>
+      </Section>
+
+      <Section title="9. Changes to This Policy">
         <Body>
           We may update this Privacy Policy from time to time. When we do, we will update the date at the top of this page. Continued use of the app after changes constitutes acceptance of the revised policy.
         </Body>
       </Section>
 
-      <Section title="9. Contact">
+      <Section title="10. Contact">
         <Body>
           If you have questions or concerns about this Privacy Policy, please contact us:
         </Body>
