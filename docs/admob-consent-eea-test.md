@@ -141,3 +141,42 @@ verify fresh refresh/form behavior after restart rather than claiming success.
 
 No build, push, message/policy publication or external configuration operation
 is performed by these tests or this handoff.
+
+## Runtime log evidence — 2026-11-05
+
+Log file: `artifacts/consent-runtime-20261105-113957.log`
+
+Tested APK: `application-70cd5af6-0dfd-4901-89be-47b731fa6f70.apk`  
+EAS build: `consent-eea-test`, version `1.0.0 (48)`, commit `7e67226`
+
+### Established
+
+- The APK packages the intended Beluga Fit Consent Test AdMob App ID:
+  `ca-app-pub-5534915161634783~8443553999`.
+- The APK manifest sets `DELAY_APP_MEASUREMENT_INIT=true`.
+- `react-native-google-mobile-ads@15.8.3` declares GMA `24.6.0` and UMP `3.2.0`
+  and injects those versions into its Android dependency configuration.
+- Static DEX inspection found GMA classes and UMP consent API/internal classes.
+- Runtime logs show UMP form loading completed with `status=ok`.
+- Runtime logs show `IABTCFgdprApplies=1` and a dismissal status of
+  `CONSENT_SIGNAL_SUFFICIENT`.
+- Runtime logs show Google Mobile Ads recognized the emulator as a test device:
+  `This request is sent from a test device.`
+- Runtime logs show GMA Dynamite module version `263500502`.
+
+### Still unverified
+
+- Final Gradle-resolved GMA/UMP versions in the EAS build; the EAS log did not
+  include a dependency-resolution report.
+- True geographic location; `gdprApplies=1` is runtime consent-state evidence,
+  not independent geographic proof.
+- Complete native traffic suppression or production compliance.
+- Whether the observed warnings affect banner rendering or ad loading.
+
+### Non-blocking observations
+
+- GMA logged a Firebase integration warning.
+- React Native logged missing generated setters for ad view-manager classes.
+- Google’s remote ad SDK reported an SDK-age warning.
+
+These observations do not by themselves establish a consent-flow failure.
