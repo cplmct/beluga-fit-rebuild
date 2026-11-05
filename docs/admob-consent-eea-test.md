@@ -142,10 +142,31 @@ testing, not independently reproduced results or a completed device test matrix:
 
 These observations do not verify geographic location, debug-device recognition,
 complete native traffic suppression or production compliance. They do not mark
-reset, account switching, background/workout safety, Home-first privacy-options
-availability or native dependency/manifest inspection as device-verified.
+comprehensive reset validation, account switching, background/workout safety,
+Home-first privacy-options availability or native dependency/manifest inspection
+as device-verified.
 Production and normal-preview advertising remain disabled; the non-TCF path
 remains blocked. No activation is implied by the observed test banner.
+
+### Additional reset/restart/refusal sequence — owner reported
+
+1. After the explicit test-only reset action, Settings displayed:
+   “Consent reset requested. Restart the app to begin a fresh consent
+   test. This is not confirmation of native completion or erasure.”
+   The adult declaration remained selected.
+2. Home showed `view=blocked`, `controller=blocked`,
+   `reason=reset-restart-required`, `error=none`, `applicability=unread`.
+3. Following the instructed force-stop/manual-reopen sequence, the owner
+   supplied a screenshot of the consent form appearing again.
+4. After selecting **Do not consent** on that form, Home showed
+   `view=blocked`, `controller=blocked`, `reason=purpose-one-refused`,
+   `error=none`, `applicability=applicable`. No banner was visible in the
+   supplied capture.
+
+This records the observed reset/restart/refusal sequence only, not complete
+native erasure or comprehensive reset validation. Busy/unsafe rejection, stale
+callbacks, account-switch lock persistence and complete navigation-lock coverage
+remain unverified on device.
 
 ### Separate network issue — owner reported
 
@@ -166,8 +187,9 @@ emulator outcomes are separate observations, not a diagnosis of that network.
   delayed-measurement metadata and bridge registration.
 - Establish UMP debug-device recognition before claiming deterministic EEA
   testing; applicability alone is insufficient.
-- Validate reset request, restart lock and fresh-session behavior, including
-  busy/unsafe rejection and stale callbacks.
+- Beyond the observed reset/restart/refusal sequence, validate busy/unsafe
+  rejection, stale callbacks, account-switch lock persistence and complete
+  navigation-lock coverage. The observed sequence does not prove native erasure.
 - Test account switching, deletion cleanup and in-flight account changes.
 - Test background/foreground and Home/workout/recovery/Settings/logout safety.
 - Validate Home-first privacy-options availability, including cold Settings,
@@ -184,12 +206,15 @@ emulator outcomes are separate observations, not a diagnosis of that network.
 - Automated tests: mocked controller, SDK, UI/storage and synthetic manifest.
 - Owner reports: external message state, consent-message display,
   refusal/consent-change/withdrawal UI and sample-banner outcomes, restart result
-  without a new screenshot, and the separate network issue above.
+  without a new screenshot, the additional reset/restart/refusal sequence with
+  supplied form/refusal captures, and the separate network issue above.
 - Console screenshots: visible setup at capture time only, if supplied.
 - Native/device evidence: the observations above are limited owner-supplied
   evidence, not independent verification. Resolved versions, merged providers,
-  emulator recognition, reset behavior, account transitions, background/workout
-  safety and Home-first privacy-options availability remain unverified on device.
+  emulator recognition, comprehensive reset validation (busy/unsafe rejection,
+  stale callbacks, account-switch lock persistence and complete navigation-lock
+  coverage), account transitions, background/workout safety and Home-first
+  privacy-options availability remain unverified on device.
 - Network evidence: separate from all of the above. Controller blocking or no
   explicit JS calls is not proof of no native traffic. Narrow proxy/VPN capture
   and Android inspection can inform this, but TLS/caching/provider activity and
