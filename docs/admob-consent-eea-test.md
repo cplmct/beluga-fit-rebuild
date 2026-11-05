@@ -168,6 +168,26 @@ native erasure or comprehensive reset validation. Busy/unsafe rejection, stale
 callbacks, account-switch lock persistence and complete navigation-lock coverage
 remain unverified on device.
 
+### Declaration-based blocking — owner-supplied Home captures
+
+The owner supplied two emulator Home screenshots: one with **Under 18**
+selected and one with **Prefer not to answer** selected. Both show:
+
+```text
+view=blocked
+controller=blocked
+reason=age-ineligible
+error=none
+applicability=unread
+```
+
+No banner is visible in either supplied capture. These are observations of
+declaration-based controller/UI blocking only, not proof of complete SDK traffic
+suppression or account isolation. Still screenshots do not establish the timing
+of banner removal. They also do not independently establish that a banner was
+loaded immediately before either declaration change; that precondition remains
+unconfirmed unless the owner explicitly confirms it.
+
 ### Separate network issue — owner reported
 
 - UMP logs showed connection failures to
@@ -207,7 +227,9 @@ emulator outcomes are separate observations, not a diagnosis of that network.
 - Owner reports: external message state, consent-message display,
   refusal/consent-change/withdrawal UI and sample-banner outcomes, restart result
   without a new screenshot, the additional reset/restart/refusal sequence with
-  supplied form/refusal captures, and the separate network issue above.
+  supplied form/refusal captures, the Under 18 and Prefer not to answer Home
+  captures showing declaration-based blocking, and the separate network issue
+  above.
 - Console screenshots: visible setup at capture time only, if supplied.
 - Native/device evidence: the observations above are limited owner-supplied
   evidence, not independent verification. Resolved versions, merged providers,
