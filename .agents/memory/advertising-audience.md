@@ -30,8 +30,8 @@ rendering success does not establish production consent or zero SDK traffic.
 
 The owner specifies one Home banner, with core tracking remaining free.
 Internal developer test controls must not appear in the public release.
-Non-personalized advertising is the proposed initial configuration, not an
-approved activation.
+Non-personalized advertising is the approved initial implementation scope, not
+an approved activation.
 
 **Why:** the owner stated these product and release constraints.
 
@@ -55,8 +55,11 @@ must block stale reuse without misrepresenting server deletion or resetting UMP.
 
 **Why:** the owner explicitly approved this narrower product package while
 withholding live-production activation, SDK upgrades and broader native adapters.
-Only a narrowly scoped read-only Android applicability presence reader is now
-approved for test-only validation; explicit non-applicability must remain blocked.
+A narrowly scoped read-only Android applicability presence reader is approved;
+explicit non-applicability must remain blocked. The owner subsequently approved
+production implementation only for the TCF-applicable path, with no build,
+publication or activation approval. Ordinary production must remain disabled,
+and existing consent-test profiles must remain intact.
 
 Reading applicability after a successful UMP refresh does not prove that UMP
 rewrote that stored value during the refresh. Do not invent timestamp, account

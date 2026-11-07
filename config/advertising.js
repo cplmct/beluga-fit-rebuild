@@ -1,10 +1,20 @@
-// Only sample banner inventory exists. One exact owner App ID is consent-test-only.
+// Exact binary configurations only; ordinary production stays disabled.
 const TEST_APP_ID = 'ca-app-pub-3940256099942544~3347511713';
 const TEST_BANNER_ID = 'ca-app-pub-3940256099942544/6300978111';
 const INTERNAL_TEST_PROFILE = 'internal-ad-rendering';
 const PUBLIC_FLOW_TEST_PROFILE = 'public-ad-flow-test';
 const CONSENT_EEA_PROFILE = 'consent-eea-test';
 const CONSENT_EEA_APP_ID = 'ca-app-pub-5534915161634783~8443553999';
+const PRODUCTION_ADS_PROFILE = 'production-advertising';
+const PRODUCTION_ADS_MODE = 'production-tcf';
+const PRODUCTION_APP_ID = 'ca-app-pub-5534915161634783~7684377807';
+const PRODUCTION_BANNER_ID = 'ca-app-pub-5534915161634783/2005509866';
+
+function isProductionAdvertising(config) {
+  return config?.buildProfile === PRODUCTION_ADS_PROFILE && config.mode === PRODUCTION_ADS_MODE
+    && config.appId === PRODUCTION_APP_ID && config.bannerId === PRODUCTION_BANNER_ID
+    && config.audienceApproved === true;
+}
 
 function isConsentEeaTest(config) {
   return config?.buildProfile === CONSENT_EEA_PROFILE && config.mode === 'public-flow-test'
@@ -13,6 +23,17 @@ function isConsentEeaTest(config) {
 }
 
 function buildAdvertisingConfig(profile, requestedMode) {
+  if (profile === PRODUCTION_ADS_PROFILE || requestedMode === PRODUCTION_ADS_MODE) {
+    if (profile !== PRODUCTION_ADS_PROFILE || requestedMode !== PRODUCTION_ADS_MODE) {
+      throw new Error('Production advertising requires its exact profile and mode.');
+    }
+    return {
+      buildProfile: PRODUCTION_ADS_PROFILE, mode: PRODUCTION_ADS_MODE,
+      appId: PRODUCTION_APP_ID, bannerId: PRODUCTION_BANNER_ID,
+      // Explicit release-configuration review only; NEVER individual eligibility.
+      audienceApproved: true,
+    };
+  }
   const internalTest = profile === INTERNAL_TEST_PROFILE && requestedMode === 'internal-test';
   const publicFlowTest = [PUBLIC_FLOW_TEST_PROFILE, CONSENT_EEA_PROFILE].includes(profile)
     && requestedMode === 'public-flow-test';
@@ -50,6 +71,11 @@ function validateSampleIdentifiers(config) {
 }
 
 function validateAdvertisingIdentifiers(config) {
+  if (config?.buildProfile === PRODUCTION_ADS_PROFILE || config?.mode === PRODUCTION_ADS_MODE
+    || config?.appId === PRODUCTION_APP_ID || config?.bannerId === PRODUCTION_BANNER_ID) {
+    if (!isProductionAdvertising(config)) throw new Error('Invalid production advertising configuration.');
+    return;
+  }
   if (config?.buildProfile === CONSENT_EEA_PROFILE || config?.appId === CONSENT_EEA_APP_ID) {
     if (!isConsentEeaTest(config)) throw new Error('Consent EEA test requires the exact profile/mode/identifiers.');
     return;
@@ -65,4 +91,6 @@ module.exports = {
   TEST_APP_ID, TEST_BANNER_ID, INTERNAL_TEST_PROFILE, buildAdvertisingConfig, validateSampleIdentifiers,
   PUBLIC_FLOW_TEST_PROFILE,
   CONSENT_EEA_PROFILE, CONSENT_EEA_APP_ID, isConsentEeaTest, validateAdvertisingIdentifiers,
+  PRODUCTION_ADS_PROFILE, PRODUCTION_ADS_MODE, PRODUCTION_APP_ID, PRODUCTION_BANNER_ID,
+  isProductionAdvertising,
 };

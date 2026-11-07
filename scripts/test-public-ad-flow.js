@@ -335,6 +335,22 @@ async function testApplicability() {
 
 async function main() {
   await testApplicability();
+  // Production reuses the guarded flow, not the legacy assessment or a test bypass.
+  const production = buildAdvertisingConfig('production-advertising', 'production-tcf');
+  for (const [overrides, expected] of [
+    [{}, true],
+    [{ readGdprApplicability: () => 'not-applicable' }, false],
+    [{ readGdprApplicability: () => 'missing' }, false],
+    [{ getPurposeConsents: () => '01111111' }, false],
+    [{ getConsentInfo: () => ({ ...allowedInfo, status: 'NOT_REQUIRED' }) }, false],
+  ]) {
+    const shared = fixture(overrides, production);
+    await adult(shared);
+    await shared.controller.prepareHome(safe);
+    assert.equal(shared.controller.getSnapshot().ready, expected);
+    assert.equal(shared.controller.resetEnabled, false);
+    assert.equal(shared.controller.diagnosticsEnabled, false);
+  }
   assert(isPublicFlowTest(config));
   assert.equal(config.audienceApproved, false);
   for (const profile of [undefined, 'unknown', 'preview', 'production', 'internal-ad-rendering']) {

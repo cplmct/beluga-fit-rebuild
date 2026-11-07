@@ -12,8 +12,8 @@ const applicabilityValues = new Set(['missing', 'not-applicable', 'applicable', 
 const phases = new Set(['blocked', 'refreshing', 'awaiting-form', 'checking', 'initializing',
   'eligible', 'loading', 'loaded', 'failed']);
 
-// Call only inside the exact sample-only public-flow branch. No owner, age
-// category, consent strings, raw messages or arbitrary SDK fields are formatted.
+// Slot calculation is shared; diagnostic text is rendered only by exact test
+// profiles. No owner, age category, consent strings or raw SDK fields are formatted.
 export function publicFlowStatus(state: Snapshot, owned: boolean, safe: boolean, width: number) {
   if (!owned) return { reserve: false,
     text: 'TEST ads: view=blocked; controller=unavailable; reason=owner-unresolved; error=none; applicability=unread' };
