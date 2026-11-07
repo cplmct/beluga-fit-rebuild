@@ -62,6 +62,14 @@ async function main() {
   assert(plugin.enabled(cfg));
   const eeaCfg = { extra: { belugaAdvertising: buildAdvertisingConfig('consent-eea-test', 'public-flow-test') } };
   assert(plugin.enabled(eeaCfg));
+  const prodCfg = { extra: { belugaAdvertising: buildAdvertisingConfig('production-advertising', 'production-tcf') } };
+  assert(plugin.enabled(prodCfg));
+  const prodRegistered = plugin(structuredClone(prodCfg));
+  assert.equal(typeof prodRegistered.mods.android.mainApplication, 'function');
+  assert.equal(typeof prodRegistered.mods.android.dangerous, 'function');
+  assert(!plugin.enabled({ extra: { belugaAdvertising: {
+    ...prodCfg.extra.belugaAdvertising, audienceApproved: false,
+  } } }));
   const eeaRegistered = plugin(structuredClone(eeaCfg));
   assert.equal(typeof eeaRegistered.mods.android.mainApplication, 'function');
   assert.equal(typeof eeaRegistered.mods.android.dangerous, 'function');

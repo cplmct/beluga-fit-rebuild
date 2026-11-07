@@ -3,7 +3,7 @@ import { isDevice } from 'expo-device';
 import { AdvertisingController, readEmbeddedConfig } from './controller';
 import { InternalTestAdsController } from './internalTestController';
 import { advertisingDeclarationStore } from './declarationStorage';
-import { PublicFlowController, isConsentEeaTest } from './publicFlowController';
+import { PublicFlowController, isConsentEeaTest, isProductionAdvertising } from './publicFlowController';
 import { readGdprApplicability } from './gdprApplicability.android';
 
 // Read the installed APK's asset directly. Constants.expoConfig/OTA extras are
@@ -37,6 +37,12 @@ export const internalTestAdvertising = new InternalTestAdsController(
 export const publicFlow = new PublicFlowController(
   config, advertisingDeclarationStore, () => {
     const adapter = createAdapter();
+    if (isProductionAdvertising(config)) {
+      const { default: mobileAds } = loadAndroidAds();
+      return { ...adapter, readGdprApplicability,
+        configure: () => mobileAds().setRequestConfiguration({}),
+      };
+    }
     if (!isConsentEeaTest(config)) return { ...adapter, readGdprApplicability };
     const { AdsConsent, AdsConsentDebugGeography } = loadAndroidAds();
     return { ...adapter, readGdprApplicability,

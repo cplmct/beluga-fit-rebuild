@@ -1,4 +1,4 @@
-# consent-eea-test — native handoff, not native validation
+# consent-eea-test — native handoff and owner-reported observations
 
 ## Scope and configuration
 
@@ -77,7 +77,7 @@ git diff --check
 These use mocks and synthetic manifests, not live consent or ads. Preserve the
 policy, dependency, bridge-reader and Personal Routines diffs as empty.
 
-## Later build and device steps — NOT executed or authorized here
+## Build and device instructions — no new build authorized here
 
 After implementation review and separate build approval, Windows PowerShell:
 
@@ -120,15 +120,123 @@ verify fresh refresh/form behavior after restart rather than claiming success.
 - Home/workout/recovery/Settings/logout smoke checks; no ineligible blank slot;
   no-fill/network failure preserve layout once an eligible load has started.
 
+## Owner-controlled emulator observations
+
+The following are owner-reported observations from consent-eea-test emulator
+testing, not independently reproduced results or a completed device test matrix:
+
+1. The consent message displayed **Consent**, **Do not consent**, and
+   **Manage options**.
+2. After **Do not consent**: controller/view blocked,
+   `reason=purpose-one-refused`, `error=none`, `applicability=applicable`.
+   No banner was visible in the supplied capture.
+3. Following the privacy-options consent-change test:
+   `view=loaded`, `controller=loaded`, `reason=none`, `error=none`,
+   `applicability=applicable`. A labelled **Google Test Ad** was visible.
+4. Following withdrawal: controller/view blocked,
+   `reason=purpose-one-refused`, `error=none`, `applicability=applicable`.
+   The banner was no longer visible in the capture.
+5. After `adb force-stop` and manual reopening, the owner reports
+   `reason=purpose-one-refused`, `error=none`, `applicability=applicable`.
+   No new screenshot was supplied for this step. This was not reset validation.
+
+These observations do not verify geographic location, debug-device recognition,
+complete native traffic suppression or production compliance. They do not mark
+comprehensive reset validation, account switching, background/workout safety,
+Home-first privacy-options availability or native dependency/manifest inspection
+as device-verified.
+Production and normal-preview advertising remain disabled; the non-TCF path
+remains blocked. No activation is implied by the observed test banner.
+
+### Additional reset/restart/refusal sequence — owner reported
+
+1. After the explicit test-only reset action, Settings displayed:
+   “Consent reset requested. Restart the app to begin a fresh consent
+   test. This is not confirmation of native completion or erasure.”
+   The adult declaration remained selected.
+2. Home showed `view=blocked`, `controller=blocked`,
+   `reason=reset-restart-required`, `error=none`, `applicability=unread`.
+3. Following the instructed force-stop/manual-reopen sequence, the owner
+   supplied a screenshot of the consent form appearing again.
+4. After selecting **Do not consent** on that form, Home showed
+   `view=blocked`, `controller=blocked`, `reason=purpose-one-refused`,
+   `error=none`, `applicability=applicable`. No banner was visible in the
+   supplied capture.
+
+This records the observed reset/restart/refusal sequence only, not complete
+native erasure or comprehensive reset validation. Busy/unsafe rejection, stale
+callbacks, account-switch lock persistence and complete navigation-lock coverage
+remain unverified on device.
+
+### Declaration-based blocking — owner-supplied Home captures
+
+The owner supplied two emulator Home screenshots: one with **Under 18**
+selected and one with **Prefer not to answer** selected. Both show:
+
+```text
+view=blocked
+controller=blocked
+reason=age-ineligible
+error=none
+applicability=unread
+```
+
+No banner is visible in either supplied capture. These are observations of
+declaration-based controller/UI blocking only, not proof of complete SDK traffic
+suppression or account isolation. Still screenshots do not establish the timing
+of banner removal. They also do not independently establish that a banner was
+loaded immediately before either declaration change; that precondition remains
+unconfirmed unless the owner explicitly confirms it.
+
+### Separate network issue — owner reported
+
+- UMP logs showed connection failures to
+  `fundingchoicesmessages.google.com:443`.
+- Windows curl tests initially failed.
+- After changing Wi-Fi, IPv4 and IPv6 curl tests received HTTP 404 responses.
+- Subsequent emulator consent tests succeeded.
+
+The specific cause on the original network remains undetermined. HTTP 404
+responses from the Windows tests are not proof that emulator UMP requests
+succeeded, nor evidence of complete native traffic suppression. The later
+emulator outcomes are separate observations, not a diagnosis of that network.
+
+### Remaining device-test checklist
+
+- Inspect actual resolved GMA/UMP versions, merged providers, App ID,
+  delayed-measurement metadata and bridge registration.
+- Establish UMP debug-device recognition before claiming deterministic EEA
+  testing; applicability alone is insufficient.
+- Beyond the observed reset/restart/refusal sequence, validate busy/unsafe
+  rejection, stale callbacks, account-switch lock persistence and complete
+  navigation-lock coverage. The observed sequence does not prove native erasure.
+- Test account switching, deletion cleanup and in-flight account changes.
+- Test background/foreground and Home/workout/recovery/Settings/logout safety.
+- Validate Home-first privacy-options availability, including cold Settings,
+  account changes and externally changed choices.
+- Exercise missing/invalid/read-failure/explicit-zero applicability, offline
+  refresh failure, no-fill and banner-load failure/layout behavior.
+- Distinguish Purpose 1 refusal from personalization-only refusal.
+- Independently observe network behavior if needed; UI/controller states alone
+  cannot establish absence of native SDK traffic.
+
 ## Evidence boundaries / outstanding native requirements
 
 - Source inspection: API mapping, defaults, exact config and call order.
 - Automated tests: mocked controller, SDK, UI/storage and synthetic manifest.
-- Owner reports: external message state and prior emulator observations.
+- Owner reports: external message state, consent-message display,
+  refusal/consent-change/withdrawal UI and sample-banner outcomes, restart result
+  without a new screenshot, the additional reset/restart/refusal sequence with
+  supplied form/refusal captures, the Under 18 and Prefer not to answer Home
+  captures showing declaration-based blocking, and the separate network issue
+  above.
 - Console screenshots: visible setup at capture time only, if supplied.
-- Native/device evidence: still needed for resolved versions, merged providers,
-  emulator recognition, actual message display/acceptance/refusal, reset behavior,
-  background transitions, privacy options and sample-banner outcome.
+- Native/device evidence: the observations above are limited owner-supplied
+  evidence, not independent verification. Resolved versions, merged providers,
+  emulator recognition, comprehensive reset validation (busy/unsafe rejection,
+  stale callbacks, account-switch lock persistence and complete navigation-lock
+  coverage), account transitions, background/workout safety and Home-first
+  privacy-options availability remain unverified on device.
 - Network evidence: separate from all of the above. Controller blocking or no
   explicit JS calls is not proof of no native traffic. Narrow proxy/VPN capture
   and Android inspection can inform this, but TLS/caching/provider activity and

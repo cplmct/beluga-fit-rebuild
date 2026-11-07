@@ -77,7 +77,7 @@ function PublicHomeBanner(props: AdvertisingProps) {
   const visible = safe && state.ready && !state.error && width >= 320;
   return (
     <View onLayout={event => setWidth(event.nativeEvent.layout.width)}>
-      <Text testID="public-ad-test-status">{status.text}</Text>
+      {publicFlow.diagnosticsEnabled && <Text testID="public-ad-test-status">{status.text}</Text>}
       {owned && (!state.loaded || state.declaration !== 'adult')
         && <AdvertisingAgeDeclaration {...props} />}
       {!!state.error && <Text accessibilityRole="alert">{state.error}</Text>}
@@ -99,7 +99,7 @@ function PublicBannerCreative() {
   const callbacks = useMemo(() => publicFlow.createBannerCallbacks(), []);
   useEffect(() => { callbacks.onLoadStart(); }, [callbacks]);
   const Banner = loadAndroidAds().BannerAd;
-  return <Banner unitId={TEST_BANNER_ID} size={loadAndroidAds().BannerAdSize.BANNER}
+  return <Banner unitId={publicFlow.bannerId} size={loadAndroidAds().BannerAdSize.BANNER}
     requestOptions={{ requestNonPersonalizedAdsOnly: true }}
     onAdLoaded={callbacks.onAdLoaded} onAdFailedToLoad={callbacks.onAdFailedToLoad} />;
 }
@@ -107,6 +107,24 @@ function PublicBannerCreative() {
 function PublicPrivacyOptions({ blocked, ownerUserId }: AdvertisingProps) {
   const { safe, current } = useSafeSurface(blocked);
   const state = useSyncExternalStore(publicFlow.subscribe, publicFlow.getSnapshot);
+  const ownedAdult = !!ownerUserId && state.owner === ownerUserId && state.loaded
+    && state.declaration === 'adult';
+  useEffect(() => {
+    let cancelled = false;
+    if (safe && ownedAdult && publicFlow.productionEnabled) {
+      void publicFlow.discoverPrivacyOptions(() => !cancelled && current.current);
+    }
+    return () => { cancelled = true; };
+  }, [safe, ownedAdult, state.trigger]);
+  if (ownedAdult && publicFlow.productionEnabled && state.error) return (
+    <View style={styles.options}>
+      <Text accessibilityRole="alert">{state.error}</Text>
+      <TouchableOpacity accessibilityRole="button" disabled={!safe || state.busy}
+        onPress={publicFlow.retry}>
+        <Text style={styles.link}>Retry advertising privacy check</Text>
+      </TouchableOpacity>
+    </View>
+  );
   if (!ownerUserId || state.owner !== ownerUserId || !state.loaded
     || state.declaration !== 'adult' || !state.privacyRequired) return null;
   return (

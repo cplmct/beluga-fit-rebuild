@@ -47,6 +47,12 @@
         "BELUGA_ADS_MODE": "public-flow-test"
       }
     },
+    "production-advertising": {
+      "extends": "production",
+      "env": {
+        "BELUGA_ADS_MODE": "production-tcf"
+      }
+    },
     "production": {
       "autoIncrement": true,
       "android": {

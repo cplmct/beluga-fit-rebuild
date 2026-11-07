@@ -21,6 +21,14 @@ export function isPublicFlowTest(config: TestConfig): boolean {
     && config.appId === TEST_APP_ID && config.bannerId === TEST_BANNER_ID);
 }
 
+// Release configuration approval is not age, consent, account or regional permission.
+export function isProductionAdvertising(config: TestConfig): boolean {
+  return config.mode === 'production-tcf' && config.buildProfile === 'production-advertising'
+    && config.audienceApproved === true
+    && config.appId === 'ca-app-pub-5534915161634783~7684377807'
+    && config.bannerId === 'ca-app-pub-5534915161634783/2005509866';
+}
+
 // UMP remains status authority. This is ONLY an extra supported Purpose 1 veto,
 // not a purpose/vendor/LI/GPP engine.
 export function purposeOneVeto(applies: unknown, purposes: unknown): string {
@@ -70,7 +78,10 @@ export class PublicFlowController {
     private load: () => PublicFlowAdapter,
     private afterBannerRemoval: () => Promise<void> = () => Promise.resolve(),
   ) {}
-  get enabled() { return isPublicFlowTest(this.config); }
+  get enabled() { return isPublicFlowTest(this.config) || this.productionEnabled; }
+  get productionEnabled() { return isProductionAdvertising(this.config); }
+  get diagnosticsEnabled() { return isPublicFlowTest(this.config); }
+  get bannerId() { return this.enabled ? this.config.bannerId! : TEST_BANNER_ID; }
   get resetEnabled() { return isConsentEeaTest(this.config); }
   getSnapshot = () => this.state;
   subscribe = (listener: () => void) => {
@@ -202,6 +213,35 @@ export class PublicFlowController {
   private privacy(info: ConsentInfo) {
     this.update({ privacyRequired: info.privacyOptionsRequirementStatus === 'REQUIRED' });
   }
+
+  // Cold Settings discovery: same mutex/generations as Home, but NEVER show a
+  // required form, initialize Mobile Ads or grant readiness here.
+  discoverPrivacyOptions = async (isSafe: () => boolean): Promise<void> => {
+    if (!this.productionEnabled || !this.adult() || !isSafe() || this.running
+      || this.state.refresh !== 'needed' || this.state.error) return;
+    const generation = this.generation;
+    const valid = () => generation === this.generation && this.adult() && isSafe();
+    this.running = true;
+    this.update({ busy: true });
+    try {
+      const sdk = this.sdk ??= this.load();
+      const info = await sdk.requestInfoUpdate();
+      if (!valid()) return;
+      this.privacy(info);
+      this.update({ refresh: 'ok' });
+    } catch (error) {
+      if (valid()) this.update({ refresh: 'failed', ready: false, phase: 'failed',
+        reason: 'refresh-failed', errorCode: publicErrorCode(error),
+        error: 'Advertising privacy refresh failed. Advertising stays off; tracking is unaffected.' });
+    } finally {
+      this.running = false;
+      this.update({ busy: false });
+      // A cancelled Settings effect or newly focused surface may now retry.
+      // Successful discovery has refresh=ok; failure has refresh=failed, so
+      // neither can create an automatic refresh loop.
+      this.trigger();
+    }
+  };
 
   prepareHome = async (isSafe: () => boolean): Promise<void> => {
     if (!this.adult() || !isSafe() || this.running || this.state.refresh === 'failed' || this.state.error) return;

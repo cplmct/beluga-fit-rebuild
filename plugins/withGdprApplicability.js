@@ -1,7 +1,7 @@
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { withMainApplication, withDangerousMod } = require('expo/config-plugins');
-const { validateAdvertisingIdentifiers, isConsentEeaTest } = require('../config/advertising');
+const { validateAdvertisingIdentifiers, isConsentEeaTest, isProductionAdvertising } = require('../config/advertising');
 
 const registration = 'packages.add(com.belugafit.advertising.BelugaGdprApplicabilityPackage())';
 const sourceNames = [
@@ -24,7 +24,7 @@ function register(contents, language) {
 
 function enabled(config) {
   const ads = config.extra?.belugaAdvertising;
-  return isConsentEeaTest(ads) || (ads?.buildProfile === 'public-ad-flow-test'
+  return isProductionAdvertising(ads) || isConsentEeaTest(ads) || (ads?.buildProfile === 'public-ad-flow-test'
     && ads.mode === 'public-flow-test' && ads.audienceApproved === false);
 }
 

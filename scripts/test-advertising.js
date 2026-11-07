@@ -300,9 +300,12 @@ async function main() {
     assert(!/from ['"].*(?:AuthContext|supabase)|keywords:|customTargeting:/.test(text), path);
     if (path === 'publicFlowController.ts') {
       const ownerIds = text.match(/ca-app-pub-5534915161634783[~/]\d+/g) || [];
-      assert.deepEqual(ownerIds, ['ca-app-pub-5534915161634783~8443553999'],
-        'Only the exact consent-test App ID may appear in its runtime predicate');
+      assert.deepEqual(ownerIds, ['ca-app-pub-5534915161634783~8443553999',
+        'ca-app-pub-5534915161634783~7684377807',
+        'ca-app-pub-5534915161634783/2005509866'],
+        'Only exact approved IDs may appear in separate runtime predicates');
       assert(text.includes("config.buildProfile === 'consent-eea-test'"));
+      assert(text.includes("config.buildProfile === 'production-advertising'"));
     } else assert(!text.includes('5534915161634783'), path);
   }
   const native = fs.readFileSync('src/advertising/runtime.android.ts', 'utf8');
